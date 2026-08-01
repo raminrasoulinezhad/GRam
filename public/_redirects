@@ -1,0 +1,5 @@
+# Single-page app: every route renders from index.html and is resolved client-side by
+# expo-router. Without this, refreshing on /body or /profile returns the host's 404 page.
+# Honoured by Netlify and Cloudflare Pages. GitHub Pages ignores it and uses 404.html instead,
+# which scripts/build-web.mjs writes as a copy of index.html.
+/*  /index.html  200

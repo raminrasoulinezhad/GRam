@@ -83,6 +83,15 @@ if (!precache.some((p) => p.startsWith('/_expo/static/js/web/') && p.endsWith('.
   process.exit(1);
 }
 
+// GitHub Pages ignores _redirects but serves 404.html for unknown paths. A verbatim copy of the
+// shell there makes deep links work on hosts with no rewrite support at all.
+writeFileSync(resolve(OUT, '404.html'), html);
+
+if (!existsSync(resolve(OUT, '_redirects'))) {
+  process.stderr.write('_redirects missing - deep links would 404 on Netlify/Cloudflare.\n');
+  process.exit(1);
+}
+
 process.stdout.write(
   `\nBuilt ${buildId} into dist/\n` +
     `Precached ${precache.length} files for offline use.\n` +

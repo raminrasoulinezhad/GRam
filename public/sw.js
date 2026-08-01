@@ -81,11 +81,21 @@ self.addEventListener('fetch', (event) => {
 
   if (url.origin !== self.location.origin) return;
 
-  // Navigations: always land on the cached shell when offline. expo-router is a single-page
-  // app, so every route resolves to the same document.
+  /*
+   * Navigations always resolve to the app shell. expo-router is a single-page app, so every
+   * route renders from the same document and the path is interpreted client-side.
+   *
+   * Falling back on a failed *fetch* is not enough: a static host without SPA rewrite rules
+   * answers /body with a perfectly successful 404 page, not a network error. So any non-OK
+   * response falls back too, which makes an installed app work regardless of how the host is
+   * configured. (public/_redirects handles it server-side on Netlify and Cloudflare Pages.)
+   */
   if (request.mode === 'navigate') {
+    const shell = () => caches.match('/index.html').then((hit) => hit ?? caches.match('/'));
     event.respondWith(
-      fetch(request).catch(() => caches.match('/index.html').then((hit) => hit ?? caches.match('/'))),
+      fetch(request)
+        .then((response) => (response.ok ? response : shell().then((hit) => hit ?? response)))
+        .catch(() => shell()),
     );
     return;
   }
