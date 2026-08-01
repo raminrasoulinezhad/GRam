@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!--
+      viewport-fit=cover lets the app paint under the notch and home indicator; the safe-area
+      insets are handled by react-native-safe-area-context. Without it an installed app sits in
+      a letterbox with white bars.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, shrink-to-fit=no"
+    />
+    <title>FitRam</title>
+    <meta name="description" content="Plan your sets and see which muscles you have actually trained." />
+
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0B1220" />
+    <meta name="color-scheme" content="dark" />
+
+    <!--
+      iOS ignores most of the web app manifest. These four tags are what actually make an
+      "Add to Home Screen" install open fullscreen with the right icon and status bar, instead
+      of as a Safari tab.
+    -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FitRam" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <link rel="icon" href="/icons/icon-192.png" type="image/png" />
+
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+        background-color: #0b1220;
+      }
+      body {
+        overflow: hidden;
+        /* Stop iOS bouncing the whole page and offering to select UI text as if it were content. */
+        overscroll-behavior: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+      /* Text inputs must stay selectable, or editing a weight becomes miserable. */
+      input,
+      textarea {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script>
+      // Registered after load so it never competes with the first paint. Only meaningful over
+      // HTTPS (or localhost); on plain HTTP the browser declines and the app still works online.
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function () {
+            /* Offline support is an enhancement, not a requirement. */
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

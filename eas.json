@@ -1,4 +1,12 @@
 {
+  "$comment": [
+    "FitRam is never published to an app store - see docs/DISTRIBUTION.md.",
+    "Every profile here is distribution: internal, meaning builds install directly onto",
+    "registered devices and never pass through App Store Connect or Play Console.",
+    "There is deliberately no `submit` section and no app-bundle profile: Play requires an",
+    "AAB, so producing only APKs means there is nothing here that a store would accept.",
+    "Restoring either would be a conscious reversal of that decision, not an accident."
+  ],
   "cli": {
     "version": ">= 12.0.0",
     "appVersionSource": "remote"
@@ -6,10 +14,12 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "android": {
         "buildType": "apk"
       },
@@ -17,14 +27,14 @@
         "simulator": true
       }
     },
-    "production": {
+    "device": {
+      "$comment": "The one you actually install and use. Android: a sideloadable APK. iOS: an ad-hoc build for UDIDs registered via `eas device:create`, which needs a paid Apple Developer account.",
+      "distribution": "internal",
+      "channel": "production",
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "apk"
       }
     }
-  },
-  "submit": {
-    "production": {}
   }
 }

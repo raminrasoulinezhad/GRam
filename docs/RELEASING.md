@@ -6,26 +6,38 @@ Everything below exists to make that true.
 
 ---
 
+> FitRam is never published to an app store — see [DISTRIBUTION.md](DISTRIBUTION.md). Everything
+> below describes direct distribution to your own devices.
+
 ## How an upgrade actually reaches a user
 
-There are two channels, and which one applies depends only on whether native code changed.
+Two channels, and which one applies depends only on whether native code changed.
 
-| What changed | Channel | User experience |
+| What changed | Channel | Experience |
 |---|---|---|
-| JS, UI, copy, business logic | **EAS Update (OTA)** | Downloads silently in the background, applies on the next launch. No store, no review, no tap. |
-| Native modules, Expo SDK, permissions, app icon, anything in `ios/` or `android/` | **Store build** | Normal App Store / Play update. |
+| JS, UI, copy, business logic | **EAS Update (OTA)** | Downloads silently in the background, applies on next launch. Nothing to tap. |
+| Native modules, Expo SDK, permissions, app icon, anything in `ios/` or `android/` | **New build** | Install the new APK over the old one, or reinstall the ad-hoc iOS build. |
 
-### Nobody reinstalls, and nobody loses data
+In practice almost everything is the first row.
 
-This is the part worth being clear about, because it is the usual worry:
+### Installing over the top is an upgrade, not a reinstall
 
-- An App Store or Play update **replaces the binary and leaves the app's data directory
-  untouched**. It is not an uninstall-then-install.
-- The only things that wipe local data are the user deleting the app, "Clear storage" in Android
-  settings, or offloading on iOS.
-- This holds as long as two things never change: the **bundle id** (`app.fitram.mobile`) and the
-  **signing key**. Change either and the store treats it as a different app — users would get a
-  second icon and an empty database. Do not change them.
+- Installing a newer APK over an installed one **replaces the binary and leaves the app's data
+  directory untouched**. Android does not uninstall first.
+- The only things that wipe local data are uninstalling, "Clear storage" in Android settings,
+  offloading on iOS, or the app's own **Erase all data** button.
+
+Two conditions must hold, both handled by EAS:
+
+- **Same signing key.** Android only grants a new APK access to the old one's data if the
+  signature matches; a differently-signed APK will refuse to install at all. EAS generates the
+  keystore on first build and reuses it. Losing it means no future version can upgrade an
+  existing install. Keep a copy via `eas credentials`.
+- **Higher `versionCode`.** Android rejects an APK whose version code did not increase. EAS
+  auto-increments it (`appVersionSource: "remote"`).
+
+Also never change the **bundle id** (`app.fitram.mobile`). A different id is a different app —
+a second icon and an empty database.
 
 So the storage survives on its own. What does *not* survive automatically is the **shape** of
 that storage when our code starts expecting something new. That is the next section.

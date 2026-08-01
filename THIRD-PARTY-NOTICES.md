@@ -42,9 +42,14 @@ probably cannot extend to them. Treat them as **unlicensed third-party content**
 
 | Use | Assessment |
 |---|---|
-| Running it yourself, on your own phone | Low practical risk. |
-| Publishing to the App Store / Play Store | **Do not ship as-is.** You would be redistributing images you have no licence for, and hotlinking someone else's bandwidth. |
-| Commercial use | **Not advisable** until the images are replaced. |
+| Running it yourself, on your own phone | Low practical risk — **and this is the only use FitRam supports.** |
+| Publishing to the App Store / Play Store | Would mean redistributing images you have no licence for, and hotlinking someone else's bandwidth. |
+| Commercial use | Not advisable until the images are replaced. |
+
+FitRam is **never published to an app store** ([docs/DISTRIBUTION.md](docs/DISTRIBUTION.md)),
+which keeps this squarely in the first row. The unresolved provenance is one of the reasons for
+that policy. If the policy is ever revisited, replacing the photographs is a precondition, not an
+afterthought.
 
 ### How to remove the exposure
 

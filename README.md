@@ -6,6 +6,19 @@ trained. One TypeScript codebase, real iOS and Android apps.
 Built as a proof of concept reimplementing the core ideas behind [Fitbod](https://fitbod.me) —
 see [docs/STUDY.md](docs/STUDY.md) for what that app does and which parts are reproduced here.
 
+> ## 🚫 Never published to an app store
+>
+> **FitRam must not be uploaded to the Apple App Store, Google Play, or any other public app
+> store or marketplace — now or in the future.** It is a personal tool, installed directly on its
+> owner's own devices.
+>
+> This is enforced structurally: `eas.json` contains no `submit` configuration and produces only
+> APKs, never the app bundle Google Play requires. See
+> [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for the reasoning.
+
+**Want to put it on your phone? → [docs/QUICKSTART.md](docs/QUICKSTART.md)** (plain English, no
+jargon.)
+
 ---
 
 ## What it does today
@@ -38,7 +51,8 @@ npm install
 npx expo start
 ```
 
-Scan the QR code. Works on iPhone and Android from the same command.
+Scan the QR code. Works on iPhone and Android from the same command, but needs the dev server
+running.
 
 **In a browser**, for quick checks:
 
@@ -46,17 +60,19 @@ Scan the QR code. Works on iPhone and Android from the same command.
 npx expo start --web
 ```
 
-### Building real app binaries
+### Installing it properly
 
-`eas.json` carries `preview` (Android APK, iOS simulator) and `production` profiles. Building
-requires an Expo account and, for iOS, an Apple Developer account:
+For an app that lives on the phone with its own icon and no computer attached, EAS builds it in
+the cloud — no local Android or Xcode toolchain needed:
 
 ```bash
 npx eas login
-npx eas build --profile preview --platform android
+npx eas build --profile device --platform android    # APK you install directly
 ```
 
-Local native builds need a Java/Android SDK toolchain; iOS binaries need macOS or EAS cloud.
+iOS needs a paid Apple Developer account even for direct installs, because Apple has no
+equivalent of Android's sideload. Full walkthrough and the tradeoffs:
+[docs/QUICKSTART.md](docs/QUICKSTART.md).
 
 ---
 
@@ -108,10 +124,9 @@ FitRam is licensed under the [Apache License 2.0](LICENSE).
 The exercise data comes from [free-exercise-db](https://github.com/yuhonas/free-exercise-db)
 under the Unlicense (public domain).
 
-⚠️ **The exercise photographs are a different matter.** They are not bundled here — the how-to
-screen loads them from the upstream repository at runtime — and their copyright status has never
-been established upstream. Read [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) before
-publishing this app anywhere. It is fine for personal use; it is not ready to ship to a store
-with those images in place.
+The exercise photographs are loaded from the upstream repository at runtime and are not bundled
+here. Their copyright status was never established upstream, which is one of the reasons this
+app is never published — private use of images is a very different matter from redistributing
+them. Details in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 FitRam is not affiliated with or endorsed by Fitbod.
