@@ -52,6 +52,15 @@ export const MUSCLE_LABEL: Record<Muscle, string> = {
 };
 
 /**
+ * Every slug the catalog can colour. Used to paint untouched regions explicitly rather than
+ * leaving them to the library's own default fill, which ignores the `defaultFill` prop and
+ * would otherwise render a grey that does not match the legend's cold end.
+ */
+export const TRACKED_SLUGS: Slug[] = [
+  ...new Set(MUSCLES.flatMap((m) => MUSCLE_TO_SLUGS[m])),
+];
+
+/**
  * Collapses per-muscle values onto body slugs, taking the max where several muscles share a
  * slug. Max rather than sum: the colour means "how hard was this region worked", and summing
  * lats + mid back would double-count a row that trains one back.

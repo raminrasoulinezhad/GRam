@@ -1,7 +1,7 @@
 import { bodyBack } from 'react-native-body-highlighter/dist/assets/bodyBack';
 import { bodyFront } from 'react-native-body-highlighter/dist/assets/bodyFront';
 import { EXERCISES, MUSCLES } from '@/catalog';
-import { MUSCLE_LABEL, MUSCLE_TO_SLUGS, toSlugValues } from '@/analytics/muscleMap';
+import { MUSCLE_LABEL, MUSCLE_TO_SLUGS, TRACKED_SLUGS, toSlugValues } from '@/analytics/muscleMap';
 import { emptyTotals } from '@/analytics/volume';
 
 const RENDERABLE = new Set([
@@ -70,5 +70,20 @@ describe('toSlugValues', () => {
     for (const slug of toSlugValues(totals).keys()) {
       expect(RENDERABLE.has(slug)).toBe(true);
     }
+  });
+});
+
+describe('TRACKED_SLUGS', () => {
+  it('covers every slug any catalog muscle can map to', () => {
+    const expected = new Set(MUSCLES.flatMap((m) => MUSCLE_TO_SLUGS[m]));
+    expect(new Set(TRACKED_SLUGS)).toEqual(expected);
+  });
+
+  it('contains no duplicates, so no path is painted twice', () => {
+    expect(TRACKED_SLUGS).toHaveLength(new Set(TRACKED_SLUGS).size);
+  });
+
+  it('only names slugs the body model can draw', () => {
+    for (const slug of TRACKED_SLUGS) expect(RENDERABLE.has(slug)).toBe(true);
   });
 });

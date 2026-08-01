@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Body, { type ExtendedBodyPart } from 'react-native-body-highlighter';
 import { MUSCLES } from '@/catalog';
-import { MUSCLE_LABEL, toSlugValues } from '@/analytics/muscleMap';
+import { MUSCLE_LABEL, TRACKED_SLUGS, toSlugValues } from '@/analytics/muscleMap';
 import { recovery, volumeInWindow, WEEKLY_TARGET_SETS } from '@/analytics/volume';
 import { completedSessions, selectSessions, useStore } from '@/store/useStore';
 import { Card, Chip, Dim, Empty, H2, Screen } from '@/ui/components';
@@ -32,9 +32,12 @@ export default function BodyScreen() {
       for (const m of MUSCLES) forDisplay[m] = 100 - totals[m];
     }
     const bySlug = toSlugValues(forDisplay);
-    return [...bySlug.entries()].map(([slug, value]) => ({
+    // Emit an entry for every tracked slug, not just the worked ones. The library's
+    // `defaultFill` prop does not reach the rendered paths, so an untouched muscle would
+    // otherwise keep the library's grey and clash with the cold end of our legend.
+    return TRACKED_SLUGS.map((slug) => ({
       slug,
-      intensity: rampIntensity(value, max),
+      intensity: rampIntensity(bySlug.get(slug) ?? 0, max),
     }));
   }, [totals, mode, max]);
 

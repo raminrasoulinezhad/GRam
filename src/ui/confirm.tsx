@@ -50,42 +50,45 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   return (
     <ConfirmContext.Provider value={value}>
       {children}
-      <Modal
-        visible={pending !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => pending?.resolve(false)}
-      >
-        <Pressable style={s.backdrop} onPress={() => pending?.resolve(false)}>
-          {/* Swallow taps on the card so they don't dismiss via the backdrop. */}
-          <Pressable style={s.card} onPress={() => {}}>
-            <Text style={s.title}>{pending?.title}</Text>
-            {pending?.message ? <Text style={s.message}>{pending.message}</Text> : null}
-            <View style={s.actions}>
-              {cancelLabel !== null ? (
+      {/*
+        Mounted only while a dialog is pending. react-native-web's Modal does NOT unmount
+        its children when visible={false} - it leaves them in the DOM, laid out and without
+        aria-hidden, so a screen reader would announce a phantom "Cancel / OK" on every
+        screen. Gating the whole element is also one less subtree to keep around.
+      */}
+      {pending !== null ? (
+        <Modal visible transparent animationType="fade" onRequestClose={() => pending.resolve(false)}>
+          <Pressable style={s.backdrop} onPress={() => pending.resolve(false)}>
+            {/* Swallow taps on the card so they don't dismiss via the backdrop. */}
+            <Pressable style={s.card} onPress={() => {}}>
+              <Text style={s.title}>{pending.title}</Text>
+              {pending.message ? <Text style={s.message}>{pending.message}</Text> : null}
+              <View style={s.actions}>
+                {cancelLabel !== null ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    testID="confirm-cancel"
+                    style={[s.btn, s.btnGhost]}
+                    onPress={() => pending.resolve(false)}
+                  >
+                    <Text style={s.btnGhostLabel}>{cancelLabel}</Text>
+                  </Pressable>
+                ) : null}
                 <Pressable
                   accessibilityRole="button"
-                  testID="confirm-cancel"
-                  style={[s.btn, s.btnGhost]}
-                  onPress={() => pending?.resolve(false)}
+                  testID="confirm-ok"
+                  style={[s.btn, pending.destructive ? s.btnDanger : s.btnPrimary]}
+                  onPress={() => pending.resolve(true)}
                 >
-                  <Text style={s.btnGhostLabel}>{cancelLabel}</Text>
+                  <Text style={[s.btnLabel, pending.destructive && { color: '#2A0A0A' }]}>
+                    {pending.confirmLabel ?? 'OK'}
+                  </Text>
                 </Pressable>
-              ) : null}
-              <Pressable
-                accessibilityRole="button"
-                testID="confirm-ok"
-                style={[s.btn, pending?.destructive ? s.btnDanger : s.btnPrimary]}
-                onPress={() => pending?.resolve(true)}
-              >
-                <Text style={[s.btnLabel, pending?.destructive && { color: '#2A0A0A' }]}>
-                  {pending?.confirmLabel ?? 'OK'}
-                </Text>
-              </Pressable>
-            </View>
+              </View>
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
+      ) : null}
     </ConfirmContext.Provider>
   );
 }
