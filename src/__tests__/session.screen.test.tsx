@@ -1,5 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
+import { cancelDialog, confirmDialog, dialogOpen, renderScreen } from '@/test-utils';
 import { useStore } from '@/store/useStore';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
@@ -18,176 +18,169 @@ const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
 const PLANK = 'Plank';
 const store = () => useStore.getState();
 
-/** Runs the destructive button of the most recent Alert, standing in for a user tap. */
-function confirmAlert(label: string) {
-  const calls = (Alert.alert as jest.Mock).mock.calls;
-  const buttons = calls[calls.length - 1][2] as { text: string; onPress?: () => void }[];
-  const button = buttons.find((b) => b.text === label);
-  if (!button?.onPress) throw new Error(`No "${label}" button in the alert`);
-  act(() => button.onPress!());
-}
-
+/** Seeds a plan with one exercise, starts it, and points the route params at the session. */
 function startWorkout(exerciseId = BENCH) {
   let sessionId = '';
-  act(() => {
-    const planId = store().createPlan('Push day');
-    store().addPlanItem(planId, exerciseId);
-    sessionId = store().startSession(planId)!;
-  });
+  const s = store();
+  const planId = s.createPlan('Push day');
+  s.addPlanItem(planId, exerciseId);
+  sessionId = s.startSession(planId)!;
   mockParams = { id: sessionId };
   return sessionId;
 }
 
+const setIds = () => store().sessions[0].entries[0].sets.map((x) => x.id);
+
 beforeEach(() => {
   jest.clearAllMocks();
-  act(() => store().resetAll());
+  store().resetAll();
   mockParams = {};
 });
 
 describe('active workout screen', () => {
-  it('renders the plan, its exercise and its three seeded sets', () => {
+  it('renders the plan, its exercise and its three seeded sets', async () => {
     const sessionId = startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
     expect(screen.getByText('Barbell Bench Press - Medium Grip')).toBeTruthy();
-    expect(screen.getByText('0/3 sets recorded')).toBeTruthy();
+    expect(screen.getByText(/0\/3 sets recorded/)).toBeTruthy();
 
     const sets = store().sessions.find((s) => s.id === sessionId)!.entries[0].sets;
     for (const set of sets) expect(screen.getByTestId(`log-${set.id}`)).toBeTruthy();
   });
 
-  it('records a set and reflects it in the header count', () => {
+  it('records a set and reflects it in the header count', async () => {
     const sessionId = startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    const setId = store().sessions[0].entries[0].sets[0].id;
-    fireEvent.press(screen.getByTestId(`log-${setId}`));
+    await fireEvent.press(screen.getByTestId(`log-${setIds()[0]}`));
 
-    expect(store().sessions.find((s) => s.id === sessionId)!.entries[0].sets[0].loggedAt).not.toBeNull();
-    expect(screen.getByText('1/3 sets recorded')).toBeTruthy();
+    const session = store().sessions.find((s) => s.id === sessionId)!;
+    expect(session.entries[0].sets[0].loggedAt).not.toBeNull();
+    expect(screen.getByText(/1\/3 sets recorded/)).toBeTruthy();
   });
 
-  it('un-records a set on a second tap', () => {
+  it('un-records a set on a second tap', async () => {
     startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    const setId = store().sessions[0].entries[0].sets[0].id;
-    fireEvent.press(screen.getByTestId(`log-${setId}`));
-    fireEvent.press(screen.getByTestId(`log-${setId}`));
+    const setId = setIds()[0];
+    await fireEvent.press(screen.getByTestId(`log-${setId}`));
+    await fireEvent.press(screen.getByTestId(`log-${setId}`));
 
     expect(store().sessions[0].entries[0].sets[0].loggedAt).toBeNull();
-    expect(screen.getByText('0/3 sets recorded')).toBeTruthy();
+    expect(screen.getByText(/0\/3 sets recorded/)).toBeTruthy();
   });
 
-  it('edits weight and reps through the set fields', () => {
+  it('edits weight and reps through the set fields', async () => {
     startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    const setId = store().sessions[0].entries[0].sets[0].id;
-    fireEvent.changeText(screen.getByTestId(`set-${setId}-weight`), '82.5');
-    fireEvent.changeText(screen.getByTestId(`set-${setId}-reps`), '5');
+    const setId = setIds()[0];
+    await fireEvent.changeText(screen.getByTestId(`set-${setId}-weight`), '82.5');
+    await fireEvent.changeText(screen.getByTestId(`set-${setId}-reps`), '5');
 
     expect(store().sessions[0].entries[0].sets[0]).toMatchObject({ weightKg: 82.5, reps: 5 });
   });
 
-  it('rejects non-numeric input rather than storing NaN', () => {
+  it('rejects non-numeric input rather than storing NaN', async () => {
     startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    const setId = store().sessions[0].entries[0].sets[0].id;
-    fireEvent.changeText(screen.getByTestId(`set-${setId}-weight`), 'abc');
+    await fireEvent.changeText(screen.getByTestId(`set-${setIds()[0]}-weight`), 'abc');
 
     expect(store().sessions[0].entries[0].sets[0].weightKg).toBeUndefined();
   });
 
-  it('clears a field to undefined instead of zero when emptied', () => {
+  it('clears a field to undefined instead of zero when emptied', async () => {
     startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    const setId = store().sessions[0].entries[0].sets[0].id;
-    fireEvent.changeText(screen.getByTestId(`set-${setId}-reps`), '');
+    await fireEvent.changeText(screen.getByTestId(`set-${setIds()[0]}-reps`), '');
 
     expect(store().sessions[0].entries[0].sets[0].reps).toBeUndefined();
   });
 
-  it('adds a set from the button', () => {
+  it('adds a set from the button', async () => {
     startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
     const entryId = store().sessions[0].entries[0].id;
-    fireEvent.press(screen.getByTestId(`add-set-${entryId}`));
+    await fireEvent.press(screen.getByTestId(`add-set-${entryId}`));
 
     expect(store().sessions[0].entries[0].sets).toHaveLength(4);
-    expect(screen.getByText('0/4 sets recorded')).toBeTruthy();
+    expect(screen.getByText(/0\/4 sets recorded/)).toBeTruthy();
   });
 
-  it('deletes a set from the row', () => {
+  it('deletes a set from the row', async () => {
     startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    const setId = store().sessions[0].entries[0].sets[0].id;
-    fireEvent.press(screen.getByTestId(`del-${setId}`));
+    const setId = setIds()[0];
+    await fireEvent.press(screen.getByTestId(`del-${setId}`));
 
     expect(store().sessions[0].entries[0].sets).toHaveLength(2);
     expect(screen.queryByTestId(`log-${setId}`)).toBeNull();
   });
 
-  it('deletes a set that was already recorded', () => {
+  it('deletes a set that was already recorded', async () => {
     startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    const setId = store().sessions[0].entries[0].sets[0].id;
-    fireEvent.press(screen.getByTestId(`log-${setId}`));
-    fireEvent.press(screen.getByTestId(`del-${setId}`));
+    const setId = setIds()[0];
+    await fireEvent.press(screen.getByTestId(`log-${setId}`));
+    await fireEvent.press(screen.getByTestId(`del-${setId}`));
 
     expect(store().sessions[0].entries[0].sets).toHaveLength(2);
-    expect(screen.getByText('0/2 sets recorded')).toBeTruthy();
+    expect(screen.getByText(/0\/2 sets recorded/)).toBeTruthy();
   });
 
-  it('shows the right fields for a timed exercise and no weight input', () => {
+  it('shows the right fields for a timed exercise and no weight input', async () => {
     startWorkout(PLANK);
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    const setId = store().sessions[0].entries[0].sets[0].id;
+    const setId = setIds()[0];
     expect(screen.getByTestId(`set-${setId}-time`)).toBeTruthy();
     expect(screen.queryByTestId(`set-${setId}-weight`)).toBeNull();
 
-    fireEvent.changeText(screen.getByTestId(`set-${setId}-time`), '75');
+    await fireEvent.changeText(screen.getByTestId(`set-${setId}-time`), '75');
     expect(store().sessions[0].entries[0].sets[0].timeSec).toBe(75);
   });
 
-  it('surfaces the muscles worked as sets are recorded', () => {
+  it('surfaces the muscles worked as sets are recorded', async () => {
     startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
     expect(screen.queryByText(/^Chest/)).toBeNull();
-    fireEvent.press(screen.getByTestId(`log-${store().sessions[0].entries[0].sets[0].id}`));
+    await fireEvent.press(screen.getByTestId(`log-${setIds()[0]}`));
+
     expect(screen.getByText('Chest 1')).toBeTruthy();
     expect(screen.getByText('Triceps 0.5')).toBeTruthy();
   });
 
-  it('starts a rest timer on record but not on un-record', () => {
+  it('starts a rest timer on record but not on un-record', async () => {
     startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    const setId = store().sessions[0].entries[0].sets[0].id;
-    fireEvent.press(screen.getByTestId(`log-${setId}`));
+    const setId = setIds()[0];
+    await fireEvent.press(screen.getByTestId(`log-${setId}`));
     expect(screen.getByText(/^Rest /)).toBeTruthy();
 
-    fireEvent.press(screen.getByTestId(`log-${setId}`));
-    // Un-recording must not restart the clock; the bar from the first tap is still counting.
+    await fireEvent.press(screen.getByTestId(`log-${setId}`));
+    // Un-recording must not restart the clock; only the bar from the first tap is present.
     expect(screen.getAllByText(/^Rest /)).toHaveLength(1);
   });
 
-  it('finishes the workout and keeps only recorded sets', () => {
+  it('finishes the workout and keeps only recorded sets', async () => {
     const sessionId = startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    const sets = store().sessions[0].entries[0].sets;
-    fireEvent.press(screen.getByTestId(`log-${sets[0].id}`));
-    fireEvent.press(screen.getByTestId(`log-${sets[1].id}`));
-    fireEvent.press(screen.getByTestId('finish'));
-    confirmAlert('Finish');
+    const [a, b] = setIds();
+    await fireEvent.press(screen.getByTestId(`log-${a}`));
+    await fireEvent.press(screen.getByTestId(`log-${b}`));
+    await fireEvent.press(screen.getByTestId('finish'));
+    expect(screen.getByText('2 recorded sets will be saved.')).toBeTruthy();
+    await confirmDialog();
 
     const session = store().sessions.find((s) => s.id === sessionId)!;
     expect(session.endedAt).not.toBeNull();
@@ -195,39 +188,66 @@ describe('active workout screen', () => {
     expect(mockRouter.replace).toHaveBeenCalledWith('/(tabs)/history');
   });
 
-  it('offers to discard rather than saving an empty workout', () => {
+  it('cancelling the finish dialog leaves the workout running', async () => {
     const sessionId = startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    fireEvent.press(screen.getByTestId('finish'));
-    expect((Alert.alert as jest.Mock).mock.calls.at(-1)![0]).toBe('Nothing recorded');
+    await fireEvent.press(screen.getByTestId(`log-${setIds()[0]}`));
+    await fireEvent.press(screen.getByTestId('finish'));
+    await cancelDialog();
 
-    confirmAlert('Discard');
+    expect(store().sessions.find((s) => s.id === sessionId)!.endedAt).toBeNull();
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+    expect(dialogOpen()).toBe(false);
+  });
+
+  it('offers to discard rather than saving an empty workout', async () => {
+    const sessionId = startWorkout();
+    await renderScreen(<SessionScreen />);
+
+    await fireEvent.press(screen.getByTestId('finish'));
+    expect(screen.getByText('Nothing recorded')).toBeTruthy();
+
+    await confirmDialog();
+    expect(store().sessions.find((s) => s.id === sessionId)).toBeUndefined();
+    expect(mockRouter.replace).toHaveBeenCalledWith('/');
+  });
+
+  it('discards the whole workout on demand', async () => {
+    const sessionId = startWorkout();
+    await renderScreen(<SessionScreen />);
+
+    await fireEvent.press(screen.getByTestId(`log-${setIds()[0]}`));
+    await fireEvent.press(screen.getByTestId('discard'));
+    expect(screen.getByText('Discard workout?')).toBeTruthy();
+    await confirmDialog();
+
     expect(store().sessions.find((s) => s.id === sessionId)).toBeUndefined();
   });
 
-  it('renders an empty state rather than crashing on a missing session', () => {
+  it('renders an empty state rather than crashing on a missing session', async () => {
     mockParams = { id: 'does-not-exist' };
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
+
     expect(screen.getByText('Workout not found')).toBeTruthy();
   });
 
-  it('handles an exercise whose sets have all been deleted', () => {
+  it('handles an exercise whose sets have all been deleted', async () => {
     startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    for (const set of [...store().sessions[0].entries[0].sets]) {
-      fireEvent.press(screen.getByTestId(`del-${set.id}`));
+    for (const setId of setIds()) {
+      await fireEvent.press(screen.getByTestId(`del-${setId}`));
     }
     expect(screen.getByText(/No sets\./)).toBeTruthy();
-    expect(screen.getByText('0/0 sets recorded')).toBeTruthy();
+    expect(screen.getByText(/0\/0 sets recorded/)).toBeTruthy();
   });
 
-  it('navigates to the how-to page for an exercise', () => {
+  it('navigates to the how-to page for an exercise', async () => {
     startWorkout();
-    render(<SessionScreen />);
+    await renderScreen(<SessionScreen />);
 
-    fireEvent.press(screen.getByText('Barbell Bench Press - Medium Grip'));
+    await fireEvent.press(screen.getByText('Barbell Bench Press - Medium Grip'));
     expect(mockRouter.push).toHaveBeenCalledWith(`/exercise/${BENCH}`);
   });
 });
