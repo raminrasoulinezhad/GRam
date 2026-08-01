@@ -1,0 +1,62 @@
+# Continuous deployment: Netlify builds and publishes on every push to main.
+#
+# dist/ is generated and gitignored, so Netlify runs the build itself rather than receiving
+# the output. Keeping this in the repo means the deploy is reproducible and reviewable, instead
+# of living in settings someone has to remember to click.
+#
+# SPA rewrites come from public/_redirects, which lands in dist/ at build time.
+
+[build]
+  command = "npm run build:web"
+  publish = "dist"
+
+[build.environment]
+  # Pin the toolchain. Netlify's default Node moves over time and a silent major bump is a
+  # miserable way to discover a build break.
+  NODE_VERSION = "20"
+  # The build only needs prod deps plus the Expo CLI; installing dev deps keeps `expo` available.
+  NPM_FLAGS = "--include=dev"
+
+# ---------------------------------------------------------------- caching
+#
+# The service worker is what decides when users get a new version, so it must never be served
+# stale. Everything it caches is content-hashed and can be cached forever.
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Filenames here contain a content hash, so a changed file is a changed URL.
+[[headers]]
+  for = "/_expo/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ---------------------------------------------------------------- security
+#
+# The app talks to exactly one external host: the exercise photographs on GitHub's raw CDN.
+# Everything else is same-origin, so the policy can be tight.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "no-referrer"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https://raw.githubusercontent.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"

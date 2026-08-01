@@ -102,11 +102,29 @@ That creates a `dist/` folder: 3.9 MB of plain files.
 
 ### Step 2 — put `dist/` on the internet
 
-It needs an HTTPS address. Any free static host works — Cloudflare Pages, Netlify, GitHub Pages,
-Vercel. You already host your personal site, so the same place is fine. Drag the `dist` folder
-into Cloudflare Pages and you get a URL like `https://fitram.pages.dev`.
+It needs an HTTPS address, because browsers switch offline support off on plain HTTP. Any free
+static host works. **Netlify Drop is the quickest:**
 
-*(It must be HTTPS. Offline support is switched off by browsers on plain HTTP.)*
+1. Go to [app.netlify.com/drop](https://app.netlify.com/drop)
+2. Drag the whole `dist` folder onto the page
+3. Wait ~20 seconds
+
+You get a URL like `https://sweet-lebkuchen-740b6f.netlify.app`. The silly name is
+auto-generated; rename it under **Site configuration → Change site name** if you like.
+
+That's it — HTTPS is automatic and `_redirects` is picked up without any configuration.
+
+#### Check it deployed properly
+
+```bash
+U=https://your-site.netlify.app
+for p in / /manifest.json /sw.js /body; do
+  printf "%-18s %s\n" "$p" "$(curl -s -o /dev/null -w '%{http_code}' "$U$p")"
+done
+```
+
+All four must be `200`. **`/body` is the one that matters** — if it returns 404, the host is not
+applying `_redirects`, and refreshing inside the app would break.
 
 ### Step 3 — install it on the iPhone
 

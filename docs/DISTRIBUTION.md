@@ -75,7 +75,8 @@ installs as a **home-screen web app** instead.
 npm run build:web     # produces dist/, 3.9 MB of static files
 ```
 
-Upload `dist/` to any HTTPS host, open it in **Safari**, then Share → **Add to Home Screen**.
+Upload `dist/` to any HTTPS host (see [Deploying](#deploying-the-web-app) below), open it in
+**Safari**, then Share → **Add to Home Screen**.
 
 This is not a bookmark. It gets its own icon, opens fullscreen with no browser chrome, works
 with no network, and keeps its data indefinitely.
@@ -112,6 +113,72 @@ above. It buys native capability, not distribution. Not needed for what this app
 Free sideloading tools re-sign apps with a free Apple ID. That signature **expires every 7 days**
 and must be refreshed, they cap you at three sideloaded apps, and initial setup needs a computer.
 A workout tracker that stops opening mid-week is worse than a web app that never does.
+
+---
+
+## Deploying the web app
+
+`npm run build:web` produces `dist/` — plain static files, no server-side anything. Two
+requirements of the host, and only two:
+
+1. **HTTPS.** Browsers refuse to register a service worker over plain HTTP, so without it the
+   app cannot work offline and cannot be meaningfully installed.
+2. **SPA rewrites** — unknown paths must serve `index.html`. `public/_redirects` handles this on
+   Netlify and Cloudflare Pages; `404.html` covers GitHub Pages. The service worker also falls
+   back to the cached shell on any non-OK navigation, so an already-installed app survives a
+   host that does neither.
+
+**The app must be served from the root of a hostname**, not a subfolder. Every path in the build
+is absolute (`/manifest.json`, `/icons/…`, `/_expo/…`) and the manifest declares
+`start_url: "/"`. So `fitram.example.com` works; `example.com/fitram` does not, and its
+`_redirects` rule would swallow the parent site's routes.
+
+### Netlify (current deployment)
+
+```bash
+npm run build:web
+```
+
+Drag the `dist` folder onto [app.netlify.com/drop](https://app.netlify.com/drop). HTTPS and
+`_redirects` need no configuration. Rename the auto-generated site under **Site configuration →
+Change site name**.
+
+Verify before installing on a phone:
+
+```bash
+U=https://your-site.netlify.app
+for p in / /manifest.json /sw.js /icons/icon-192.png /body /profile; do
+  printf "%-24s %s\n" "$p" "$(curl -s -o /dev/null -w '%{http_code}  %{content_type}' "$U$p")"
+done
+```
+
+Expect `200` for all of them. `sw.js` must come back as `application/javascript` and
+`manifest.json` as `application/json`; a host serving either as `text/plain` will silently break
+installation. `/body` and `/profile` returning the 2.8 KB shell rather than a 404 is what proves
+the rewrite works.
+
+### Custom subdomain, with DNS on Cloudflare
+
+Netlify → **Domain management → Add a domain**, then add a CNAME in Cloudflare DNS:
+
+```
+fitram   CNAME   your-site.netlify.app
+```
+
+⚠️ Set that record to **DNS only (grey cloud)**, not proxied (orange cloud). Cloudflare proxying
+in front of Netlify prevents Netlify from issuing its certificate and can produce redirect loops.
+
+⚠️ **Moving the app to a different address is a fresh install.** Browser storage is scoped per
+origin, so `something.netlify.app` and `fitram.example.com` are separate worlds — the home-screen
+icon must be re-added and the workouts logged under the old address do not follow. Settle on the
+address *before* you start logging real training.
+
+### Cloudflare Pages alternative
+
+**Workers & Pages → Create → Pages → Upload assets** (not *Connect to Git* — `dist/` is generated
+and gitignored). Attach the custom domain from inside the project; if the zone is already on
+Cloudflare it creates the DNS record and certificate itself, and the grey-cloud caveat above does
+not apply.
 
 ---
 
