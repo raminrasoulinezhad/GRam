@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { exerciseName, type SetKind } from '@/catalog';
@@ -9,6 +9,7 @@ import { formatDuration, relativeTime } from '@/lib/format';
 import type { SessionEntry, SessionSet, SetValues } from '@/store/types';
 import { useStore } from '@/store/useStore';
 import { Button, Card, Chip, Dim, Empty, Screen } from '@/ui/components';
+import { useConfirm } from '@/ui/confirm';
 import { RestTimer } from '@/ui/RestTimer';
 import { SetFields } from '@/ui/SetFields';
 import { theme } from '@/ui/theme';
@@ -130,7 +131,7 @@ const EntryCard = memo(function EntryCard({
         <Pressable
           accessibilityLabel="Remove exercise"
           hitSlop={6}
-          onPress={() => onRemoveEntry(entry.id, name)}
+          onPress={() => void onRemoveEntry(entry.id, name)}
         >
           <Ionicons name="close" size={20} color={theme.color.danger} />
         </Pressable>
@@ -177,6 +178,7 @@ export default function SessionScreen() {
   const removeSessionEntry = useStore((st) => st.removeSessionEntry);
   const endSession = useStore((st) => st.endSession);
   const discardSession = useStore((st) => st.discardSession);
+  const confirm = useConfirm();
 
   const [rest, setRest] = useState<{ startedAt: number; seconds: number } | null>(null);
 
@@ -207,13 +209,16 @@ export default function SessionScreen() {
   const handleAddSet = useCallback((entryId: string) => addSet(id, entryId), [id, addSet]);
 
   const handleRemoveEntry = useCallback(
-    (entryId: string, name: string) => {
-      Alert.alert('Remove exercise?', `${name} and its sets will be dropped from this workout.`, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => removeSessionEntry(id, entryId) },
-      ]);
+    async (entryId: string, name: string) => {
+      const ok = await confirm({
+        title: 'Remove exercise?',
+        message: `${name} and its sets will be dropped from this workout.`,
+        confirmLabel: 'Remove',
+        destructive: true,
+      });
+      if (ok) removeSessionEntry(id, entryId);
     },
-    [id, removeSessionEntry],
+    [id, removeSessionEntry, confirm],
   );
 
   const logged = useMemo(() => (session ? countLoggedSets(session) : 0), [session]);
@@ -233,35 +238,43 @@ export default function SessionScreen() {
   const finished = session.endedAt !== null;
   const totalSets = session.entries.reduce((n, e) => n + e.sets.length, 0);
 
-  function handleFinish() {
+  async function handleFinish() {
     if (logged === 0) {
-      Alert.alert(
-        'Nothing recorded',
-        'No sets were recorded. Discard this workout instead of saving it?',
-        [
-          { text: 'Keep going', style: 'cancel' },
-          {
-            text: 'Discard',
-            style: 'destructive',
-            onPress: () => {
-              discardSession(id);
-              router.replace('/');
-            },
-          },
-        ],
-      );
+      const discard = await confirm({
+        title: 'Nothing recorded',
+        message: 'No sets were recorded. Discard this workout instead of saving it?',
+        confirmLabel: 'Discard',
+        cancelLabel: 'Keep going',
+        destructive: true,
+      });
+      if (discard) {
+        discardSession(id);
+        router.replace('/');
+      }
       return;
     }
-    Alert.alert('Finish workout?', `${logged} recorded set${logged === 1 ? '' : 's'} will be saved.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Finish',
-        onPress: () => {
-          endSession(id);
-          router.replace('/(tabs)/history');
-        },
-      },
-    ]);
+    const ok = await confirm({
+      title: 'Finish workout?',
+      message: `${logged} recorded set${logged === 1 ? '' : 's'} will be saved.`,
+      confirmLabel: 'Finish',
+    });
+    if (ok) {
+      endSession(id);
+      router.replace('/(tabs)/history');
+    }
+  }
+
+  async function handleDiscard() {
+    const ok = await confirm({
+      title: 'Discard workout?',
+      message: 'Everything recorded in this session is lost.',
+      confirmLabel: 'Discard',
+      destructive: true,
+    });
+    if (ok) {
+      discardSession(id);
+      router.replace('/');
+    }
   }
 
   return (
@@ -317,24 +330,8 @@ export default function SessionScreen() {
 
       {!finished ? (
         <View style={s.footer}>
-          <Button label="Finish workout" onPress={handleFinish} style={{ flex: 1 }} testID="finish" />
-          <Button
-            label="Discard"
-            variant="danger"
-            onPress={() =>
-              Alert.alert('Discard workout?', 'Everything recorded in this session is lost.', [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Discard',
-                  style: 'destructive',
-                  onPress: () => {
-                    discardSession(id);
-                    router.replace('/');
-                  },
-                },
-              ])
-            }
-          />
+          <Button label="Finish workout" onPress={() => void handleFinish()} style={{ flex: 1 }} testID="finish" />
+          <Button label="Discard" variant="danger" onPress={() => void handleDiscard()} testID="discard" />
         </View>
       ) : null}
     </Screen>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { getExercise, SET_KIND_LABEL, type SetKind } from '@/catalog';
@@ -7,6 +7,7 @@ import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDuration } from '@/lib/format';
 import { useStore } from '@/store/useStore';
 import { Button, Card, Chip, Dim, Empty, Screen } from '@/ui/components';
+import { useConfirm } from '@/ui/confirm';
 import { SetFields } from '@/ui/SetFields';
 import { theme } from '@/ui/theme';
 
@@ -26,6 +27,7 @@ export default function PlanEditorScreen() {
   const removePlanTemplate = useStore((s) => s.removePlanTemplate);
   const updatePlanTemplate = useStore((s) => s.updatePlanTemplate);
   const startSession = useStore((s) => s.startSession);
+  const confirm = useConfirm();
 
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -37,10 +39,14 @@ export default function PlanEditorScreen() {
     );
   }
 
-  function handleStart() {
+  async function handleStart() {
     if (!plan) return;
     if (plan.items.length === 0) {
-      Alert.alert('Empty plan', 'Add at least one exercise before starting.');
+      await confirm({
+        title: 'Empty plan',
+        message: 'Add at least one exercise before starting.',
+        cancelLabel: null,
+      });
       return;
     }
     const sessionId = startSession(plan.id);
@@ -206,7 +212,7 @@ export default function PlanEditorScreen() {
       </ScrollView>
 
       <View style={s.footer}>
-        <Button label="Start this workout" onPress={handleStart} testID="start-plan" />
+        <Button label="Start this workout" onPress={() => void handleStart()} testID="start-plan" />
       </View>
     </Screen>
   );

@@ -1,4 +1,4 @@
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { exerciseName } from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
@@ -6,6 +6,7 @@ import { countLoggedSets, rankMuscles, sessionTonnage, sessionVolume } from '@/a
 import { formatDate, formatDuration, formatSet, formatTime, toDisplayWeight } from '@/lib/format';
 import { useStore } from '@/store/useStore';
 import { Button, Card, Chip, Dim, Empty, H2, Screen } from '@/ui/components';
+import { useConfirm } from '@/ui/confirm';
 import { theme } from '@/ui/theme';
 
 export default function HistoryDetailScreen() {
@@ -13,6 +14,7 @@ export default function HistoryDetailScreen() {
   const session = useStore((s) => s.sessions.find((x) => x.id === id));
   const unit = useStore((s) => s.settings.unit);
   const discardSession = useStore((s) => s.discardSession);
+  const confirm = useConfirm();
 
   if (!session) {
     return (
@@ -20,6 +22,20 @@ export default function HistoryDetailScreen() {
         <Empty title="Workout not found" />
       </Screen>
     );
+  }
+
+  async function handleDelete() {
+    if (!session) return;
+    const ok = await confirm({
+      title: 'Delete workout?',
+      message: 'This removes it from your log and the body map.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (ok) {
+      discardSession(session.id);
+      router.back();
+    }
   }
 
   const sets = countLoggedSets(session);
@@ -84,19 +100,8 @@ export default function HistoryDetailScreen() {
         <Button
           label="Delete this workout"
           variant="danger"
-          onPress={() =>
-            Alert.alert('Delete workout?', 'This removes it from your log and the body map.', [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Delete',
-                style: 'destructive',
-                onPress: () => {
-                  discardSession(session.id);
-                  router.back();
-                },
-              },
-            ])
-          }
+          testID="delete-workout"
+          onPress={() => void handleDelete()}
         />
       </ScrollView>
     </Screen>

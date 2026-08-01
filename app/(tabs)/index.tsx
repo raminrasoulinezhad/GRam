@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { exerciseName } from '@/catalog';
 import { relativeTime } from '@/lib/format';
 import { useStore } from '@/store/useStore';
 import { Body, Button, Card, Dim, Empty, Screen } from '@/ui/components';
+import { useConfirm } from '@/ui/confirm';
 import { theme } from '@/ui/theme';
 
 export default function PlansScreen() {
@@ -17,6 +18,7 @@ export default function PlansScreen() {
   const duplicatePlan = useStore((s) => s.duplicatePlan);
   const startSession = useStore((s) => s.startSession);
   const startEmptySession = useStore((s) => s.startEmptySession);
+  const confirm = useConfirm();
 
   const [draftName, setDraftName] = useState('');
   const activeSession = sessions.find((x) => x.id === activeSessionId);
@@ -27,20 +29,27 @@ export default function PlansScreen() {
     router.push(`/plan/${id}`);
   }
 
-  function handleStart(planId: string, itemCount: number) {
+  async function handleStart(planId: string, itemCount: number) {
     if (itemCount === 0) {
-      Alert.alert('Empty plan', 'Add at least one exercise before starting.');
+      await confirm({
+        title: 'Empty plan',
+        message: 'Add at least one exercise before starting.',
+        cancelLabel: null,
+      });
       return;
     }
     const id = startSession(planId);
     if (id) router.push(`/session/${id}`);
   }
 
-  function handleDelete(planId: string, name: string) {
-    Alert.alert('Delete plan?', `"${name}" will be removed. Logged workouts are kept.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deletePlan(planId) },
-    ]);
+  async function handleDelete(planId: string, name: string) {
+    const ok = await confirm({
+      title: 'Delete plan?',
+      message: `"${name}" will be removed. Logged workouts are kept.`,
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (ok) deletePlan(planId);
   }
 
   return (
@@ -112,13 +121,13 @@ export default function PlansScreen() {
             <View style={s.planActions}>
               <Button
                 label="Start"
-                onPress={() => handleStart(plan.id, plan.items.length)}
+                onPress={() => void handleStart(plan.id, plan.items.length)}
                 style={{ flex: 1 }}
                 testID={`start-${plan.id}`}
               />
               <Button label="Edit" variant="secondary" onPress={() => router.push(`/plan/${plan.id}`)} />
               <Button label="Copy" variant="secondary" onPress={() => duplicatePlan(plan.id)} />
-              <Button label="Delete" variant="danger" onPress={() => handleDelete(plan.id, plan.name)} />
+              <Button label="Delete" variant="danger" onPress={() => void handleDelete(plan.id, plan.name)} />
             </View>
           </Card>
         ))}
