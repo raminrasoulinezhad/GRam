@@ -6,6 +6,7 @@ import { uid } from '@/lib/id';
 import type {
   Plan,
   PlanItem,
+  Profile,
   Session,
   SessionEntry,
   SessionSet,
@@ -19,6 +20,18 @@ const DEFAULT_SETTINGS: Settings = {
   defaultRestSec: 90,
   defaultSetCount: 3,
   bodyGender: 'male',
+  unitSeededFromDevice: false,
+};
+
+const DEFAULT_PROFILE: Profile = {
+  displayName: '',
+  birthDate: null,
+  sex: 'unspecified',
+  heightCm: null,
+  weightKg: null,
+  goal: 'hypertrophy',
+  experience: 'beginner',
+  equipment: [],
 };
 
 /** Sensible starting numbers so a freshly added exercise is editable rather than blank. */
@@ -39,6 +52,7 @@ type State = {
   plans: Plan[];
   sessions: Session[];
   settings: Settings;
+  profile: Profile;
   /** At most one session is live at a time; the tab bar surfaces it. */
   activeSessionId: string | null;
 };
@@ -75,8 +89,12 @@ type Actions = {
   endSession: (sessionId: string) => void;
   discardSession: (sessionId: string) => void;
 
-  // --- settings ---
+  // --- profile & settings ---
+  updateProfile: (patch: Partial<Profile>) => void;
+  toggleEquipment: (equipment: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
+  /** Applies the phone's region default for weight units, once, before the user has chosen. */
+  seedUnitFromDevice: (unit: 'kg' | 'lb') => void;
   resetAll: () => void;
 };
 
@@ -111,6 +129,7 @@ export const useStore = create<State & Actions>()(
       plans: [],
       sessions: [],
       settings: DEFAULT_SETTINGS,
+      profile: DEFAULT_PROFILE,
       activeSessionId: null,
 
       // ---------------------------------------------------------------- plans
@@ -383,11 +402,37 @@ export const useStore = create<State & Actions>()(
           activeSessionId: s.activeSessionId === sessionId ? null : s.activeSessionId,
         })),
 
-      // ------------------------------------------------------------- settings
+      // ------------------------------------------------------ profile & settings
+      updateProfile: (patch) => set((s) => ({ profile: { ...s.profile, ...patch } })),
+
+      toggleEquipment: (equipment) =>
+        set((s) => ({
+          profile: {
+            ...s.profile,
+            equipment: s.profile.equipment.includes(equipment)
+              ? s.profile.equipment.filter((e) => e !== equipment)
+              : [...s.profile.equipment, equipment],
+          },
+        })),
+
       updateSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
 
+      seedUnitFromDevice: (unit) =>
+        set((s) =>
+          // Only ever fires once. After that the user's own choice is authoritative.
+          s.settings.unitSeededFromDevice
+            ? s
+            : { settings: { ...s.settings, unit, unitSeededFromDevice: true } },
+        ),
+
       resetAll: () =>
-        set({ plans: [], sessions: [], settings: DEFAULT_SETTINGS, activeSessionId: null }),
+        set({
+          plans: [],
+          sessions: [],
+          settings: DEFAULT_SETTINGS,
+          profile: DEFAULT_PROFILE,
+          activeSessionId: null,
+        }),
     }),
     {
       name: 'fitram-v1',
@@ -396,8 +441,23 @@ export const useStore = create<State & Actions>()(
         plans: s.plans,
         sessions: s.sessions,
         settings: s.settings,
+        profile: s.profile,
         activeSessionId: s.activeSessionId,
       }),
+      version: 2,
+      // Older installs have no profile and no unit-seed flag; fill them in rather than
+      // handing the app a half-shaped object.
+      migrate: (persisted, from) => {
+        const state = persisted as Partial<State>;
+        if (from < 2) {
+          return {
+            ...state,
+            profile: { ...DEFAULT_PROFILE, ...(state.profile ?? {}) },
+            settings: { ...DEFAULT_SETTINGS, ...(state.settings ?? {}) },
+          };
+        }
+        return state;
+      },
     },
   ),
 );

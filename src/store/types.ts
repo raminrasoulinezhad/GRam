@@ -58,4 +58,31 @@ export type Settings = {
   defaultRestSec: number;
   defaultSetCount: number;
   bodyGender: 'male' | 'female';
+  /**
+   * False until the unit has been defaulted from the phone's region once. Prevents a later
+   * app launch from overwriting a unit the user has deliberately changed.
+   */
+  unitSeededFromDevice: boolean;
+};
+
+export type TrainingGoal = 'strength' | 'hypertrophy' | 'general';
+export type Experience = 'beginner' | 'intermediate' | 'advanced';
+
+/**
+ * The lifter's own details. Everything is optional: the app is fully usable without filling
+ * any of it in, and none of it is transmitted anywhere - it lives in on-device storage and
+ * feeds unit defaults, the body figure, and (later) load recommendations.
+ */
+export type Profile = {
+  displayName: string;
+  /** ISO yyyy-mm-dd. Stored rather than age so it does not silently go stale. */
+  birthDate: string | null;
+  /** Drives which body figure is drawn; deliberately separate from bodyGender's rendering use. */
+  sex: 'male' | 'female' | 'unspecified';
+  heightCm: number | null;
+  weightKg: number | null;
+  goal: TrainingGoal;
+  experience: Experience;
+  /** Catalog equipment values the user actually has access to. Empty means "no filter". */
+  equipment: string[];
 };

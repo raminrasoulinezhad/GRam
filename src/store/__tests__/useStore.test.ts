@@ -394,3 +394,69 @@ describe('settings', () => {
     expect(store().plans[0].items[0].templates).toHaveLength(5);
   });
 });
+
+// ------------------------------------------------------------------- profile
+
+describe('profile', () => {
+  it('starts empty so the app is usable without filling anything in', () => {
+    expect(store().profile).toMatchObject({
+      displayName: '',
+      birthDate: null,
+      sex: 'unspecified',
+      heightCm: null,
+      weightKg: null,
+      equipment: [],
+    });
+  });
+
+  it('patches fields without clobbering the rest', () => {
+    store().updateProfile({ heightCm: 178 });
+    store().updateProfile({ weightKg: 82.5 });
+    expect(store().profile).toMatchObject({ heightCm: 178, weightKg: 82.5, goal: 'hypertrophy' });
+  });
+
+  it('toggles equipment on and off', () => {
+    store().toggleEquipment('barbell');
+    store().toggleEquipment('dumbbell');
+    expect(store().profile.equipment).toEqual(['barbell', 'dumbbell']);
+
+    store().toggleEquipment('barbell');
+    expect(store().profile.equipment).toEqual(['dumbbell']);
+  });
+
+  it('never duplicates an equipment entry', () => {
+    store().toggleEquipment('cable');
+    store().toggleEquipment('cable');
+    store().toggleEquipment('cable');
+    expect(store().profile.equipment).toEqual(['cable']);
+  });
+
+  it('is cleared by resetAll', () => {
+    store().updateProfile({ displayName: 'Test', heightCm: 180 });
+    store().resetAll();
+    expect(store().profile.displayName).toBe('');
+    expect(store().profile.heightCm).toBeNull();
+  });
+});
+
+describe('unit seeding from the device', () => {
+  it('applies the phone default the first time', () => {
+    store().seedUnitFromDevice('lb');
+    expect(store().settings.unit).toBe('lb');
+    expect(store().settings.unitSeededFromDevice).toBe(true);
+  });
+
+  it('never overrides the unit a second time', () => {
+    store().seedUnitFromDevice('lb');
+    store().seedUnitFromDevice('kg');
+    expect(store().settings.unit).toBe('lb');
+  });
+
+  it('leaves a deliberate user choice alone on the next launch', () => {
+    // User switches to kg by hand, which marks the seed as done...
+    store().updateSettings({ unit: 'kg', unitSeededFromDevice: true });
+    // ...so a US phone re-seeding on the next launch must not undo it.
+    store().seedUnitFromDevice('lb');
+    expect(store().settings.unit).toBe('kg');
+  });
+});
