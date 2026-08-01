@@ -1,9 +1,10 @@
+import { useMemo } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { getExercise, imageUrl, SET_KIND_LABEL } from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDate, formatSet, relativeTime, titleCase } from '@/lib/format';
-import { selectExerciseHistory, useStore } from '@/store/useStore';
+import { exerciseHistory, selectSessions, useStore } from '@/store/useStore';
 import { Body, Card, Chip, Dim, Empty, H2, Screen } from '@/ui/components';
 import { theme } from '@/ui/theme';
 
@@ -11,7 +12,8 @@ export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const exercise = getExercise(id);
   const unit = useStore((s) => s.settings.unit);
-  const history = useStore(selectExerciseHistory(id));
+  const sessions = useStore(selectSessions);
+  const history = useMemo(() => exerciseHistory(sessions, id), [sessions, id]);
 
   if (!exercise) {
     return (

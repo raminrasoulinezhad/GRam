@@ -12,13 +12,15 @@ import {
   volumeInWindow,
 } from '@/analytics/volume';
 import { formatDate, formatDuration, formatTime, toDisplayWeight } from '@/lib/format';
-import { selectCompleted, useStore } from '@/store/useStore';
+import { completedSessions, selectSessions, useStore } from '@/store/useStore';
 import { Card, Chip, Dim, Empty, H2, Screen } from '@/ui/components';
 import { theme } from '@/ui/theme';
 
 export default function HistoryScreen() {
-  const sessions = useStore(selectCompleted);
+  const allSessions = useStore(selectSessions);
   const unit = useStore((s) => s.settings.unit);
+
+  const sessions = useMemo(() => completedSessions(allSessions), [allSessions]);
 
   const week = useMemo(() => {
     const now = Date.now();

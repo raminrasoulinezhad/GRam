@@ -402,29 +402,33 @@ export const useStore = create<State & Actions>()(
   ),
 );
 
-// ------------------------------------------------------------------ selectors
+// ------------------------------------------------------------------ derivations
+//
+// These are plain functions over a Session[], NOT zustand selectors. Passing a selector
+// that builds a new array to useStore() makes getSnapshot return a fresh reference every
+// render, which zustand detects as a state change and re-renders forever. Components
+// subscribe to the raw `sessions` array and wrap these in useMemo instead.
 
-export const selectPlan = (planId: string) => (s: State) => s.plans.find((p) => p.id === planId);
+/** Finished sessions, newest first - what the History tab and the body map read. */
+export function completedSessions(sessions: Session[]): Session[] {
+  return sessions.filter((x) => x.endedAt !== null).sort((a, b) => b.startedAt - a.startedAt);
+}
 
-export const selectSession = (sessionId: string) => (s: State) =>
-  s.sessions.find((x) => x.id === sessionId);
-
-/** Finished sessions, newest first - the History tab and all analytics read this. */
-export const selectCompleted = (s: State) =>
-  s.sessions.filter((x) => x.endedAt !== null).sort((a, b) => b.startedAt - a.startedAt);
+export type HistoryRow = { session: Session; set: SessionSet; kind: SetKind };
 
 /** Every recorded set of one exercise, newest first. Powers the per-exercise history list. */
-export function selectExerciseHistory(exerciseId: string) {
-  return (s: State) => {
-    const rows: { session: Session; set: SessionSet; kind: SetKind }[] = [];
-    for (const session of s.sessions) {
-      for (const entry of session.entries) {
-        if (entry.exerciseId !== exerciseId) continue;
-        for (const set of entry.sets) {
-          if (set.loggedAt !== null) rows.push({ session, set, kind: entry.kind });
-        }
+export function exerciseHistory(sessions: Session[], exerciseId: string): HistoryRow[] {
+  const rows: HistoryRow[] = [];
+  for (const session of sessions) {
+    for (const entry of session.entries) {
+      if (entry.exerciseId !== exerciseId) continue;
+      for (const set of entry.sets) {
+        if (set.loggedAt !== null) rows.push({ session, set, kind: entry.kind });
       }
     }
-    return rows.sort((a, b) => (b.set.loggedAt ?? 0) - (a.set.loggedAt ?? 0));
-  };
+  }
+  return rows.sort((a, b) => (b.set.loggedAt ?? 0) - (a.set.loggedAt ?? 0));
 }
+
+/** Stable-reference selector: the raw session list. Safe to pass to useStore(). */
+export const selectSessions = (s: State) => s.sessions;

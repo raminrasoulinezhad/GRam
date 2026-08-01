@@ -4,16 +4,18 @@ import Body, { type ExtendedBodyPart } from 'react-native-body-highlighter';
 import { MUSCLES } from '@/catalog';
 import { MUSCLE_LABEL, toSlugValues } from '@/analytics/muscleMap';
 import { recovery, volumeInWindow, WEEKLY_TARGET_SETS } from '@/analytics/volume';
-import { selectCompleted, useStore } from '@/store/useStore';
+import { completedSessions, selectSessions, useStore } from '@/store/useStore';
 import { Card, Chip, Dim, Empty, H2, Screen } from '@/ui/components';
 import { rampColor, rampIntensity, theme } from '@/ui/theme';
 
 type Mode = 'volume' | 'recovery';
 
 export default function BodyScreen() {
-  const sessions = useStore(selectCompleted);
+  const allSessions = useStore(selectSessions);
   const gender = useStore((s) => s.settings.bodyGender);
   const [mode, setMode] = useState<Mode>('volume');
+
+  const sessions = useMemo(() => completedSessions(allSessions), [allSessions]);
 
   // Recomputed only when the finished-session list or the mode changes - never per frame.
   const totals = useMemo(() => {
