@@ -2,7 +2,7 @@
   "expo": {
     "name": "FitRam",
     "slug": "fitram",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "fitram",
@@ -28,14 +28,15 @@
       "bundler": "metro",
       "output": "single"
     },
-    "plugins": [
-      "expo-router",
-      "expo-status-bar",
-      "expo-asset",
-      "expo-localization"
-    ],
+    "plugins": ["expo-router", "expo-status-bar", "expo-asset", "expo-localization"],
     "experiments": {
       "typedRoutes": true
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
     }
   }
 }

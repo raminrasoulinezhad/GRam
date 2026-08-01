@@ -1,8 +1,14 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { getExercise, type SetKind } from '@/catalog';
 import { uid } from '@/lib/id';
+import {
+  DEFAULT_PROFILE,
+  DEFAULT_SETTINGS,
+  SCHEMA_VERSION,
+  migratePersisted,
+} from './migrations';
+import { STORAGE_KEY, createBackingStorage } from './storage';
 import type {
   Plan,
   PlanItem,
@@ -14,25 +20,6 @@ import type {
   SetValues,
   Settings,
 } from './types';
-
-const DEFAULT_SETTINGS: Settings = {
-  unit: 'kg',
-  defaultRestSec: 90,
-  defaultSetCount: 3,
-  bodyGender: 'male',
-  unitSeededFromDevice: false,
-};
-
-const DEFAULT_PROFILE: Profile = {
-  displayName: '',
-  birthDate: null,
-  sex: 'unspecified',
-  heightCm: null,
-  weightKg: null,
-  goal: 'hypertrophy',
-  experience: 'beginner',
-  equipment: [],
-};
 
 /** Sensible starting numbers so a freshly added exercise is editable rather than blank. */
 function seedTemplate(kind: SetKind): SetTemplate {
@@ -435,8 +422,9 @@ export const useStore = create<State & Actions>()(
         }),
     }),
     {
-      name: 'fitram-v1',
-      storage: createJSONStorage(() => AsyncStorage),
+      name: STORAGE_KEY,
+      // Stashes a verbatim copy of the old blob before any migration rewrites it.
+      storage: createJSONStorage(() => createBackingStorage(SCHEMA_VERSION)),
       partialize: (s) => ({
         plans: s.plans,
         sessions: s.sessions,
@@ -444,20 +432,10 @@ export const useStore = create<State & Actions>()(
         profile: s.profile,
         activeSessionId: s.activeSessionId,
       }),
-      version: 2,
-      // Older installs have no profile and no unit-seed flag; fill them in rather than
-      // handing the app a half-shaped object.
-      migrate: (persisted, from) => {
-        const state = persisted as Partial<State>;
-        if (from < 2) {
-          return {
-            ...state,
-            profile: { ...DEFAULT_PROFILE, ...(state.profile ?? {}) },
-            settings: { ...DEFAULT_SETTINGS, ...(state.settings ?? {}) },
-          };
-        }
-        return state;
-      },
+      version: SCHEMA_VERSION,
+      // Synchronous by contract - see the note in migrations.ts. An async migrate silently
+      // resets the store to its initial state, which would read as total data loss.
+      migrate: (persisted, from) => migratePersisted(persisted, from),
     },
   ),
 );

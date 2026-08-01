@@ -1,6 +1,6 @@
 {
   "name": "fitram",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
   "description": "A strength-training tracker that plans your sets and maps which muscles you have actually trained.",
@@ -27,6 +27,7 @@
     "expo-localization": "~57.0.1",
     "expo-router": "~57.0.9",
     "expo-status-bar": "~57.0.1",
+    "expo-updates": "~57.0.11",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.2",
