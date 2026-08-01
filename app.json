@@ -10,10 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "me.ramin.fitram"
+      "bundleIdentifier": "app.fitram.mobile"
     },
     "android": {
-      "package": "me.ramin.fitram",
+      "package": "app.fitram.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#0B1220",
         "foregroundImage": "./assets/android-icon-foreground.png",

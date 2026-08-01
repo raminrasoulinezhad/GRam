@@ -2,6 +2,8 @@
   "name": "fitram",
   "version": "1.0.0",
   "private": true,
+  "license": "Apache-2.0",
+  "description": "A strength-training tracker that plans your sets and maps which muscles you have actually trained.",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
@@ -10,7 +12,8 @@
     "web": "expo start --web",
     "build:catalog": "node scripts/build-catalog.mjs",
     "test": "jest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "licenses": "node scripts/licenses.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.8",
