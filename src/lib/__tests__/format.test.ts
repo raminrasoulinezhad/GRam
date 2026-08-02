@@ -1,6 +1,7 @@
 import {
   formatDuration,
   formatSet,
+  formatSets,
   fromDisplayWeight,
   relativeTime,
   titleCase,
@@ -25,6 +26,24 @@ describe('weight conversion', () => {
     for (const kg of [2.5, 20, 60, 102.5, 250]) {
       expect(fromDisplayWeight(toDisplayWeight(kg, 'lb'), 'lb')).toBeCloseTo(kg, 1);
     }
+  });
+});
+
+describe('formatSets', () => {
+  it('leaves a whole count alone rather than adding a decimal', () => {
+    expect(formatSets(0)).toBe('0');
+    expect(formatSets(3)).toBe('3');
+  });
+
+  it('keeps the halves an assisting muscle earns', () => {
+    expect(formatSets(0.5)).toBe('0.5');
+    expect(formatSets(4.5)).toBe('4.5');
+  });
+
+  it('snaps floating-point drift to the nearest half', () => {
+    // 0.5 x 3 summed one at a time is exact, but a decayed or averaged figure need not be.
+    expect(formatSets(1.4999999999)).toBe('1.5');
+    expect(formatSets(2.0000000001)).toBe('2');
   });
 });
 

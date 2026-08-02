@@ -11,6 +11,17 @@ export function fromDisplayWeight(value: number, unit: 'kg' | 'lb'): number {
   return unit === 'kg' ? value : Math.round(value * KG_PER_LB * 100) / 100;
 }
 
+/**
+ * An effective-set count, as short as it can honestly be: "3", "1.5".
+ *
+ * Halves are real - an assisting muscle earns half a set - so they are shown rather than
+ * rounded away, but a whole number never picks up a pointless ".0".
+ */
+export function formatSets(value: number): string {
+  const rounded = Math.round(value * 2) / 2;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
 /** "1:30" for 90s, "45s" under a minute, "1:02:00" past an hour. */
 export function formatDuration(totalSec: number): string {
   const s = Math.max(0, Math.round(totalSec));

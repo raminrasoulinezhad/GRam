@@ -163,15 +163,40 @@ describe('active workout screen', () => {
     expect(store().sessions[0].entries[0].sets[0].timeSec).toBe(75);
   });
 
-  it('surfaces the muscles worked as sets are recorded', async () => {
+  it('shows what each muscle is in for today, and how much of it is done', async () => {
     startWorkout();
     await renderScreen(<SessionScreen />);
 
-    expect(screen.queryByText(/^Chest/)).toBeNull();
+    // Before anything is recorded the chips already say what the workout holds: three sets of
+    // bench is three effective sets of chest, and half that for the triceps assisting.
+    expect(screen.getByText('Chest 0/3')).toBeTruthy();
+    expect(screen.getByText('Triceps 0/1.5')).toBeTruthy();
+
     await fireEvent.press(screen.getByTestId(`log-${setIds()[0]}`));
 
-    expect(screen.getByText('Chest 1')).toBeTruthy();
-    expect(screen.getByText('Triceps 0.5')).toBeTruthy();
+    expect(screen.getByText('Chest 1/3')).toBeTruthy();
+    expect(screen.getByText('Triceps 0.5/1.5')).toBeTruthy();
+  });
+
+  it('completes a muscle when the workout has nothing left for it', async () => {
+    startWorkout();
+    await renderScreen(<SessionScreen />);
+
+    for (const id of setIds()) await fireEvent.press(screen.getByTestId(`log-${id}`));
+
+    expect(screen.getByText('Chest 3/3')).toBeTruthy();
+  });
+
+  it('counts a muscle across every exercise that works it', async () => {
+    const s = store();
+    const planId = s.createPlan('monday');
+    s.addPlanItem(planId, BENCH);
+    s.addPlanItem(planId, BENCH);
+    mockParams = { id: s.startSession(planId)! };
+    await renderScreen(<SessionScreen />);
+
+    // Two exercises of three sets each, not three.
+    expect(screen.getByText('Chest 0/6')).toBeTruthy();
   });
 
   it('starts a rest timer on record but not on un-record', async () => {

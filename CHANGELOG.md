@@ -6,6 +6,22 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.13] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **The muscle chips in a live workout read `2/6` instead of `2`** — sets recorded out of what
+  the whole session holds for that muscle, so you can see how much of today's shoulders is left
+  without counting rows.
+  - The chips appear **from the moment the workout starts**, saying what it is going to be
+    (`Chest 0/9`) rather than staying blank until something is recorded.
+  - Ranked by the planned total, so the row does not reshuffle as the numbers fill in.
+  - A chip lights up once that muscle has had everything the workout holds for it.
+  - Halves are shown, not rounded away: a muscle assisting a movement earns half a set, and
+    `Triceps 0.5/1.5` is the honest reading.
+
 ## [1.2.12] — 2026-08-02
 
 Storage schema **v7** — unchanged.

@@ -3,9 +3,14 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { exerciseName, type SetKind } from '@/catalog';
-import { countLoggedSets, rankMuscles, sessionVolume } from '@/analytics/volume';
+import {
+  countLoggedSets,
+  rankMuscles,
+  sessionPlannedVolume,
+  sessionVolume,
+} from '@/analytics/volume';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
-import { formatDuration, relativeTime } from '@/lib/format';
+import { formatDuration, formatSets, relativeTime } from '@/lib/format';
 import type { SessionEntry, SessionSet, SetValues } from '@/store/types';
 import { useStore } from '@/store/useStore';
 import { Button, Chip, Dim, Empty, Screen } from '@/ui/components';
@@ -260,10 +265,21 @@ export default function SessionScreen() {
     () => (session ? [...session.entries].sort((a, b) => progressRank(a) - progressRank(b)) : []),
     [session],
   );
-  const worked = useMemo(
-    () => (session ? rankMuscles(sessionVolume(session)).slice(0, 6) : []),
-    [session],
-  );
+  /*
+   * Per muscle: effective sets recorded, out of what the whole workout comes to.
+   *
+   * Ranked by the planned total rather than by what is done, so the chips are the shape of
+   * today's session from the moment it starts - "chest 0/9" is the useful thing to see before
+   * you have recorded anything, and the row does not reshuffle as the numbers fill in.
+   */
+  const worked = useMemo(() => {
+    if (!session) return [];
+    const done = sessionVolume(session);
+    const planned = sessionPlannedVolume(session);
+    return rankMuscles(planned)
+      .slice(0, 6)
+      .map(({ muscle, value }) => ({ muscle, done: done[muscle], planned: value }));
+  }, [session]);
 
   if (!session) {
     return (
@@ -328,8 +344,14 @@ export default function SessionScreen() {
           <Dim>Started {relativeTime(session.startedAt)}</Dim>
         </View>
         <View style={s.workedChips}>
-          {worked.map(({ muscle, value }) => (
-            <Chip key={muscle} label={`${MUSCLE_LABEL[muscle]} ${value}`} tone="primary" />
+          {worked.map(({ muscle, done, planned }) => (
+            <Chip
+              key={muscle}
+              label={`${MUSCLE_LABEL[muscle]} ${formatSets(done)}/${formatSets(planned)}`}
+              // Lit up once the muscle has had everything today's workout holds for it.
+              tone={done >= planned ? 'primary' : 'secondary'}
+              testID={`muscle-${muscle}`}
+            />
           ))}
         </View>
       </View>
