@@ -54,6 +54,65 @@ export function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }
 
+/**
+ * The four functions below read and write a timestamp as the text of a plain field, in the
+ * device's own timezone. Local rather than UTC because a workout belongs to the day you did
+ * it: an 8pm Monday session in Sydney is Monday, not Tuesday, and a date shown as one and
+ * stored as the other is the kind of bug that only appears for some users at some hours.
+ *
+ * The parsers return null for anything that is not a whole, real date or time, so a field
+ * being typed into character by character leaves the stored value alone until it makes sense.
+ */
+
+/** "2026-08-02" in local time. */
+export function toDateInput(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+/** "18:30" in local time. 24-hour, so it round-trips with no am/pm to parse. */
+export function toTimeInput(ts: number): string {
+  const d = new Date(ts);
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+/**
+ * Moves `ts` onto the calendar day written as "yyyy-mm-dd", keeping its time of day.
+ *
+ * Month and day must be two digits - the shape the field itself displays. Accepting one was
+ * worse than it sounds: "2026-07-3", on the way to typing the 30th, is a complete date under a
+ * loose rule, so the workout jumped to the 3rd and back again mid-keystroke.
+ */
+export function withDateInput(ts: number, text: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text.trim());
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  const d = new Date(ts);
+  d.setFullYear(year, month - 1, day);
+  // setFullYear rolls 31 February forward into March rather than refusing it. Reject instead:
+  // silently moving a workout to a day nobody typed is worse than ignoring the edit.
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+  return d.getTime();
+}
+
+/** Moves `ts` to the time of day written as "HH:MM", keeping its date. */
+export function withTimeInput(ts: number, text: string): number | null {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(text.trim());
+  if (!m) return null;
+  const hours = Number(m[1]);
+  const minutes = Number(m[2]);
+  if (hours > 23 || minutes > 59) return null;
+  const d = new Date(ts);
+  d.setHours(hours, minutes, 0, 0);
+  return d.getTime();
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
 /** "just now" / "3h ago" / "2d ago". */
 export function relativeTime(ts: number, now = Date.now()): string {
   const diff = Math.max(0, now - ts);

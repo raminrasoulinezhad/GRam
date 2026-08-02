@@ -89,6 +89,14 @@ type Actions = {
   toggleSetLogged: (sessionId: string, entryId: string, setId: string) => void;
   endSession: (sessionId: string) => void;
   discardSession: (sessionId: string) => void;
+  /** Retitles a workout in the log. Blank falls back to "Workout" rather than an empty row. */
+  renameSession: (sessionId: string, planName: string) => void;
+  /** Moves a workout to another date and time, carrying everything inside it along. */
+  setSessionStart: (sessionId: string, startedAt: number) => void;
+  /** Corrects how long a finished workout took. Ignored for one still running. */
+  setSessionDuration: (sessionId: string, seconds: number) => void;
+  /** Drops exercises left with no sets. Run when an edit of a past workout finishes. */
+  tidySession: (sessionId: string) => void;
 
   // --- profile & settings ---
   updateProfile: (patch: Partial<Profile>) => void;
@@ -373,15 +381,23 @@ export const useStore = create<State & Actions>()(
         const exercise = getExercise(exerciseId);
         if (!exercise) return;
         const { defaultRestSec, defaultSetCount } = get().settings;
+        const finished = get().sessions.find((x) => x.id === sessionId)?.endedAt ?? null;
+        /*
+         * A live workout is pre-filled with the usual number of sets to work through. A
+         * finished one is a record of what happened, so it gets exactly one set, already
+         * recorded and stamped with the workout's own time rather than today's - otherwise
+         * correcting last Tuesday would show up on the body map as training done just now.
+         */
+        const count = finished === null ? defaultSetCount : 1;
         const entry: SessionEntry = {
           id: uid('se'),
           exerciseId,
           kind: exercise.kind,
           restSec: defaultRestSec,
-          sets: Array.from({ length: defaultSetCount }, () => ({
+          sets: Array.from({ length: count }, () => ({
             ...seedTemplate(exercise.kind),
             id: uid('ss'),
-            loggedAt: null,
+            loggedAt: finished,
           })),
         };
         set((s) => ({
@@ -405,9 +421,14 @@ export const useStore = create<State & Actions>()(
           sessions: withSession(s.sessions, sessionId, (session) =>
             withEntry(session, entryId, (entry) => {
               const last = entry.sets[entry.sets.length - 1];
+              // A set added to a finished workout is recorded on the spot - there is no
+              // workout left to record it during - and it borrows the timestamp of the set it
+              // was copied from so it lands on the day the training actually happened.
+              const loggedAt =
+                session.endedAt === null ? null : (last?.loggedAt ?? session.endedAt);
               const next: SessionSet = last
-                ? { ...last, id: uid('ss'), loggedAt: null }
-                : { ...seedTemplate(entry.kind), id: uid('ss'), loggedAt: null };
+                ? { ...last, id: uid('ss'), loggedAt }
+                : { ...seedTemplate(entry.kind), id: uid('ss'), loggedAt };
               return { ...entry, sets: [...entry.sets, next] };
             }),
           ),
@@ -462,6 +483,72 @@ export const useStore = create<State & Actions>()(
         set((s) => ({
           sessions: s.sessions.filter((x) => x.id !== sessionId),
           activeSessionId: s.activeSessionId === sessionId ? null : s.activeSessionId,
+        })),
+
+      /*
+       * The empty name is stored as typed and only defaulted on commit. Substituting a
+       * fallback mid-edit would push text back into a field someone is halfway through
+       * clearing - the round-trip that made a plan's last character undeletable twice.
+       */
+      renameSession: (sessionId, planName) =>
+        set((s) => ({
+          sessions: withSession(s.sessions, sessionId, (session) => ({ ...session, planName })),
+        })),
+
+      /**
+       * Moves a workout to another date and time.
+       *
+       * Everything inside shifts by the same amount - the end time and every set's timestamp -
+       * so the workout keeps its length and the order its sets were recorded in. Shifting the
+       * sets is not cosmetic: the body map, the weekly volume and the per-exercise history all
+       * read `loggedAt`, so a workout moved without them would go on counting on the old day.
+       */
+      setSessionStart: (sessionId, startedAt) =>
+        set((s) => ({
+          sessions: withSession(s.sessions, sessionId, (session) => {
+            const delta = startedAt - session.startedAt;
+            if (delta === 0) return session;
+            return {
+              ...session,
+              startedAt,
+              endedAt: session.endedAt === null ? null : session.endedAt + delta,
+              entries: session.entries.map((e) => ({
+                ...e,
+                sets: e.sets.map((x) =>
+                  x.loggedAt === null ? x : { ...x, loggedAt: x.loggedAt + delta },
+                ),
+              })),
+            };
+          }),
+        })),
+
+      /*
+       * Length is stored as an end time, so correcting it moves endedAt and nothing else. A
+       * workout still in progress has no length yet - it is however long it has been going -
+       * so there is nothing to correct and the call is ignored.
+       */
+      setSessionDuration: (sessionId, seconds) =>
+        set((s) => ({
+          sessions: withSession(s.sessions, sessionId, (session) =>
+            session.endedAt === null
+              ? session
+              : { ...session, endedAt: session.startedAt + Math.max(0, Math.round(seconds)) * 1000 },
+          ),
+        })),
+
+      /**
+       * Drops exercises left with no sets.
+       *
+       * Deliberately not done by removeSet: while an edit is in progress an exercise you have
+       * just emptied has to stay on screen, or there is nowhere to add the corrected sets back
+       * to. This runs when the edit finishes, which is the same rule endSession applies.
+       */
+      tidySession: (sessionId) =>
+        set((s) => ({
+          sessions: withSession(s.sessions, sessionId, (session) => ({
+            ...session,
+            entries: session.entries.filter((e) => e.sets.length > 0),
+          })),
         })),
 
       // ------------------------------------------------------ profile & settings

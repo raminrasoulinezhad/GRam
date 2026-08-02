@@ -2,6 +2,10 @@
 
 Where GRam goes after the v0.1.0 proof of concept. Ordered by value per unit of work.
 
+> The headings below are **work not yet built**, and their numbers date from before 1.0 — read
+> them as a priority order, not as released versions. What has actually shipped is in the git
+> tags and in [../CHANGELOG.md](../CHANGELOG.md).
+
 The PoC deliberately built the *first* arrow of the loop described in [STUDY.md](STUDY.md) —
 log what you did, and see which muscles it hit. Everything below is the second arrow: using
 that record to decide what you should do next.

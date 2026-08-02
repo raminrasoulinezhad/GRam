@@ -41,10 +41,12 @@ Then open it from the new icon. If there's no address bar at the top, it install
 
 ## What it does
 
-### 📋 Build a plan
+### 📋 Plan your week
 
-Pick from **873 exercises**, searchable by name or filtered by muscle, equipment and difficulty.
-Set how many sets you want, at what weight, with how much rest. Save it and reuse it.
+A plan is a **day of the week** — Monday push, Wednesday pull, and so on. Fill each day from
+**879 exercises**, searchable by name, equipment or muscle and filtered by primary muscle. The
+week review then checks the shape of it: every major muscle group twice a week on two different
+days, with one tap to fix whatever is missing.
 
 ### 🏋️ Run your workout
 
@@ -61,10 +63,15 @@ The **Body** tab colours a front and back figure by what you've actually worked 
 week's volume, or how recovered each muscle is right now. It's the fastest way to notice you've
 skipped legs for two weeks.
 
-### 📈 Look back
+### 📈 Look back, and fix what you got wrong
 
 Every finished workout is kept, with a 7-day rollup and a full breakdown. Each exercise also
 keeps its own history, so you can see what you lifted last time before deciding today's weight.
+
+Any past workout can be corrected — **open it and tap Edit**. Change a weight you mistyped, add
+the set you forgot to record, drop an exercise you did not really do, rename it, or move the whole
+thing to the day it actually happened. Everything follows: the body map, the weekly volume and
+your backup all move with it.
 
 ---
 
@@ -78,9 +85,13 @@ On your phone, and nowhere else. There's no server and no account, so nothing is
 nobody — including me — can see your training.
 
 **Can I back it up, or move it to another phone?**
-Yes. **Profile → Backup and transfer → Export a backup** writes one file with every plan,
+Yes. **Profile → Backup and transfer → Export** writes a `GRam` folder holding every plan,
 workout and setting. Keep it in Files or iCloud; **Import** reads it back. That is also how you
 move an install: export, remove the app, add it again, import.
+
+On a desktop browser that supports it (Chrome or Edge), the export can stay switched on and keep
+that folder up to date by itself as you train. Safari has no such capability, on any device, so
+on an iPhone Export is a deliberate tap.
 
 **Will I lose my workouts when it updates?**
 No. Updates apply automatically the next time you open it, and your data carries across. This is

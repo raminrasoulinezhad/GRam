@@ -6,6 +6,39 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.6] — 2026-08-02
+
+Storage schema **v7** — unchanged, so this is an ordinary upgrade.
+
+### Added
+
+- **Any past workout can be corrected.** Open it from History and tap **Edit**. Weights, reps,
+  times and distances become editable; sets can be added or deleted; exercises can be added or
+  removed; and the workout itself can be renamed, moved to another date and time, and given the
+  length it actually took.
+  - **Moving a workout moves everything in it.** The end time and every set's timestamp shift by
+    the same amount, so the workout keeps its length and the order its sets were recorded in.
+    This is not cosmetic: the body map, the weekly volume and each exercise's history all read
+    the set timestamps, so a workout moved without them would go on counting on the old day.
+  - **A set added to a finished workout is recorded straight away**, stamped with the time of the
+    set it was copied from rather than today's — there is no workout left to record it during,
+    and an unrecorded set inside history would show on screen while counting for nothing.
+  - **An exercise added to a finished workout arrives with one set**, not the usual three. A
+    finished workout is a record of what happened, so inventing sets is the wrong default.
+  - History stays **read-only until you ask to edit it**, and the delete buttons only exist in
+    edit mode. A mistap while browsing should not be able to rewrite a record.
+  - Finishing an edit drops any exercise left with no sets, and offers to delete a workout
+    emptied of everything.
+  - The correction reaches your backup with no extra step: the folder already holds the sessions,
+    and auto-export watches them. A workout retimed across New Year moves between year shards
+    cleanly — the new year is rewritten and the old file removed, never left holding a duplicate.
+
+### Fixed
+
+- A date field no longer commits a half-typed value. Month and day now require two digits, so
+  typing `2026-07-30` no longer flickers the workout onto the 3rd of the month on the way past
+  `2026-07-3`.
+
 ## [1.2.5] — 2026-08-02
 
 Storage schema **v7**.

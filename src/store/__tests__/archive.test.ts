@@ -218,6 +218,40 @@ describe('what has to be rewritten when a set is logged', () => {
       'sessions/2028.json',
     ]);
   });
+
+  /*
+   * A workout whose date is corrected in the history editor can land in a different year than
+   * the one it was filed under. Sharding by year makes that the one edit that touches two
+   * shards - and, when it empties the old one, deletes a file. A backup that kept the old shard
+   * would hold the workout twice, on two different days.
+   */
+  describe('a workout retimed into another year', () => {
+    const moved = [
+      session('a', '2026-02-01T09:00:00'),
+      session('b', '2026-11-20T09:00:00'),
+      session('c', '2027-05-05T09:00:00'),
+      session('d', '2027-12-30T09:00:00'), // was 2028-01-10
+    ];
+    const after = buildArchive(state(moved), '1.2.5', NOW + 1000);
+
+    it('rewrites the year it went to and drops the year it left', () => {
+      expect(changedFiles(after, manifestOf(before)).map((f) => f.path).sort()).toEqual([
+        MANIFEST_PATH,
+        'sessions/2027.json',
+      ]);
+      expect(staleFiles(after, manifestOf(before))).toEqual(['sessions/2028.json']);
+    });
+
+    it('reads back with the workout counted once, on its new date', () => {
+      const read = readArchive(asMap(after));
+      expect(read.ok).toBe(true);
+      if (!read.ok) return;
+      expect(read.state.sessions).toHaveLength(4);
+      expect(read.state.sessions.filter((x) => x.id === 'd')).toHaveLength(1);
+      expect(new Date(read.state.sessions.find((x) => x.id === 'd')!.startedAt).getFullYear())
+        .toBe(2027);
+    });
+  });
 });
 
 describe('reading a folder that is not in perfect shape', () => {

@@ -482,3 +482,146 @@ describe('unit seeding from the device', () => {
     expect(store().settings.unit).toBe('kg');
   });
 });
+
+// ------------------------------------------------------ editing a past workout
+
+describe('editing a finished workout', () => {
+  const DAY = 86_400_000;
+
+  /** A saved workout with three recorded sets of bench. */
+  function pastWorkout(): string {
+    const planId = store().createPlan('monday');
+    store().addPlanItem(planId, BENCH);
+    const sessionId = store().startSession(planId)!;
+    const entry = store().sessions[0].entries[0];
+    for (const set of entry.sets) store().toggleSetLogged(sessionId, entry.id, set.id);
+    store().endSession(sessionId);
+    return sessionId;
+  }
+
+  const session = () => store().sessions[0];
+
+  it('moves the whole workout when its start moves', () => {
+    const sessionId = pastWorkout();
+    const before = session();
+    const duration = before.endedAt! - before.startedAt;
+    const gaps = before.entries[0].sets.map((x) => x.loggedAt! - before.startedAt);
+
+    store().setSessionStart(sessionId, before.startedAt - 10 * DAY);
+
+    const after = session();
+    expect(after.startedAt).toBe(before.startedAt - 10 * DAY);
+    expect(after.endedAt! - after.startedAt).toBe(duration);
+    expect(after.entries[0].sets.map((x) => x.loggedAt! - after.startedAt)).toEqual(gaps);
+  });
+
+  it('takes the sets out of this week when the workout leaves it', () => {
+    const sessionId = pastWorkout();
+    const now = Date.now();
+    expect(volumeInWindow(store().sessions, now, 7).chest).toBe(3);
+
+    store().setSessionStart(sessionId, session().startedAt - 30 * DAY);
+
+    // The point of shifting loggedAt: the body map reads the sets, not the session header.
+    expect(volumeInWindow(store().sessions, now, 7).chest).toBe(0);
+    expect(volumeInWindow(store().sessions, now, 60).chest).toBe(3);
+  });
+
+  it('leaves an unrecorded set of a live workout unstamped when it moves', () => {
+    const planId = store().createPlan('monday');
+    store().addPlanItem(planId, BENCH);
+    const sessionId = store().startSession(planId)!;
+
+    store().setSessionStart(sessionId, store().sessions[0].startedAt - DAY);
+
+    expect(session().endedAt).toBeNull();
+    expect(session().entries[0].sets.every((x) => x.loggedAt === null)).toBe(true);
+  });
+
+  it('records a set added afterwards, on the day of the workout', () => {
+    const sessionId = pastWorkout();
+    store().setSessionStart(sessionId, session().startedAt - 5 * DAY);
+    const entry = session().entries[0];
+    const last = entry.sets[entry.sets.length - 1].loggedAt!;
+
+    store().addSet(sessionId, entry.id);
+
+    const added = session().entries[0].sets[3];
+    expect(added.loggedAt).toBe(last);
+    expect(Date.now() - added.loggedAt!).toBeGreaterThan(4 * DAY);
+  });
+
+  it('adds an exercise as one recorded set rather than a full set of invented ones', () => {
+    const sessionId = pastWorkout();
+    store().addSessionExercise(sessionId, SQUAT);
+
+    const added = session().entries[1];
+    expect(added.sets).toHaveLength(1);
+    expect(added.sets[0].loggedAt).toBe(session().endedAt);
+  });
+
+  it('still pre-fills a live workout with the usual number of unrecorded sets', () => {
+    const sessionId = store().startEmptySession();
+    store().addSessionExercise(sessionId, SQUAT);
+
+    const entry = store().sessions[0].entries[0];
+    expect(entry.sets).toHaveLength(store().settings.defaultSetCount);
+    expect(entry.sets.every((x) => x.loggedAt === null)).toBe(true);
+  });
+
+  it('tidies away an exercise emptied of sets, and only then', () => {
+    const sessionId = pastWorkout();
+    store().addSessionExercise(sessionId, SQUAT);
+    const squat = session().entries[1];
+    store().removeSet(sessionId, squat.id, squat.sets[0].id);
+
+    // Still there while the edit is in progress.
+    expect(session().entries).toHaveLength(2);
+
+    store().tidySession(sessionId);
+    expect(session().entries.map((e) => e.exerciseId)).toEqual([BENCH]);
+  });
+
+  it('corrects the length by moving the end, never the start', () => {
+    const sessionId = pastWorkout();
+    const start = session().startedAt;
+
+    store().setSessionDuration(sessionId, 90 * 60);
+
+    expect(session().startedAt).toBe(start);
+    expect(session().endedAt).toBe(start + 90 * 60_000);
+  });
+
+  it('refuses a negative length rather than ending before it started', () => {
+    const sessionId = pastWorkout();
+    store().setSessionDuration(sessionId, -600);
+    expect(session().endedAt).toBe(session().startedAt);
+  });
+
+  it('leaves a workout still in progress without an end time', () => {
+    const planId = store().createPlan('monday');
+    store().addPlanItem(planId, BENCH);
+    const sessionId = store().startSession(planId)!;
+
+    store().setSessionDuration(sessionId, 3600);
+
+    // A running workout is however long it has been going; there is nothing to correct.
+    expect(session().endedAt).toBeNull();
+  });
+
+  it('renames a workout without touching anything else', () => {
+    const sessionId = pastWorkout();
+    const before = session();
+    store().renameSession(sessionId, 'Heavy bench');
+
+    expect(session().planName).toBe('Heavy bench');
+    expect(session().entries).toEqual(before.entries);
+    expect(session().startedAt).toBe(before.startedAt);
+  });
+
+  it('keeps a blank name as typed, for the field to default on commit', () => {
+    const sessionId = pastWorkout();
+    store().renameSession(sessionId, '');
+    expect(session().planName).toBe('');
+  });
+});

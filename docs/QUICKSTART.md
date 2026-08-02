@@ -138,7 +138,7 @@ Done. GRam is now on your home screen.
 ### Does it really work offline?
 
 Yes, and I tested it rather than assuming: I loaded the app, **shut the web server down
-completely**, reloaded, and the app opened normally with all 873 exercises available. A service
+completely**, reloaded, and the app opened normally with all 879 exercises available. A service
 worker stores the whole app on the phone the first time you open it.
 
 ### Will my workouts survive?
@@ -195,8 +195,8 @@ through the actual app to confirm.
 - Android Settings → Apps → GRam → Storage → Clear storage
 - Tapping "Erase all data" in the app's Profile tab
 
-**Before any of those, export a backup.** **Profile → Backup and transfer → Export a backup**
-saves one file holding everything; **Import** puts it back. On iPhone, "Save to Files" keeps it
+**Before any of those, export a backup.** **Profile → Backup and transfer → Export** saves a
+`GRam` folder holding everything; **Import** puts it back. On iPhone, "Save to Files" keeps it
 somewhere that deleting the app cannot reach.
 
 ### Changing the app icon on an iPhone
@@ -205,7 +205,7 @@ iOS copies the icon into the home-screen shortcut when you add it, and never rea
 a new icon never reaches a shortcut that already exists. The only way to update it is to remove
 and re-add, which on iOS also deletes the app's storage. So:
 
-1. **Profile → Backup and transfer → Export a backup**, and Save to Files.
+1. **Profile → Backup and transfer → Export**, and Save to Files.
 2. Long-press the icon → Remove App → Delete.
 3. Open the site in Safari → Share → Add to Home Screen.
 4. Open it and tap **Import**.
