@@ -4,6 +4,7 @@ import { muscleTermsIn, scoreQuery } from './search';
 import type { Exercise, Muscle } from './types';
 
 export * from './generated';
+export * from './perSide';
 export * from './recommended';
 export * from './types';
 export { EXERCISES, muscleTermsIn };

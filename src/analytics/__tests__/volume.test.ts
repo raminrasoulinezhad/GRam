@@ -17,6 +17,8 @@ import {
 
 const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
 const SQUAT = 'Barbell_Full_Squat';
+const DB_BENCH = 'Dumbbell_Bench_Press';
+const ONE_ARM_ROW = 'One-Arm_Dumbbell_Row';
 const NOW = 1_800_000_000_000; // fixed clock so decay assertions are deterministic
 
 let setSeq = 0;
@@ -238,6 +240,27 @@ describe('per-session summaries', () => {
   it('ignores tonnage for sets missing weight or reps', () => {
     const timed = mkSession([{ exerciseId: BENCH, sets: [mkSet(NOW, { timeSec: 60 })] }]);
     expect(sessionTonnage(timed)).toBe(0);
+  });
+
+  it('counts both dumbbells, because the weight written down is one of them', () => {
+    const db = mkSession([
+      { exerciseId: DB_BENCH, sets: [mkSet(NOW, { weightKg: 30, reps: 10 })] },
+    ]);
+    // Two 30s for ten reps is 600kg moved. Counting the 30 as the whole load would halve
+    // every dumbbell session in the total-lifted milestone.
+    expect(sessionTonnage(db)).toBe(600);
+  });
+
+  it('counts a one-arm exercise once, since only one side is loaded', () => {
+    const row = mkSession([
+      { exerciseId: ONE_ARM_ROW, sets: [mkSet(NOW, { weightKg: 30, reps: 10 })] },
+    ]);
+    expect(sessionTonnage(row)).toBe(300);
+  });
+
+  it('still counts a barbell as the number on the bar', () => {
+    const bb = mkSession([{ exerciseId: BENCH, sets: [mkSet(NOW, { weightKg: 100, reps: 5 })] }]);
+    expect(sessionTonnage(bb)).toBe(500);
   });
 
   it('computes per-session muscle volume', () => {

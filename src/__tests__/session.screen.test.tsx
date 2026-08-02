@@ -28,6 +28,8 @@ const SessionScreen = require('../../app/session/[id]').default;
 const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
 const SQUAT = 'Barbell_Full_Squat';
 const PLANK = 'Plank';
+const DB_BENCH = 'Dumbbell_Bench_Press';
+const ONE_ARM_ROW = 'One-Arm_Dumbbell_Row';
 const store = () => useStore.getState();
 
 /** Seeds a plan with one exercise, starts it, and points the route params at the session. */
@@ -341,6 +343,30 @@ describe('active workout screen', () => {
     expect(screen.getByTestId(`entry-${id0}-done`)).toBeTruthy();
     expect(screen.queryByText('3/3')).toBeNull();
     expect(store().sessions[0].entries[0].sets.every((x) => x.loggedAt !== null)).toBe(true);
+  });
+});
+
+describe('exercises loaded a dumbbell per hand', () => {
+  it('says so on the record page, so the right number gets typed', async () => {
+    startWorkout(DB_BENCH);
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.getByTestId(`per-side-${entryId()}`)).toBeTruthy();
+    expect(screen.getByText(/Weight is per dumbbell/)).toBeTruthy();
+  });
+
+  it('says nothing of the sort about a barbell', async () => {
+    startWorkout(BENCH);
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.queryByTestId(`per-side-${entryId()}`)).toBeNull();
+  });
+
+  it('says nothing about a one-arm exercise, where the weight is the whole load', async () => {
+    startWorkout(ONE_ARM_ROW);
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.queryByTestId(`per-side-${entryId()}`)).toBeNull();
   });
 });
 

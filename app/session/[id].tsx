@@ -2,7 +2,13 @@ import { memo, useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { exerciseName, type SetKind } from '@/catalog';
+import {
+  exerciseName,
+  getExercise,
+  implementWord,
+  isPerSideLoad,
+  type SetKind,
+} from '@/catalog';
 import {
   countLoggedSets,
   rankMuscles,
@@ -106,7 +112,9 @@ const EntryCard = memo(function EntryCard({
   onAddSet: (entryId: string) => void;
   onRemoveEntry: (entryId: string, name: string) => void;
 }) {
+  const exercise = getExercise(entry.exerciseId);
   const name = exerciseName(entry.exerciseId);
+  const perSide = exercise !== undefined && isPerSideLoad(exercise);
   const done = entry.sets.filter((x) => x.loggedAt !== null).length;
   const complete = entry.sets.length > 0 && done === entry.sets.length;
 
@@ -138,6 +146,13 @@ const EntryCard = memo(function EntryCard({
       onHowTo={() => router.push(`/exercise/${entry.exerciseId}`)}
       testID={`entry-${entry.id}`}
     >
+      {perSide ? (
+        <Dim style={s.perSide} testID={`per-side-${entry.id}`}>
+          Weight is per {implementWord(exercise!)} — one in each hand. Your total lifted counts
+          both.
+        </Dim>
+      ) : null}
+
       {entry.sets.length === 0 ? (
         <Dim style={{ paddingVertical: theme.space(2) }}>
           No sets. Add one below, or remove this exercise.
@@ -430,6 +445,7 @@ const s = StyleSheet.create({
   },
   content: { padding: theme.space(4), gap: theme.space(3), paddingBottom: theme.space(6) },
   entryActions: { flexDirection: 'row', gap: theme.space(2), marginTop: theme.space(2) },
+  perSide: { paddingBottom: theme.space(2), lineHeight: 18 },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',

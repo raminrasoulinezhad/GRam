@@ -6,6 +6,34 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.16] — 2026-08-02
+
+Storage schema **v7** — unchanged. Nothing stored changes; the figure is recomputed from the
+sets you already have, so **Total lifted** goes up the moment you open this build.
+
+### Fixed
+
+- **Dumbbell work counts both dumbbells in your total lifted.** A press with two 30s is 60kg
+  moved, but 30 is the number anyone writes down — so every dumbbell session was being counted
+  at half, and the more dumbbell work you did the further out the figure drifted.
+- **The record page now says when a weight is per hand**, so there is no question which number
+  to type. The exercise description carries a matching **Weight per hand** tag.
+
+The rule, in full, is in [`src/catalog/perSide.ts`](src/catalog/perSide.ts):
+
+- **Dumbbells count double by default** — a dumbbell exercise means one in each hand unless the
+  name says otherwise. **Kettlebells only when the name says two of them** (Double, Two-Arm,
+  Alternating), because one bell is the norm.
+- **One-arm work counts once.** Only one side is loaded at a time, so the weight written down
+  *is* the whole load. Train both arms and log it as a single set and you are undercounted by
+  half — log it as two sets, one per side, which is what the set list is for.
+- **Anything held in both hands counts once**: goblet squats, pullovers, two-handed swings. A
+  hand-checked list of eleven exercises the naming would otherwise get wrong is in that file
+  with a reason against each.
+- **Two-stack cable machines are not covered.** On a crossover each side really does carry the
+  selected weight, but the dataset has no field that marks them and the naming gives no reliable
+  signal, so guessing would be worse than the known gap.
+
 ## [1.2.15] — 2026-08-02
 
 Storage schema **v7** — unchanged.

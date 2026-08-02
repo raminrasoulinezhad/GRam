@@ -2,7 +2,13 @@ import { memo, useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { exerciseName, type SetKind } from '@/catalog';
+import {
+  exerciseName,
+  getExercise,
+  implementWord,
+  isPerSideLoad,
+  type SetKind,
+} from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { countLoggedSets, rankMuscles, sessionTonnage, sessionVolume } from '@/analytics/volume';
 import {
@@ -90,7 +96,9 @@ const EntryCard = memo(function EntryCard({
   onAddSet: (entryId: string) => void;
   onRemoveEntry: (entryId: string, name: string) => void;
 }) {
+  const exercise = getExercise(entry.exerciseId);
   const name = exerciseName(entry.exerciseId);
+  const perSide = exercise !== undefined && isPerSideLoad(exercise);
 
   const handleChange = useCallback(
     (setId: string, patch: SetValues) => onChangeSet(entry.id, setId, patch),
@@ -104,6 +112,13 @@ const EntryCard = memo(function EntryCard({
   return (
     <Card testID={`history-entry-${entry.id}`}>
       <Text style={s.exName}>{name}</Text>
+
+      {/* Only while editing: reading back a workout, the number means what it meant on the day. */}
+      {editing && perSide ? (
+        <Dim style={s.perSide} testID={`history-per-side-${entry.id}`}>
+          Weight is per {implementWord(exercise!)} — one in each hand.
+        </Dim>
+      ) : null}
 
       {editing ? (
         <>
@@ -462,6 +477,7 @@ const s = StyleSheet.create({
     marginBottom: theme.space(2),
   },
   entryActions: { flexDirection: 'row', gap: theme.space(2), marginTop: theme.space(2) },
+  perSide: { paddingBottom: theme.space(1), lineHeight: 18 },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',

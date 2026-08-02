@@ -1,4 +1,4 @@
-import { MUSCLES, getExercise, type Muscle } from '@/catalog';
+import { MUSCLES, getExercise, loadMultiplier, type Muscle } from '@/catalog';
 import type { Session } from '@/store/types';
 
 /**
@@ -145,12 +145,22 @@ export function countLoggedSets(session: Session): number {
   return n;
 }
 
-/** Total kg moved in a session. Sets without both weight and reps contribute nothing. */
+/**
+ * Total kg moved in a session. Sets without both weight and reps contribute nothing.
+ *
+ * A dumbbell exercise counts double, because the number written down is what one hand holds -
+ * a dumbbell press with two 30s is 60kg moved, and nobody records it as 60. See
+ * `src/catalog/perSide.ts` for exactly which exercises that applies to and why.
+ */
 export function sessionTonnage(session: Session): number {
   let kg = 0;
   for (const entry of session.entries) {
+    const exercise = getExercise(entry.exerciseId);
+    const perRep = exercise ? loadMultiplier(exercise) : 1;
     for (const set of entry.sets) {
-      if (set.loggedAt !== null && set.weightKg && set.reps) kg += set.weightKg * set.reps;
+      if (set.loggedAt !== null && set.weightKg && set.reps) {
+        kg += set.weightKg * set.reps * perRep;
+      }
     }
   }
   return kg;

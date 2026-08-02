@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { getExercise, imageUrl, SET_KIND_LABEL } from '@/catalog';
+import { getExercise, imageUrl, isPerSideLoad, SET_KIND_LABEL } from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDate, formatSet, relativeTime, titleCase } from '@/lib/format';
 import { exerciseHistory, selectSessions, useStore } from '@/store/useStore';
@@ -53,6 +53,8 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
           {exercise.force ? <Chip label={`${titleCase(exercise.force)} force`} /> : null}
           <Chip label={titleCase(exercise.category)} />
           <Chip label={SET_KIND_LABEL[exercise.kind]} />
+          {/* So the weight in the history below is read as one hand's, not the pair's. */}
+          {isPerSideLoad(exercise) ? <Chip label="Weight per hand" tone="primary" /> : null}
         </View>
 
         {/*
