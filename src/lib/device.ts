@@ -58,14 +58,6 @@ export function readDeviceProfile(): DeviceProfile {
 }
 
 /**
- * The weight unit the phone's region implies. Only the US and, for body weight, the UK
- * routinely use pounds in the gym; everywhere else is kilograms.
- */
-export function preferredUnit(device: DeviceProfile): 'kg' | 'lb' {
-  return device.measurementSystem === 'us' ? 'lb' : 'kg';
-}
-
-/**
  * Whole years since `birthDate` (an ISO yyyy-mm-dd string), or null if unset or unparseable.
  *
  * The string is split into calendar components rather than fed to `new Date()`. A bare

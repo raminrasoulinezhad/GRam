@@ -461,25 +461,20 @@ describe('profile', () => {
   });
 });
 
-describe('unit seeding from the device', () => {
-  it('applies the phone default the first time', () => {
-    store().seedUnitFromDevice('lb');
-    expect(store().settings.unit).toBe('lb');
-    expect(store().settings.unitSeededFromDevice).toBe(true);
-  });
-
-  it('never overrides the unit a second time', () => {
-    store().seedUnitFromDevice('lb');
-    store().seedUnitFromDevice('kg');
+describe('the weight unit', () => {
+  it('starts a fresh install in pounds', () => {
     expect(store().settings.unit).toBe('lb');
   });
 
-  it('leaves a deliberate user choice alone on the next launch', () => {
-    // User switches to kg by hand, which marks the seed as done...
-    store().updateSettings({ unit: 'kg', unitSeededFromDevice: true });
-    // ...so a US phone re-seeding on the next launch must not undo it.
-    store().seedUnitFromDevice('lb');
+  it('keeps the unit the user picked', () => {
+    store().updateSettings({ unit: 'kg' });
     expect(store().settings.unit).toBe('kg');
+  });
+
+  it('is restored to pounds by resetAll, which is a fresh install again', () => {
+    store().updateSettings({ unit: 'kg' });
+    store().resetAll();
+    expect(store().settings.unit).toBe('lb');
   });
 });
 

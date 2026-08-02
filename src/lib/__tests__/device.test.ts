@@ -1,26 +1,10 @@
-import { ageFrom, bmi, preferredUnit, type DeviceProfile } from '@/lib/device';
+import { ageFrom, bmi } from '@/lib/device';
 
-const BASE: DeviceProfile = {
-  model: 'iPhone 15 Pro',
-  manufacturer: 'Apple',
-  osLabel: 'iOS 18.2',
-  platform: 'ios',
-  isPhysicalDevice: true,
-  locale: 'en-CA',
-  region: 'CA',
-  timeZone: 'America/Vancouver',
-  measurementSystem: 'metric',
-};
-
-describe('preferredUnit', () => {
-  it('picks pounds only for a US phone', () => {
-    expect(preferredUnit({ ...BASE, measurementSystem: 'us' })).toBe('lb');
-  });
-
-  it.each(['metric', 'uk', null] as const)('picks kilograms for %s', (system) => {
-    expect(preferredUnit({ ...BASE, measurementSystem: system })).toBe('kg');
-  });
-});
+/*
+ * There was a preferredUnit() here, mapping the phone's reported measurement system onto kg or
+ * lb. The unit is now a fixed lb default the user changes if they want to, so the device no
+ * longer has a say - see DEFAULT_SETTINGS in src/store/migrations.ts.
+ */
 
 describe('ageFrom', () => {
   const now = new Date('2026-08-01T12:00:00Z');

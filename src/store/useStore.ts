@@ -102,8 +102,6 @@ type Actions = {
   updateProfile: (patch: Partial<Profile>) => void;
   toggleEquipment: (equipment: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
-  /** Applies the phone's region default for weight units, once, before the user has chosen. */
-  seedUnitFromDevice: (unit: 'kg' | 'lb') => void;
   /** Records milestone ids as seen, so their celebration is not shown again. */
   markMilestonesSeen: (ids: string[]) => void;
   // --- week balance ---
@@ -565,14 +563,6 @@ export const useStore = create<State & Actions>()(
         })),
 
       updateSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
-
-      seedUnitFromDevice: (unit) =>
-        set((s) =>
-          // Only ever fires once. After that the user's own choice is authoritative.
-          s.settings.unitSeededFromDevice
-            ? s
-            : { settings: { ...s.settings, unit, unitSeededFromDevice: true } },
-        ),
 
       markMilestonesSeen: (ids) =>
         set((s) => ({

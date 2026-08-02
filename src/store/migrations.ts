@@ -18,11 +18,19 @@ import type { Plan, Profile, Session, Settings } from './types';
 export const SCHEMA_VERSION = 7;
 
 export const DEFAULT_SETTINGS: Settings = {
-  unit: 'kg',
+  /*
+   * Pounds on a fresh install, everywhere.
+   *
+   * This used to be kilograms, overwritten once on first launch by whatever the phone's region
+   * implied - which meant the unit depended on a setting most people have never looked at, and
+   * a device reporting metric handed a pounds lifter kilograms. A fixed default is predictable,
+   * and changing it is two taps in Profile. An existing install keeps whatever it has: the
+   * stored settings are spread over these defaults, so this only ever decides a first launch.
+   */
+  unit: 'lb',
   defaultRestSec: 90,
   defaultSetCount: 3,
   bodyGender: 'male',
-  unitSeededFromDevice: false,
   showExercisePhotos: true,
 };
 
@@ -104,6 +112,8 @@ const MIGRATIONS: Record<number, Migration> = {
       ...(asRecord(state.settings) ?? {}),
       // An existing user already had a unit they were happy with; treat it as their choice
       // so the region default cannot overwrite it on the first launch after upgrading.
+      // Region seeding is gone as of 1.2.8 and nothing reads this key any more - it is written
+      // exactly as it was because a shipped migration step is never edited.
       unitSeededFromDevice: true,
     },
   }),

@@ -79,6 +79,8 @@ describe('a past workout reads as a record until you ask to edit it', () => {
 
 describe('correcting what was recorded', () => {
   it('edits weight and reps of a logged set', async () => {
+    // Kilograms, so the number typed is the number stored - see the note in session.screen.test.
+    store().updateSettings({ unit: 'kg' });
     pastWorkout();
     await openEditor();
 

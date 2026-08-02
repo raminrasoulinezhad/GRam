@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Constants from 'expo-constants';
 import { EXERCISES } from '@/catalog';
-import { ageFrom, bmi, preferredUnit, readDeviceProfile } from '@/lib/device';
+import { ageFrom, bmi, readDeviceProfile } from '@/lib/device';
 import { formatDate, fromDisplayWeight, titleCase, toDisplayWeight } from '@/lib/format';
 import { SCHEMA_VERSION } from '@/store/migrations';
 import { completedSessions, selectSessions, useStore } from '@/store/useStore';
@@ -21,15 +21,10 @@ export default function ProfileScreen() {
   const allSessions = useStore(selectSessions);
   const updateProfile = useStore((s) => s.updateProfile);
   const updateSettings = useStore((s) => s.updateSettings);
-  const seedUnitFromDevice = useStore((s) => s.seedUnitFromDevice);
   const resetAll = useStore((s) => s.resetAll);
   const confirm = useConfirm();
   // Read once per mount - none of it changes while the app is open.
   const [device] = useState(readDeviceProfile);
-  // The phone's region picks kg or lb the first time, then never again.
-  useEffect(() => {
-    seedUnitFromDevice(preferredUnit(device));
-  }, [device, seedUnitFromDevice]);
   const stats = useMemo(() => {
     const done = completedSessions(allSessions);
     return {
@@ -152,13 +147,14 @@ export default function ProfileScreen() {
                 key={u}
                 label={u}
                 active={settings.unit === u}
-                onPress={() => updateSettings({ unit: u, unitSeededFromDevice: true })}
+                onPress={() => updateSettings({ unit: u })}
               />
             ))}
           </View>
           <Dim style={s.hint}>
-            Defaulted from your phone's region settings. Weights are always stored in kilograms,
-            so switching never rewrites your history.
+            Pounds to begin with; switch whenever you like and it stays switched, including
+            across updates. Weights are always stored in kilograms underneath, so changing this
+            never rewrites your history.
           </Dim>
           <Text style={[s.label, s.spaced]}>EXERCISE PHOTOS</Text>
           <View style={s.row}>

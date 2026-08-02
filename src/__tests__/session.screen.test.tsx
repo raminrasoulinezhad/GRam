@@ -74,6 +74,9 @@ describe('active workout screen', () => {
   });
 
   it('edits weight and reps through the set fields', async () => {
+    // Deliberately in kilograms, so the number typed is the number stored and this stays a
+    // test of the field wiring. The pounds path, which is what a fresh install shows, is next.
+    store().updateSettings({ unit: 'kg' });
     startWorkout();
     await renderScreen(<SessionScreen />);
 
@@ -82,6 +85,17 @@ describe('active workout screen', () => {
     await fireEvent.changeText(screen.getByTestId(`set-${setId}-reps`), '5');
 
     expect(store().sessions[0].entries[0].sets[0]).toMatchObject({ weightKg: 82.5, reps: 5 });
+  });
+
+  it('converts a weight typed in the default pounds', async () => {
+    startWorkout();
+    await renderScreen(<SessionScreen />);
+
+    const setId = setIds()[0];
+    await fireEvent.changeText(screen.getByTestId(`set-${setId}-weight`), '225');
+
+    // Stored in kg whatever the field says, so switching units never rewrites history.
+    expect(store().sessions[0].entries[0].sets[0].weightKg).toBeCloseTo(102.06, 1);
   });
 
   it('rejects non-numeric input rather than storing NaN', async () => {

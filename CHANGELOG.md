@@ -6,6 +6,27 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.8] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **A fresh install starts in pounds.** The unit used to be kilograms, overwritten once on first
+  launch by whatever the phone's region reported — so it depended on a setting most people have
+  never opened, and a phone reporting metric handed a pounds lifter kilograms. Now it is simply
+  pounds, changed in two taps in **Profile → Units** if you want kilograms.
+  - **An update never touches a unit you have already got.** The default only ever decides a
+    first launch; stored settings are laid over it. There is a migration test for exactly this:
+    an install on kilograms upgrades still on kilograms.
+  - Weights are still stored in kilograms underneath, so switching the display never rewrites
+    a single logged set.
+
+### Removed
+
+- The device-region unit seeding, along with `preferredUnit()` and the `unitSeededFromDevice`
+  flag it needed. A fixed default needs neither.
+
 ## [1.2.7] — 2026-08-02
 
 Storage schema **v7** — unchanged. Documentation only; the app itself is identical to 1.2.6.

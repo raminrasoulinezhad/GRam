@@ -87,9 +87,13 @@ describe('upgrading from v1', () => {
     });
   });
 
-  it('does not let the phone region overwrite an existing user unit', () => {
-    // An upgrading user already had a unit; the v2 seed must treat it as deliberate.
-    expect(migrated.settings.unitSeededFromDevice).toBe(true);
+  it('does not impose the new default unit on someone who already had one', () => {
+    // The fresh-install default is pounds. A v1 user who was on kilograms stays on kilograms.
+    const onKg = migratePersisted(
+      { ...V1_PAYLOAD, settings: { ...V1_PAYLOAD.settings, unit: 'kg' } },
+      1,
+    );
+    expect(onKg.settings.unit).toBe('kg');
   });
 
   it('adds the profile that v1 never had', () => {
@@ -129,7 +133,6 @@ describe('upgrading from v2', () => {
 
   it('does not disturb the unit the user had chosen', () => {
     expect(migrated.settings.unit).toBe('kg');
-    expect(migrated.settings.unitSeededFromDevice).toBe(true);
   });
 });
 

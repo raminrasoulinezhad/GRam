@@ -117,11 +117,6 @@ export type Settings = {
    * muscle glyphs, which need no network and carry no third-party rights.
    */
   showExercisePhotos: boolean;
-  /**
-   * False until the unit has been defaulted from the phone's region once. Prevents a later
-   * app launch from overwriting a unit the user has deliberately changed.
-   */
-  unitSeededFromDevice: boolean;
 };
 
 export type TrainingGoal = 'strength' | 'hypertrophy' | 'general';

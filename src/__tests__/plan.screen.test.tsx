@@ -95,6 +95,8 @@ describe('plan editor', () => {
   });
 
   it('edits a template weight and reps', async () => {
+    // Kilograms, so the number typed is the number stored - see the note in session.screen.test.
+    store().updateSettings({ unit: 'kg' });
     makePlan(BENCH);
     await renderScreen(<PlanEditorScreen />);
 
