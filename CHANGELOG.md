@@ -6,6 +6,33 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.1.0] — 2026-08-02
+
+Your data can leave the device now. Storage schema **v4**, unchanged.
+
+### Added
+
+- **Backup and transfer**, on the Profile tab. Export writes one file holding every plan,
+  workout, setting and profile field; Import reads it back. This closes the trap the app has
+  had since the start: everything lived on one device, and on iOS removing a home-screen web
+  app takes its storage with it — which is also the only way to change its icon. A cosmetic
+  change used to cost a training history.
+- **Import accepts more than its own exports** — a raw zustand blob copied out of browser
+  storage, or a bare state object, both work. That is a real recovery route when the app will
+  not open. Backups written at an older schema are migrated on the way in.
+- **Import always confirms first**, showing what is in the file against what is on the device,
+  and saying plainly that it replaces rather than merges.
+- Export degrades rather than failing: the system share sheet where it exists (the only route
+  that works in an iOS home-screen web app), then a file download, then the clipboard — and the
+  text is always on screen to select regardless.
+
+### Fixed
+
+- **Stored data was only validated when a migration ran.** zustand calls `migrate` on a version
+  mismatch, so a blob already at the current schema went into live state unchecked, and a
+  partial or truncated write could blank a screen. Found by seeding one into the running app.
+  Validation now runs on every load, migration or not.
+
 ## [1.0.0] — 2026-08-01
 
 **The app is now called GRam.** Storage schema **v4**, unchanged from 0.3.0 — the rebrand moves

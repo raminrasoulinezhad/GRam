@@ -6,7 +6,9 @@ import {
   DEFAULT_PROFILE,
   DEFAULT_SETTINGS,
   SCHEMA_VERSION,
+  coerce,
   migratePersisted,
+  type PersistedState,
 } from './migrations';
 import { STORAGE_KEY, createBackingStorage } from './storage';
 import type {
@@ -92,6 +94,11 @@ type Actions = {
   ignoreBalanceGroup: (group: string) => void;
   /** Brings every dismissed group back, so a fresh review says everything it has to say. */
   clearIgnoredBalanceGroups: () => void;
+  // --- backup ---
+  /** Everything the app persists, as one object - what an export writes to a file. */
+  exportState: () => PersistedState;
+  /** Replaces every persisted field from an imported backup. See src/store/backup.ts. */
+  replaceAll: (state: PersistedState) => void;
   resetAll: () => void;
 };
 
@@ -434,6 +441,34 @@ export const useStore = create<State & Actions>()(
 
       clearIgnoredBalanceGroups: () => set({ ignoredBalanceGroups: [] }),
 
+      exportState: () => {
+        const s = get();
+        return {
+          plans: s.plans,
+          sessions: s.sessions,
+          settings: s.settings,
+          profile: s.profile,
+          activeSessionId: s.activeSessionId,
+          celebratedMilestones: s.celebratedMilestones,
+          ignoredBalanceGroups: s.ignoredBalanceGroups,
+        };
+      },
+
+      /*
+       * Replaces the lot, field by field rather than with a spread of the argument, so a key
+       * the file happens to carry cannot overwrite an action on the store.
+       */
+      replaceAll: (next) =>
+        set({
+          plans: next.plans,
+          sessions: next.sessions,
+          settings: next.settings,
+          profile: next.profile,
+          activeSessionId: next.activeSessionId,
+          celebratedMilestones: next.celebratedMilestones,
+          ignoredBalanceGroups: next.ignoredBalanceGroups,
+        }),
+
       resetAll: () =>
         set({
           plans: [],
@@ -462,6 +497,19 @@ export const useStore = create<State & Actions>()(
       // Synchronous by contract - see the note in migrations.ts. An async migrate silently
       // resets the store to its initial state, which would read as total data loss.
       migrate: (persisted, from) => migratePersisted(persisted, from),
+      /*
+       * Validation has to happen here, not only inside migrate().
+       *
+       * zustand calls migrate() only when the stored version differs from this one, so a blob
+       * already at the current version goes straight into live state unchecked - and coerce()
+       * is precisely the thing standing between a truncated write, a hand-edited file or a
+       * restored backup and a screen that crashes on `undefined.length`. Running it in merge()
+       * means every load is validated, whether or not a migration was involved.
+       */
+      merge: (persisted, current) => ({
+        ...current,
+        ...coerce((persisted ?? {}) as Record<string, unknown>),
+      }),
     },
   ),
 );

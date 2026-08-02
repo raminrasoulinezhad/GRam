@@ -8,6 +8,7 @@ import { completedSessions, selectSessions, useStore } from '@/store/useStore';
 import { countLoggedSets } from '@/analytics/volume';
 import { Button, Card, Chip, Dim, H2, NumberField, Screen } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
+import { BackupCard } from '@/ui/BackupCard';
 import { MilestonesCard } from '@/ui/Milestones';
 import { theme } from '@/ui/theme';
 
@@ -152,6 +153,8 @@ export default function ProfileScreen() {
         </Card>
 
         <MilestonesCard />
+
+        <BackupCard />
 
         <Card>
           <H2>Training</H2>

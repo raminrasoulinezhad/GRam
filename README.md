@@ -77,6 +77,11 @@ No. No subscription, no account, no ads.
 On your phone, and nowhere else. There's no server and no account, so nothing is uploaded and
 nobody — including me — can see your training.
 
+**Can I back it up, or move it to another phone?**
+Yes. **Profile → Backup and transfer → Export a backup** writes one file with every plan,
+workout and setting. Keep it in Files or iCloud; **Import** reads it back. That is also how you
+move an install: export, remove the app, add it again, import.
+
 **Will I lose my workouts when it updates?**
 No. Updates apply automatically the next time you open it, and your data carries across. This is
 tested against real data from older versions.
@@ -89,7 +94,8 @@ as your gym phone.
 Yes, once it's installed. That's the point.
 
 **What actually deletes my data?**
-Only removing the app from your home screen, clearing your browser storage, or tapping
+Export a backup first and none of this matters. Otherwise: removing the app from your home
+screen, clearing your browser storage, or tapping
 **Erase all data** in the Profile tab.
 
 ---

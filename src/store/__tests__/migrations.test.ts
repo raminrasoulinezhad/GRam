@@ -230,3 +230,41 @@ describe('the migration chain itself', () => {
     }
   });
 });
+
+describe('a payload at the current version is still validated', () => {
+  /*
+   * zustand only calls migrate() when the stored version differs from the current one, so a
+   * blob already at SCHEMA_VERSION skips the migration chain entirely. Everything below is
+   * what reaches live state through that path - it has to be safe on its own, which is why the
+   * store runs coerce() in merge() rather than relying on migrate().
+   *
+   * This is not hypothetical: it was found by seeding a partial v4 blob into the running app,
+   * which rendered a blank screen because a screen read `.length` of a field that was not there.
+   */
+  it('fills in fields a partial write left out', () => {
+    const partial = { plans: [], sessions: [], settings: { unit: 'lb' }, profile: { displayName: 'R' } };
+    const result = coerce(partial);
+
+    expect(result.profile.equipment).toEqual([]);
+    expect(result.profile.displayName).toBe('R');
+    expect(result.settings.unit).toBe('lb');
+    expect(result.settings.defaultSetCount).toBe(DEFAULT_SETTINGS.defaultSetCount);
+    expect(result.celebratedMilestones).toEqual([]);
+    expect(result.ignoredBalanceGroups).toEqual([]);
+  });
+
+  it('gives every field the screens read, from an empty object', () => {
+    const result = coerce({});
+    for (const key of [
+      'plans',
+      'sessions',
+      'settings',
+      'profile',
+      'activeSessionId',
+      'celebratedMilestones',
+      'ignoredBalanceGroups',
+    ]) {
+      expect([key, result[key as keyof typeof result] !== undefined]).toEqual([key, true]);
+    }
+  });
+});

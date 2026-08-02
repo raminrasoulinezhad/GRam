@@ -125,8 +125,10 @@ All four must be `200`. **`/body` is the one that matters** — a 404 there mean
 isn't being applied and refreshing inside the app would break.
 
 > ⚠️ **Changing the URL is a fresh install.** Browser storage is per-origin, so moving from
-> `x.netlify.app` to `gram.example.com` means re-adding the home-screen icon and losing
-> anything logged at the old address. Settle the address before logging real training.
+> `x.netlify.app` to `gram.example.com` means re-adding the home-screen icon, and the new
+> address starts empty. Export a backup from the old one first (**Profile → Backup and
+> transfer**) and import it at the new one. Still, settle the address before logging real
+> training — it is one less thing to remember.
 
 ### Custom subdomain with DNS on Cloudflare
 

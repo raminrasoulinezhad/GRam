@@ -191,9 +191,24 @@ new code. That upgrade path is tested against real data from an older version, a
 through the actual app to confirm.
 
 **The only things that erase your data:**
-- Uninstalling the app
+- Uninstalling the app, or removing it from the iPhone home screen
 - Android Settings → Apps → GRam → Storage → Clear storage
 - Tapping "Erase all data" in the app's Profile tab
+
+**Before any of those, export a backup.** **Profile → Backup and transfer → Export a backup**
+saves one file holding everything; **Import** puts it back. On iPhone, "Save to Files" keeps it
+somewhere that deleting the app cannot reach.
+
+### Changing the app icon on an iPhone
+
+iOS copies the icon into the home-screen shortcut when you add it, and never reads it again — so
+a new icon never reaches a shortcut that already exists. The only way to update it is to remove
+and re-add, which on iOS also deletes the app's storage. So:
+
+1. **Profile → Backup and transfer → Export a backup**, and Save to Files.
+2. Long-press the icon → Remove App → Delete.
+3. Open the site in Safari → Share → Add to Home Screen.
+4. Open it and tap **Import**.
 
 ---
 

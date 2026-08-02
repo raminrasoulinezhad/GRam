@@ -229,6 +229,10 @@ Only these:
 
 - Uninstalling the app
 - Android Settings → Apps → GRam → Storage → Clear storage
+- Removing an iPhone home-screen web app, which takes its storage container with it
+
+Export a backup first and every one of those is recoverable — see
+[QUICKSTART.md](QUICKSTART.md).
 - Offloading the app on iOS
 - Tapping **Erase all data** in the app's own Profile tab
 
