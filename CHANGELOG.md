@@ -6,6 +6,15 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.3] — 2026-08-02
+
+### Changed
+
+- **"Export a backup" is now just "Export".**
+- **Removed "Paste".** It existed as a fallback for platforms that could not open a file picker,
+  and there are none — the picker works in an iOS home-screen web app too, which is the case it
+  was there for. Import covers it.
+
 ## [1.2.2] — 2026-08-02
 
 Storage schema **v6** — adds a version log; nothing existing changes.

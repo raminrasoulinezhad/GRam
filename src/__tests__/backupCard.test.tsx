@@ -4,6 +4,13 @@ import { useStore } from '@/store/useStore';
 import { buildBackup, serialiseBackup, summarise } from '@/store/backup';
 import { BackupCard, describeImport } from '@/ui/BackupCard';
 
+// The only import route now is the system file picker, so that is what the tests drive.
+const mockPickTextFile = jest.fn();
+jest.mock('@/lib/transfer', () => {
+  const actual = jest.requireActual('@/lib/transfer');
+  return { ...actual, pickTextFile: () => mockPickTextFile(), canPickFile: () => true };
+});
+
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
   Stack: { Screen: () => null },
@@ -29,6 +36,7 @@ function trainedUser() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockPickTextFile.mockResolvedValue(null);
   store().resetAll();
 });
 
@@ -91,10 +99,10 @@ describe('importing', () => {
     return text;
   }
 
-  async function paste(text: string) {
-    await fireEvent.press(screen.getByTestId('paste-backup'));
-    await fireEvent.changeText(screen.getByTestId('paste-input'), text);
-    await fireEvent.press(screen.getByTestId('paste-import'));
+  /** Picks `text` as though the user chose that file from the system picker. */
+  async function importFile(text: string) {
+    mockPickTextFile.mockResolvedValue(text);
+    await fireEvent.press(screen.getByTestId('import-backup'));
   }
 
   it('restores a backup onto an empty device', async () => {
@@ -102,7 +110,7 @@ describe('importing', () => {
     await renderScreen(<BackupCard />);
     expect(store().plans).toHaveLength(0);
 
-    await paste(text);
+    await importFile(text);
     await confirmDialog();
 
     expect(store().plans).toHaveLength(1);
@@ -117,7 +125,7 @@ describe('importing', () => {
     store().addPlanItem(other, SQUAT);
 
     await renderScreen(<BackupCard />);
-    await paste(text);
+    await importFile(text);
 
     expect(screen.getByText('Replace everything on this device?')).toBeTruthy();
   });
@@ -128,7 +136,7 @@ describe('importing', () => {
     store().addPlanItem(other, SQUAT);
 
     await renderScreen(<BackupCard />);
-    await paste(text);
+    await importFile(text);
     await cancelDialog();
 
     expect(store().plans.map((p) => p.name)).toEqual(['Leg day']);
@@ -140,7 +148,7 @@ describe('importing', () => {
     store().addPlanItem(other, SQUAT);
 
     await renderScreen(<BackupCard />);
-    await paste(text);
+    await importFile(text);
     await confirmDialog();
 
     expect(store().plans.map((p) => p.name)).toEqual(['Push day']);
@@ -150,9 +158,9 @@ describe('importing', () => {
     trainedUser();
     await renderScreen(<BackupCard />);
 
-    await paste('this is my shopping list');
+    await importFile('this is my shopping list');
 
-    expect(screen.getByTestId('paste-error')).toBeTruthy();
+    expect(screen.getByTestId('backup-error')).toBeTruthy();
     expect(store().plans).toHaveLength(1);
   });
 
@@ -162,7 +170,7 @@ describe('importing', () => {
     const text = backupText();
 
     await renderScreen(<BackupCard />);
-    await paste(text);
+    await importFile(text);
     await confirmDialog();
 
     expect(store().settings.unit).toBe('lb');

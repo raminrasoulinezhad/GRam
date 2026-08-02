@@ -50,8 +50,6 @@ export function BackupCard() {
 
   const [exported, setExported] = useState<{ text: string; filename: string } | null>(null);
   const [note, setNote] = useState<string | null>(null);
-  const [pasting, setPasting] = useState(false);
-  const [pasted, setPasted] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [target, setTarget] = useState<string | null>(null);
 
@@ -139,8 +137,6 @@ export function BackupCard() {
     if (!ok) return;
 
     replaceAll(toLiveState(backup.state));
-    setPasting(false);
-    setPasted('');
     setNote(
       `Imported ${backup.summary.plans} plan${backup.summary.plans === 1 ? '' : 's'} and ` +
         `${backup.summary.sessions} workout${backup.summary.sessions === 1 ? '' : 's'}.`,
@@ -228,7 +224,7 @@ export function BackupCard() {
 
         <View style={s.actions}>
           <Button
-            label="Export a backup"
+            label="Export"
             testID="export-backup"
             style={{ flex: 1 }}
             onPress={() => void handleExport()}
@@ -241,15 +237,6 @@ export function BackupCard() {
               onPress={() => void handlePickFile()}
             />
           ) : null}
-          <Button
-            label="Paste"
-            variant="secondary"
-            testID="paste-backup"
-            onPress={() => {
-              setError(null);
-              setPasting(true);
-            }}
-          />
         </View>
 
         {note !== null ? (
@@ -384,52 +371,6 @@ export function BackupCard() {
         </Card>
       ) : null}
 
-      {pasting ? (
-        <Modal visible transparent animationType="slide" onRequestClose={() => setPasting(false)}>
-          <View style={s.backdrop}>
-            <View style={s.sheet}>
-              <View style={s.sheetHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.sheetTitle}>Paste a backup</Text>
-                  <Dim>For when the file is in a note or a message rather than in Files.</Dim>
-                </View>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  testID="paste-close"
-                  hitSlop={12}
-                  onPress={() => setPasting(false)}
-                  style={s.close}
-                >
-                  <Ionicons name="close" size={22} color={theme.color.text} />
-                </Pressable>
-              </View>
-              <ScrollView contentContainerStyle={s.sheetBody}>
-                <TextInput
-                  testID="paste-input"
-                  value={pasted}
-                  onChangeText={setPasted}
-                  multiline
-                  placeholder="Paste the contents of your backup file here"
-                  placeholderTextColor={theme.color.textFaint}
-                  style={[s.textArea, s.pasteArea]}
-                />
-                {error !== null ? (
-                  <Dim style={{ color: theme.color.danger }} testID="paste-error">
-                    {error}
-                  </Dim>
-                ) : null}
-                <Button
-                  label="Import this"
-                  testID="paste-import"
-                  disabled={pasted.trim().length === 0}
-                  onPress={() => void applyImport(pasted)}
-                />
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-      ) : null}
     </>
   );
 }
