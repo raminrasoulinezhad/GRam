@@ -15,7 +15,7 @@ import type { Plan, Profile, Session, Settings } from './types';
  *   3. Add the old payload to the fixtures in __tests__/migrations.test.ts.
  * Never edit an existing step - someone out there is still on that version.
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
   unit: 'kg',
@@ -23,6 +23,7 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultSetCount: 3,
   bodyGender: 'male',
   unitSeededFromDevice: false,
+  showExercisePhotos: true,
 };
 
 export const DEFAULT_PROFILE: Profile = {
@@ -42,6 +43,8 @@ export type PersistedState = {
   settings: Settings;
   profile: Profile;
   activeSessionId: string | null;
+  /** Milestone ids already shown to the user, so a celebration never repeats. */
+  celebratedMilestones: string[];
 };
 
 /** A single forward step. Receives the previous version's shape, returns the next one. */
@@ -64,6 +67,17 @@ const MIGRATIONS: Record<number, Migration> = {
       // so the region default cannot overwrite it on the first launch after upgrading.
       unitSeededFromDevice: true,
     },
+  }),
+  // v2 -> v3: the exercise-photo switch, and a record of which milestones have already been
+  // celebrated. An existing user has earned their milestones quietly up to now, so they are
+  // backfilled as already seen rather than firing a stack of popups on first launch - that is
+  // handled where the state is first computed, not here.
+  3: (state) => ({
+    ...state,
+    settings: { ...DEFAULT_SETTINGS, ...(asRecord(state.settings) ?? {}) },
+    celebratedMilestones: Array.isArray(state.celebratedMilestones)
+      ? state.celebratedMilestones
+      : [],
   }),
 };
 
@@ -111,5 +125,8 @@ export function coerce(state: Record<string, unknown>): PersistedState {
     settings: { ...DEFAULT_SETTINGS, ...(asRecord(state.settings) ?? {}) },
     profile: { ...DEFAULT_PROFILE, ...(asRecord(state.profile) ?? {}) },
     activeSessionId: typeof activeSessionId === 'string' ? activeSessionId : null,
+    celebratedMilestones: asArray<string>(state.celebratedMilestones).filter(
+      (x) => typeof x === 'string',
+    ),
   };
 }

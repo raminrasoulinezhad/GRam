@@ -1,20 +1,33 @@
-import { render, screen } from '@testing-library/react-native';
-import { getExercise, MUSCLES } from '@/catalog';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { getExercise, imageUrl, MUSCLES } from '@/catalog';
 import { ExerciseThumb } from '@/ui/ExerciseThumb';
 import { MUSCLE_VIEW, REGIONS } from '@/ui/MuscleGlyph';
 
 const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
 
 describe('exercise thumbnail', () => {
+  it('shows the demonstration photo', async () => {
+    const { toJSON } = await render(<ExerciseThumb exerciseId={BENCH} />);
+    expect(JSON.stringify(toJSON())).toContain(imageUrl(getExercise(BENCH)!.images[0]));
+  });
+
   it('labels the row with the exercise and the muscle it works', async () => {
     await render(<ExerciseThumb exerciseId={BENCH} />);
     expect(screen.getByLabelText(`${getExercise(BENCH)!.name}, works chest`)).toBeTruthy();
   });
 
-  it('renders without a network request of any kind', async () => {
+  it('keeps a drawn glyph underneath, so an offline row still reads as chest or legs', async () => {
     const { toJSON } = await render(<ExerciseThumb exerciseId={BENCH} />);
-    // Nothing in the tree may reference a remote host: the glyph is drawn, not fetched.
-    expect(JSON.stringify(toJSON())).not.toContain('http');
+    const tree = JSON.stringify(toJSON());
+    // Both are present: the glyph renders behind the photo rather than instead of it.
+    expect(tree).toContain('chest');
+    expect(tree).toContain(imageUrl(getExercise(BENCH)!.images[0]));
+  });
+
+  it('drops the photo and leaves the glyph when the image fails to load', async () => {
+    const { toJSON } = await render(<ExerciseThumb exerciseId={BENCH} />);
+    await fireEvent(screen.getByTestId(`thumb-photo-${BENCH}`), 'error');
+    expect(JSON.stringify(toJSON())).not.toContain('githubusercontent');
   });
 
   it('degrades to a plain body rather than crashing on an unknown exercise', async () => {

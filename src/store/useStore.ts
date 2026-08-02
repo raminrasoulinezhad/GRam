@@ -42,6 +42,7 @@ type State = {
   profile: Profile;
   /** At most one session is live at a time; the tab bar surfaces it. */
   activeSessionId: string | null;
+  celebratedMilestones: string[];
 };
 
 type Actions = {
@@ -82,6 +83,8 @@ type Actions = {
   updateSettings: (patch: Partial<Settings>) => void;
   /** Applies the phone's region default for weight units, once, before the user has chosen. */
   seedUnitFromDevice: (unit: 'kg' | 'lb') => void;
+  /** Records milestone ids as seen, so their celebration is not shown again. */
+  markMilestonesSeen: (ids: string[]) => void;
   resetAll: () => void;
 };
 
@@ -118,6 +121,7 @@ export const useStore = create<State & Actions>()(
       settings: DEFAULT_SETTINGS,
       profile: DEFAULT_PROFILE,
       activeSessionId: null,
+      celebratedMilestones: [],
 
       // ---------------------------------------------------------------- plans
       createPlan: (name) => {
@@ -412,6 +416,11 @@ export const useStore = create<State & Actions>()(
             : { settings: { ...s.settings, unit, unitSeededFromDevice: true } },
         ),
 
+      markMilestonesSeen: (ids) =>
+        set((s) => ({
+          celebratedMilestones: [...new Set([...s.celebratedMilestones, ...ids])],
+        })),
+
       resetAll: () =>
         set({
           plans: [],
@@ -419,6 +428,7 @@ export const useStore = create<State & Actions>()(
           settings: DEFAULT_SETTINGS,
           profile: DEFAULT_PROFILE,
           activeSessionId: null,
+          celebratedMilestones: [],
         }),
     }),
     {
@@ -431,6 +441,7 @@ export const useStore = create<State & Actions>()(
         settings: s.settings,
         profile: s.profile,
         activeSessionId: s.activeSessionId,
+        celebratedMilestones: s.celebratedMilestones,
       }),
       version: SCHEMA_VERSION,
       // Synchronous by contract - see the note in migrations.ts. An async migrate silently

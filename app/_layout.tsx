@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConfirmProvider } from '@/ui/confirm';
+import { MilestoneCelebration } from '@/ui/Milestones';
 import { Splash } from '@/ui/Splash';
 import { theme } from '@/ui/theme';
 
@@ -29,6 +30,7 @@ export default function RootLayout() {
             <Stack.Screen name="picker" options={{ presentation: 'modal', title: 'Add exercise' }} />
             <Stack.Screen name="history/[id]" options={{ title: 'Workout' }} />
             </Stack>
+            <MilestoneCelebration />
           </ConfirmProvider>
         </Splash>
       </SafeAreaProvider>

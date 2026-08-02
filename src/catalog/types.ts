@@ -25,6 +25,8 @@ export type Exercise = {
   primaryMuscles: Muscle[];
   secondaryMuscles: Muscle[];
   instructions: string[];
+  /** Repo-relative image paths, e.g. "Barbell_Curl/0.jpg". Resolve with imageUrl(). */
+  images: string[];
   kind: SetKind;
 };
 

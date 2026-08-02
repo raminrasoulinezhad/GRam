@@ -97,6 +97,42 @@ describe('upgrading from v1', () => {
   });
 });
 
+/** A v2 payload: profile and unit-seed flag present, no photo switch, no milestone record. */
+const V2_PAYLOAD = {
+  ...V1_PAYLOAD,
+  settings: {
+    unit: 'kg',
+    defaultRestSec: 90,
+    defaultSetCount: 3,
+    bodyGender: 'male',
+    unitSeededFromDevice: true,
+  },
+  profile: { ...DEFAULT_PROFILE, displayName: 'Existing user', weightKg: 82 },
+};
+
+describe('upgrading from v2', () => {
+  const migrated = migratePersisted(V2_PAYLOAD, 2);
+
+  it('keeps the training log and the profile the user filled in', () => {
+    expect(migrated.sessions[0].entries[0].sets).toHaveLength(2);
+    expect(migrated.profile.displayName).toBe('Existing user');
+    expect(migrated.profile.weightKg).toBe(82);
+  });
+
+  it('turns exercise photos on by default, matching previous behaviour', () => {
+    expect(migrated.settings.showExercisePhotos).toBe(true);
+  });
+
+  it('starts with no milestones recorded as seen', () => {
+    expect(migrated.celebratedMilestones).toEqual([]);
+  });
+
+  it('does not disturb the unit the user had chosen', () => {
+    expect(migrated.settings.unit).toBe('kg');
+    expect(migrated.settings.unitSeededFromDevice).toBe(true);
+  });
+});
+
 describe('upgrading from an unversioned install', () => {
   it('runs every step in order from v0', () => {
     const migrated = migratePersisted(V1_PAYLOAD, 0);

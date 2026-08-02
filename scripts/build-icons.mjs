@@ -27,12 +27,34 @@ const ICONS = resolve(ROOT, 'public/icons');
 /** Brand background. Icons must be opaque - iOS renders transparency as black. */
 const BG = '#0B1220';
 
+/** Shield bounds within assets/brand/icon-source.png (719x719). */
+const ICON_CROP = '664x664+28+22';
+
+/*
+ * The two splash images are full-bleed gym scenes with the logo composited on. Both carry a
+ * decorative four-point sparkle near the bottom-right that reads as a blemish once the image
+ * is behind an app. It sits close enough to the edge to crop out, which is cleaner than
+ * retouching it - the texture there has a hard equipment edge running through it, so cloning
+ * or blurring leaves a worse mark than the sparkle did.
+ */
+const LOGO_CROP_WIDE = '2470x1536+0+0';
+const LOGO_CROP_PORTRAIT = '1536x2430+0+0';
+
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
   const hit = args.find((a) => a.startsWith(`--${name}=`));
   return hit ? hit.split('=')[1] : fallback;
 };
 const noTrim = args.includes('--no-trim');
+/**
+ * Explicit crop, WxH+X+Y, applied before anything else.
+ *
+ * The supplied icon artwork sits on a brushed-metal tile whose gradient defeats --trim: there
+ * is no uniform border to detect, so an automatic crop keeps the whole tile. The shield's box
+ * was measured by eye once and recorded here so the result is reproducible rather than a
+ * one-off command someone has to remember.
+ */
+const crop = flag('crop', ICON_CROP);
 /** Percentage of the canvas left as margin around the artwork. */
 const inset = Number(flag('inset', '8'));
 
@@ -53,10 +75,11 @@ function requireTool() {
  * Crops to the artwork, squares it up on the brand background, and leaves an even margin.
  * Cropping to a square *before* insetting keeps the artwork centred rather than stretched.
  */
-function normalise(source, out, size) {
-  const inner = Math.round(size * (1 - inset / 100 * 2));
+function normalise(source, out, size, { useCrop = true } = {}) {
+  const inner = Math.round(size * (1 - (inset / 100) * 2));
   const cmd = [source];
-  if (!noTrim) cmd.push('-fuzz', '12%', '-trim', '+repage');
+  if (useCrop && crop) cmd.push('-crop', crop, '+repage');
+  else if (!noTrim) cmd.push('-fuzz', '12%', '-trim', '+repage');
   cmd.push(
     '-background', 'none',
     '-resize', `${inner}x${inner}`,
@@ -98,7 +121,7 @@ function main() {
   const maskableInset = Math.max(inset, 20);
   const inner = Math.round(512 * (1 - (maskableInset / 100) * 2));
   const cmd = [iconSource];
-  if (!noTrim) cmd.push('-fuzz', '12%', '-trim', '+repage');
+  if (crop) cmd.push('-crop', crop, '+repage');
   cmd.push(
     '-background', 'none',
     '-resize', `${inner}x${inner}`,
@@ -113,7 +136,7 @@ function main() {
 
   // Android adaptive icons are composited by the OS, so the foreground keeps its transparency.
   const fgCmd = [iconSource];
-  if (!noTrim) fgCmd.push('-fuzz', '12%', '-trim', '+repage');
+  if (crop) fgCmd.push('-crop', crop, '+repage');
   fgCmd.push(
     '-background', 'none',
     '-resize', '300x300',
@@ -125,15 +148,26 @@ function main() {
   convert(['-size', '512x512', `xc:${BG}`, resolve(ROOT, 'assets/android-icon-background.png')]);
 
   // The splash keeps its transparency - it sits on the app's own background.
-  const splashSource = existsSync(logoSource) ? logoSource : iconSource;
-  const splashCmd = [splashSource];
-  if (!noTrim) splashCmd.push('-fuzz', '12%', '-trim', '+repage');
-  splashCmd.push('-background', 'none', '-resize', '1200x1200', resolve(ROOT, 'assets/logo.png'));
-  convert(splashCmd);
+  // Two splash images: a wide one for a landscape window, a tall one that fills a phone.
+  // Displayed full-bleed, so they keep their scene and are only cropped, never padded.
+  // JPEG, not PNG: these are photographs, and PNG was costing 2MB each - more than half the
+  // entire app download - for an image shown for under two seconds.
+  for (const [src, out, box] of [
+    [logoSource, 'assets/logo.jpg', LOGO_CROP_WIDE],
+    [resolve(BRAND, 'logo-source-cellphone.png'), 'assets/logo-portrait.jpg', LOGO_CROP_PORTRAIT],
+  ]) {
+    if (!existsSync(src)) continue;
+    convert([
+      src, '-crop', box, '+repage',
+      '-resize', '1200x1200>',
+      '-strip', '-interlace', 'Plane', '-sampling-factor', '4:2:0', '-quality', '80',
+      resolve(ROOT, out),
+    ]);
+  }
 
   process.stdout.write(
-    `Icons rebuilt from ${existsSync(logoSource) ? 'icon-source.png + logo-source.png' : 'icon-source.png'}.\n` +
-      `  trim: ${noTrim ? 'off' : 'on'}   inset: ${inset}%\n` +
+    `Icons rebuilt.\n` +
+      `  crop: ${crop || '(auto-trim)'}   inset: ${inset}%\n` +
       `Check public/icons/ and assets/, then: npm run build:web\n`,
   );
 }

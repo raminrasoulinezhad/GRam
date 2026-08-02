@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { getExercise, SET_KIND_LABEL } from '@/catalog';
+import { getExercise, imageUrl, SET_KIND_LABEL } from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDate, formatSet, relativeTime, titleCase } from '@/lib/format';
 import { exerciseHistory, selectSessions, useStore } from '@/store/useStore';
 import { Body, Card, Chip, Dim, Empty, H2, Screen } from '@/ui/components';
-import { MuscleGlyph } from '@/ui/MuscleGlyph';
+import { BodyMap, exerciseMuscleValues } from '@/ui/BodyMap';
 import { theme } from '@/ui/theme';
 
 export default function ExerciseDetailScreen() {
@@ -14,7 +14,13 @@ export default function ExerciseDetailScreen() {
   const exercise = getExercise(id);
   const unit = useStore((s) => s.settings.unit);
   const sessions = useStore(selectSessions);
+  const bodyGender = useStore((s) => s.settings.bodyGender);
+  const showPhotos = useStore((s) => s.settings.showExercisePhotos);
   const history = useMemo(() => exerciseHistory(sessions, id), [sessions, id]);
+  const muscleValues = useMemo(
+    () => exerciseMuscleValues(exercise?.primaryMuscles ?? [], exercise?.secondaryMuscles ?? []),
+    [exercise],
+  );
 
   if (!exercise) {
     return (
@@ -39,23 +45,36 @@ export default function ExerciseDetailScreen() {
           <Chip label={SET_KIND_LABEL[exercise.kind]} />
         </View>
 
-        <Card style={s.glyphCard}>
-          <MuscleGlyph muscle={exercise.primaryMuscles[0]} size={132} />
-          <View style={{ flex: 1 }}>
-            <Dim>Primary target</Dim>
-            <Text style={s.glyphMuscle}>
-              {exercise.primaryMuscles.map((m) => MUSCLE_LABEL[m]).join(', ')}
-            </Text>
-            <Dim style={{ marginTop: theme.space(2) }}>
-              {exercise.secondaryMuscles.length > 0
-                ? `Also works ${exercise.secondaryMuscles.map((m) => MUSCLE_LABEL[m]).join(', ').toLowerCase()}.`
-                : 'No significant assisting muscles.'}
-            </Dim>
+        {/* The dataset ships a start and an end frame; side by side they read as the movement. */}
+        {showPhotos && exercise.images.length > 0 ? (
+          <View style={s.images}>
+            {exercise.images.map((path, i) => (
+              <View key={path} style={s.imageWrap}>
+                <Image
+                  source={{ uri: imageUrl(path) }}
+                  style={s.image}
+                  resizeMode="cover"
+                  accessibilityLabel={`${exercise.name}, position ${i + 1}`}
+                />
+                <Text style={s.imageCaption}>{i === 0 ? 'START' : 'FINISH'}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        <Card>
+          <H2>Muscles involved</H2>
+          <Dim style={{ marginTop: theme.space(1) }}>
+            Drawn the same way as the Body tab. Solid colour is the muscle this movement targets;
+            cooler shades are the ones assisting it.
+          </Dim>
+          <View style={{ marginTop: theme.space(3) }}>
+            <BodyMap values={muscleValues} max={1} scale={0.72} gender={bodyGender} />
           </View>
         </Card>
 
         <Card>
-          <H2>Muscles worked</H2>
+          <H2>Breakdown</H2>
           <Dim style={{ marginTop: theme.space(1) }}>Primary</Dim>
           <View style={s.muscleRow}>
             {exercise.primaryMuscles.map((m) => (
@@ -120,8 +139,22 @@ const s = StyleSheet.create({
   content: { padding: theme.space(4), gap: theme.space(3), paddingBottom: theme.space(12) },
   title: { color: theme.color.text, fontSize: theme.font.h1, fontWeight: '800', letterSpacing: -0.5 },
   facts: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space(1.5) },
-  glyphCard: { flexDirection: 'row', alignItems: 'center', gap: theme.space(4) },
-  glyphMuscle: { color: theme.color.text, fontSize: theme.font.h3, fontWeight: '700' },
+  images: { flexDirection: 'row', gap: theme.space(2) },
+  imageWrap: { flex: 1 },
+  image: {
+    width: '100%',
+    aspectRatio: 4 / 3,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.color.surfaceAlt,
+  },
+  imageCaption: {
+    color: theme.color.textFaint,
+    fontSize: theme.font.tiny,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginTop: theme.space(1),
+    textAlign: 'center',
+  },
   muscleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space(1.5), marginTop: theme.space(1.5) },
   step: { flexDirection: 'row', gap: theme.space(3), marginTop: theme.space(3) },
   stepNum: {

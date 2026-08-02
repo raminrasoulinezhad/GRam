@@ -8,6 +8,7 @@ import { completedSessions, selectSessions, useStore } from '@/store/useStore';
 import { countLoggedSets } from '@/analytics/volume';
 import { Button, Card, Chip, Dim, H2, NumberField, Screen } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
+import { MilestonesCard } from '@/ui/Milestones';
 import { theme } from '@/ui/theme';
 
 const GOALS: { value: TrainingGoal; label: string; blurb: string }[] = [
@@ -150,6 +151,8 @@ export default function ProfileScreen() {
           </View>
         </Card>
 
+        <MilestonesCard />
+
         <Card>
           <H2>Training</H2>
           <Text style={[s.label, s.spaced]}>GOAL</Text>
@@ -211,6 +214,25 @@ export default function ProfileScreen() {
           <Dim style={s.hint}>
             Defaulted from your phone's region settings. Weights are always stored in kilograms,
             so switching never rewrites your history.
+          </Dim>
+
+          <Text style={[s.label, s.spaced]}>EXERCISE PHOTOS</Text>
+          <View style={s.row}>
+            <Chip
+              label="Show photos"
+              active={settings.showExercisePhotos}
+              onPress={() => updateSettings({ showExercisePhotos: true })}
+            />
+            <Chip
+              label="Drawings only"
+              active={!settings.showExercisePhotos}
+              onPress={() => updateSettings({ showExercisePhotos: false })}
+            />
+          </View>
+          <Dim style={s.hint}>
+            Photos come from a public exercise dataset whose image licence was never confirmed by
+            its maintainer. Turning them off uses the drawn muscle figures instead, which need no
+            network and carry no third-party rights. See THIRD-PARTY-NOTICES.md.
           </Dim>
         </Card>
 

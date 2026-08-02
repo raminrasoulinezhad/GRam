@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Animated, Easing, Image, Platform, StyleSheet, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Image,
+  Platform,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useStore } from '@/store/useStore';
 import { theme } from './theme';
 
@@ -18,6 +26,11 @@ const FADE_MS = 320;
 export function Splash({ children }: { children: ReactNode }) {
   const [done, setDone] = useState(false);
   const opacity = useRef(new Animated.Value(1)).current;
+  const { width, height } = useWindowDimensions();
+
+  // Two versions of the artwork: a tall one that fills a phone, a wide one for a landscape
+  // window. Using the wide logo on a phone would leave it stranded in a band of empty space.
+  const portrait = height >= width;
 
   useEffect(() => {
     let cancelled = false;
@@ -70,9 +83,13 @@ export function Splash({ children }: { children: ReactNode }) {
       {!done ? (
         <Animated.View style={[s.overlay, { opacity }]} pointerEvents="none" testID="splash">
           <Image
-            source={require('../../assets/logo.png')}
-            style={s.logo}
-            resizeMode="contain"
+            source={
+              portrait
+                ? require('../../assets/logo-portrait.jpg')
+                : require('../../assets/logo.jpg')
+            }
+            style={s.image}
+            resizeMode="cover"
             accessibilityLabel="FitRam"
           />
         </Animated.View>
@@ -94,5 +111,6 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 10,
   },
-  logo: { width: '68%', maxWidth: 340, aspectRatio: 1 },
+  // Full-bleed: the artwork is a scene, not a logo on a flat colour, so it fills the screen.
+  image: { width: '100%', height: '100%' },
 });

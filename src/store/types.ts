@@ -59,6 +59,11 @@ export type Settings = {
   defaultSetCount: number;
   bodyGender: 'male' | 'female';
   /**
+   * Whether to load exercise photographs from the upstream CDN. Off falls back to the drawn
+   * muscle glyphs, which need no network and carry no third-party rights.
+   */
+  showExercisePhotos: boolean;
+  /**
    * False until the unit has been defaulted from the phone's region once. Prevents a later
    * app launch from overwriting a unit the user has deliberately changed.
    */

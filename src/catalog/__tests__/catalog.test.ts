@@ -5,6 +5,7 @@ import {
   LEVELS,
   MUSCLES,
   getExercise,
+  imageUrl,
   exerciseName,
   searchExercises,
 } from '@/catalog';
@@ -35,20 +36,17 @@ describe('bundled catalog integrity', () => {
     expect(orphans).toEqual([]);
   });
 
-  it('gives every exercise a set kind', () => {
+  it('gives every exercise a set kind and demonstration images', () => {
     for (const e of EXERCISES) {
       expect(['weight_reps', 'reps', 'time', 'distance_time']).toContain(e.kind);
+      expect(e.images.length).toBeGreaterThan(0);
     }
   });
 
-  it('carries no third-party image paths', () => {
-    // The upstream photographs have unresolved provenance, so the pipeline drops them and the
-    // app draws its own muscle glyphs. This guards against them creeping back in on a rebuild.
-    for (const e of EXERCISES) {
-      expect(e).not.toHaveProperty('images');
-    }
-    expect(JSON.stringify(EXERCISES)).not.toContain('githubusercontent');
-    expect(JSON.stringify(EXERCISES)).not.toContain('.jpg');
+  it('resolves image paths to the upstream CDN', () => {
+    expect(imageUrl('Barbell_Curl/0.jpg')).toBe(
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/0.jpg',
+    );
   });
 
   it('never lists a muscle as both primary and secondary', () => {

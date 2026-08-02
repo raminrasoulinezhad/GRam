@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import Body, { type ExtendedBodyPart } from 'react-native-body-highlighter';
 import { MUSCLES } from '@/catalog';
-import { MUSCLE_LABEL, TRACKED_SLUGS, toSlugValues } from '@/analytics/muscleMap';
+import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { recovery, volumeInWindow, WEEKLY_TARGET_SETS } from '@/analytics/volume';
 import { completedSessions, selectSessions, useStore } from '@/store/useStore';
 import { Card, Chip, Dim, Empty, H2, Screen } from '@/ui/components';
-import { rampColor, rampIntensity, theme } from '@/ui/theme';
+import { BodyMap } from '@/ui/BodyMap';
+import { rampColor, theme } from '@/ui/theme';
 
 type Mode = 'volume' | 'recovery';
 
@@ -25,21 +25,13 @@ export default function BodyScreen() {
 
   const max = mode === 'volume' ? WEEKLY_TARGET_SETS : 100;
 
-  const data = useMemo<ExtendedBodyPart[]>(() => {
-    // Recovery is inverted for colouring: a *fresh* muscle should read cold, a fried one hot.
-    const forDisplay = { ...totals };
-    if (mode === 'recovery') {
-      for (const m of MUSCLES) forDisplay[m] = 100 - totals[m];
-    }
-    const bySlug = toSlugValues(forDisplay);
-    // Emit an entry for every tracked slug, not just the worked ones. The library's
-    // `defaultFill` prop does not reach the rendered paths, so an untouched muscle would
-    // otherwise keep the library's grey and clash with the cold end of our legend.
-    return TRACKED_SLUGS.map((slug) => ({
-      slug,
-      intensity: rampIntensity(bySlug.get(slug) ?? 0, max),
-    }));
-  }, [totals, mode, max]);
+  // Recovery is inverted for colouring: a *fresh* muscle should read cold, a fried one hot.
+  const displayValues = useMemo(() => {
+    if (mode !== 'recovery') return totals;
+    const inverted = { ...totals };
+    for (const m of MUSCLES) inverted[m] = 100 - totals[m];
+    return inverted;
+  }, [totals, mode]);
 
   const rows = useMemo(
     () =>
@@ -70,32 +62,7 @@ export default function BodyScreen() {
         </Dim>
 
         <Card style={s.bodyCard}>
-          <View style={s.bodies}>
-            <View style={s.bodyCol}>
-              <Body
-                data={data}
-                gender={gender}
-                side="front"
-                scale={0.85}
-                colors={[...theme.color.ramp]}
-                defaultFill={theme.color.ramp[0]}
-                border={theme.color.border}
-              />
-              <Text style={s.sideLabel}>FRONT</Text>
-            </View>
-            <View style={s.bodyCol}>
-              <Body
-                data={data}
-                gender={gender}
-                side="back"
-                scale={0.85}
-                colors={[...theme.color.ramp]}
-                defaultFill={theme.color.ramp[0]}
-                border={theme.color.border}
-              />
-              <Text style={s.sideLabel}>BACK</Text>
-            </View>
-          </View>
+          <BodyMap values={displayValues} max={max} gender={gender} />
 
           <View style={s.legend}>
             <Text style={s.legendEnd}>{mode === 'volume' ? '0 sets' : 'fresh'}</Text>
@@ -157,14 +124,6 @@ const s = StyleSheet.create({
   modeRow: { flexDirection: 'row', gap: theme.space(2) },
   explainer: { lineHeight: 19 },
   bodyCard: { alignItems: 'center', paddingVertical: theme.space(4) },
-  bodies: { flexDirection: 'row', gap: theme.space(4), justifyContent: 'center' },
-  bodyCol: { alignItems: 'center', gap: theme.space(2) },
-  sideLabel: {
-    color: theme.color.textFaint,
-    fontSize: theme.font.tiny,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-  },
   legend: {
     flexDirection: 'row',
     alignItems: 'center',

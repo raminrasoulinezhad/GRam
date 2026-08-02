@@ -2,8 +2,8 @@
  * Service worker for the installed (home-screen) app.
  *
  * Goal: FitRam opens and works in a gym basement with no signal. The app shell - HTML, the JS
- * bundle, icons - is cached on install and served from cache first. Nothing is fetched from any
- * other origin, so there is no third-party caching to reason about.
+ * bundle, icons - is cached on install and served from cache first. Exercise photographs come
+ * from an external CDN and are cached opportunistically as you view them.
  *
  * Deliberately simple. There is no user data here to sync: everything the user records lives in
  * localStorage, which the browser persists independently of this cache.
@@ -22,6 +22,8 @@ const CACHE = 'fitram-__BUILD_ID__';
  * signal would get a blank screen. Precaching on install fixes that.
  */
 const BUILD_ASSETS = __PRECACHE__;
+
+const PHOTO_HOST = 'raw.githubusercontent.com';
 
 const SHELL = [
   '/',
@@ -57,6 +59,26 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+
+  // Exercise photographs: cache on first view, then serve offline forever.
+  if (url.hostname === PHOTO_HOST) {
+    event.respondWith(
+      caches.match(request).then(
+        (hit) =>
+          hit ??
+          fetch(request)
+            .then((response) => {
+              if (response.ok) {
+                const copy = response.clone();
+                caches.open(CACHE).then((cache) => cache.put(request, copy));
+              }
+              return response;
+            })
+            .catch(() => new Response('', { status: 504 })),
+      ),
+    );
+    return;
+  }
 
   if (url.origin !== self.location.origin) return;
 
