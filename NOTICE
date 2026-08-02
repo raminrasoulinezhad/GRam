@@ -24,11 +24,10 @@ Exercise data
     under the Unlicense (public domain dedication). No attribution is required;
     it is given voluntarily.
 
-Exercise demonstration photographs
-    NOT bundled in this repository. The how-to screens load them at runtime from
-    the free-exercise-db repository. Their copyright status is UNRESOLVED
-    upstream - see THIRD-PARTY-NOTICES.md before shipping this app publicly or
-    commercially.
+Exercise artwork
+    Original to this project. The upstream dataset's photographs are not used -
+    their copyright status was never established - so the app draws its own
+    muscle glyphs instead. See THIRD-PARTY-NOTICES.md.
 
 Bundled software dependencies
     All runtime dependencies are MIT licensed. Their copyright notices and the

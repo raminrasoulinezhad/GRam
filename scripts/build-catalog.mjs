@@ -127,7 +127,9 @@ async function main() {
       primaryMuscles: primary,
       secondaryMuscles: secondary,
       instructions: e.instructions ?? [],
-      images: e.images ?? [],
+      // The upstream photographs are deliberately NOT carried over. Their copyright status
+      // was never established (issues #2 and #12 went unanswered), so the app draws its own
+      // muscle glyphs instead. See THIRD-PARTY-NOTICES.md.
     };
     normalised.kind = defaultSetKind(normalised);
     return normalised;
@@ -159,6 +161,10 @@ export type Mechanic = (typeof MECHANICS)[number];
 export type Equipment = (typeof EQUIPMENT)[number];
 `;
   writeFileSync(resolve(ROOT, 'src/catalog/generated.ts'), ts);
+
+  if (exercises.some((e) => 'images' in e)) {
+    throw new Error('Image paths leaked into the catalog - see the note above.');
+  }
 
   const withoutInstructions = exercises.filter((e) => e.instructions.length === 0).length;
   process.stdout.write(

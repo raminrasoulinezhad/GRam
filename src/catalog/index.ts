@@ -20,12 +20,6 @@ export function exerciseName(id: string): string {
   return BY_ID.get(id)?.name ?? 'Unknown exercise';
 }
 
-const IMAGE_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
-
-export function imageUrl(path: string): string {
-  return IMAGE_BASE + path;
-}
-
 export type CatalogFilters = {
   query?: string;
   muscle?: Muscle | null;

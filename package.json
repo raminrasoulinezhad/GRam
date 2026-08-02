@@ -14,7 +14,8 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "licenses": "node scripts/licenses.mjs",
-    "build:web": "node scripts/build-web.mjs"
+    "build:web": "node scripts/build-web.mjs",
+    "build:icons": "node scripts/build-icons.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.8",

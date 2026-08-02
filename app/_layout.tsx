@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConfirmProvider } from '@/ui/confirm';
+import { Splash } from '@/ui/Splash';
 import { theme } from '@/ui/theme';
 
 export default function RootLayout() {
@@ -10,7 +11,8 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.color.bg }}>
       <SafeAreaProvider>
         <StatusBar style="light" />
-        <ConfirmProvider>
+        <Splash>
+          <ConfirmProvider>
           <Stack
             screenOptions={{
               headerStyle: { backgroundColor: theme.color.bg },
@@ -26,8 +28,9 @@ export default function RootLayout() {
             <Stack.Screen name="exercise/[id]" options={{ title: 'Exercise' }} />
             <Stack.Screen name="picker" options={{ presentation: 'modal', title: 'Add exercise' }} />
             <Stack.Screen name="history/[id]" options={{ title: 'Workout' }} />
-          </Stack>
-        </ConfirmProvider>
+            </Stack>
+          </ConfirmProvider>
+        </Splash>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

@@ -19,52 +19,33 @@ derivations are FitRam's own and fall under Apache 2.0 with the rest of the proj
 
 ---
 
-## 2. Exercise photographs — ⚠️ UNRESOLVED, read before publishing
+## 2. Exercise photographs — removed, deliberately
 
-Each exercise in the dataset references two demonstration photographs. **FitRam does not bundle
-them.** The how-to screen builds a URL at runtime and loads them from the upstream repository:
+The upstream dataset references two demonstration photographs per exercise. **FitRam does not
+use them.** They are not bundled, not linked, and not fetched at runtime.
 
-```
-https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/{id}/{n}.jpg
-```
-
-**The copyright status of these photographs has never been established.** Two people have asked
-the upstream maintainer directly and neither question was answered:
+Their copyright status was never established. The repository's Unlicense declaration covers what
+its maintainer had the right to dedicate, and the photographs appear to have been collected from
+a third-party fitness site, so that dedication probably cannot extend to them. Two people asked
+directly and neither question was answered:
 
 - [Issue #2 — "License of Images?"](https://github.com/yuhonas/free-exercise-db/issues/2) (June 2023) — no maintainer response.
 - [Issue #12 — "Enquiry regarding the license status of the images"](https://github.com/yuhonas/free-exercise-db/issues/12) (March 2024) — closed without a licensing answer.
 
-The repository's Unlicense declaration covers what the maintainer had the right to dedicate. The
-photographs appear to have been collected from a third-party fitness site, so that dedication
-probably cannot extend to them. Treat them as **unlicensed third-party content**.
+Rather than carry an unresolved right, the app draws its own artwork: `src/ui/MuscleGlyph.tsx`
+renders a body silhouette with the exercise's primary muscle highlighted. It is original work
+under this project's Apache-2.0 licence, needs no network, and works offline.
 
-### What this means in practice
+Three things enforce this rather than merely documenting it:
 
-| Use | Assessment |
-|---|---|
-| Running it yourself, on your own phone | Low practical risk — **and this is the only use FitRam supports.** |
-| Publishing to the App Store / Play Store | Would mean redistributing images you have no licence for, and hotlinking someone else's bandwidth. |
-| Commercial use | Not advisable until the images are replaced. |
+- `scripts/build-catalog.mjs` strips the `images` field and **throws** if it reappears.
+- A test asserts the bundled catalog contains no `images` property, no `githubusercontent`
+  reference and no `.jpg` path.
+- A test asserts the rendered thumbnail contains no `http` reference at all.
 
-FitRam is **never published to an app store** ([docs/DISTRIBUTION.md](docs/DISTRIBUTION.md)),
-which keeps this squarely in the first row. The unresolved provenance is one of the reasons for
-that policy. If the policy is ever revisited, replacing the photographs is a precondition, not an
-afterthought.
-
-### How to remove the exposure
-
-The photographs are isolated behind one function, `imageUrl()` in
-[`src/catalog/index.ts`](src/catalog/index.ts), and one component block in
-[`app/exercise/[id].tsx`](app/exercise/[id].tsx). To ship without them, either:
-
-1. **Drop them** — delete the image block; the numbered written instructions carry the how-to on
-   their own.
-2. **Replace them** — commission or shoot your own, or use a properly licensed set (for example
-   CC-BY illustrations, with attribution added here), and repoint `imageUrl()`.
-
-The written `instructions` text sits inside the Unlicense-dedicated JSON and is not affected.
-
----
+The written `instructions` text is retained. It sits inside the JSON the maintainer explicitly
+dedicated to the public domain, and consists of functional descriptions of how to perform a
+physical movement.
 
 ## 3. Bundled software dependencies
 

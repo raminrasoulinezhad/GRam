@@ -1,132 +1,105 @@
+<div align="center">
+
+<img src="assets/brand/hero.png" alt="FitRam — personal workouts & weightlifting" width="720">
+
 # FitRam
 
-A strength-training tracker that plans your sets and shows you which muscles you have actually
-trained. One TypeScript codebase, real iOS and Android apps.
+**Plan your sets. See which muscles you've actually trained.**
 
-Built as a proof of concept reimplementing the core ideas behind [Fitbod](https://fitbod.me) —
-see [docs/STUDY.md](docs/STUDY.md) for what that app does and which parts are reproduced here.
+### [▶ Open FitRam](https://sweet-lebkuchen-740b6f.netlify.app)
 
-> ## 🚫 Never published to an app store
->
-> **FitRam must not be uploaded to the Apple App Store, Google Play, or any other public app
-> store or marketplace — now or in the future.** It is a personal tool, installed directly on its
-> owner's own devices.
->
-> This is enforced structurally: `eas.json` contains no `submit` configuration and produces only
-> APKs, never the app bundle Google Play requires. See
-> [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for the reasoning.
+Free · No account · Works offline · Your data never leaves your phone
 
-**Want to put it on your phone? → [docs/QUICKSTART.md](docs/QUICKSTART.md)** (plain English, no
-jargon.)
+</div>
 
 ---
 
-## What it does today
+## Install it on your phone
 
-| | |
-|---|---|
-| **Exercise catalog** | 873 movements, searchable by name and filterable by muscle, equipment, category and difficulty. |
-| **How-to pages** | Demo photos, numbered instructions, primary and secondary muscles, and your own logged history of that movement. |
-| **Custom plans** | Reusable lists of exercises. Add, remove, reorder; set the default sets, weight, reps and rest per exercise. |
-| **Live workouts** | Start a plan, then add or remove sets, edit weight / reps / time / distance inline, record a set and un-record it, with a rest timer that starts on each recorded set. |
-| **Body heatmap** | Front and back figures coloured by what you have trained — this week's volume, or how recovered each muscle is right now. |
-| **History** | A 7-day rollup and a detail page for every finished workout. |
-| **Profile** | Your body details, goal and equipment, with units defaulted from your phone's region. |
+It installs to your home screen like a normal app — own icon, fullscreen, works with no signal.
 
-Everything is stored on the device. There is no account, no server, and nothing is transmitted
-anywhere.
+### iPhone
 
----
+1. Open **[the app link](https://sweet-lebkuchen-740b6f.netlify.app)** in **Safari**
+   *(must be Safari — Chrome on iOS can't install apps)*
+2. Tap the **Share** button — the square with an arrow, in the bottom bar
+3. Scroll down and tap **Add to Home Screen**
+4. Tap **Add**
 
-## Running it
+### Android
 
-```bash
-npm install
-```
+1. Open **[the app link](https://sweet-lebkuchen-740b6f.netlify.app)** in **Chrome**
+2. Tap the **⋮** menu
+3. Tap **Install app** (or **Add to Home screen**)
 
-**On your phone** — install Expo Go ([iOS](https://apps.apple.com/app/expo-go/id982107779),
-[Android](https://play.google.com/store/apps/details?id=host.exp.exponent)), then:
+Then open it from the new icon. If there's no address bar at the top, it installed properly.
 
-```bash
-npx expo start
-```
-
-Scan the QR code. Works on iPhone and Android from the same command, but needs the dev server
-running.
-
-**In a browser**, for quick checks:
-
-```bash
-npx expo start --web
-```
-
-### Installing it properly
-
-For an app that lives on the phone with its own icon and no computer attached, EAS builds it in
-the cloud — no local Android or Xcode toolchain needed:
-
-```bash
-npx eas login
-npx eas build --profile device --platform android    # APK you install directly
-```
-
-iOS needs a paid Apple Developer account even for direct installs, because Apple has no
-equivalent of Android's sideload. Full walkthrough and the tradeoffs:
-[docs/QUICKSTART.md](docs/QUICKSTART.md).
+> **Open it once while you have signal.** That first launch downloads and stores the whole app on
+> your phone. After that it works anywhere — including a basement gym with no reception.
 
 ---
 
-## Development
+## What it does
 
-```bash
-npm test           # 184 tests
-npm run typecheck  # tsc --noEmit
-npm run licenses   # regenerate the dependency table in THIRD-PARTY-NOTICES.md
-npm run build:catalog   # re-import the exercise dataset from upstream
-```
+### 📋 Build a plan
 
-### Layout
+Pick from **873 exercises**, searchable by name or filtered by muscle, equipment and difficulty.
+Set how many sets you want, at what weight, with how much rest. Save it and reuse it.
 
-```
-app/                     expo-router routes; the file tree is the navigation tree
-  (tabs)/                Plans, Exercises, Body, History, Profile
-  plan/[id]              plan editor
-  session/[id]           the active workout — the screen that matters
-  exercise/[id]          how-to page
-src/
-  catalog/               the bundled exercise data and its search
-  store/                 zustand state, persisted to AsyncStorage
-  analytics/             pure functions: effective sets, recovery, muscle mapping
-  ui/                    shared components and the theme
-scripts/build-catalog.mjs   regenerates assets/data/exercises.json
-```
+### 🏋️ Run your workout
 
-### How training load is measured
+Start a plan and it becomes a live session. Each exercise is one tappable row — open it, and:
 
-In **effective sets**, not tonnage. Each recorded set counts 1.0 for every muscle the exercise
-targets and 0.5 for every muscle it assists.
+- Record a set with one tap, or tap again to un-record it
+- Change the weight, reps, time or distance as you go
+- Add or delete sets on the fly
+- The rest timer starts itself when you record a set
 
-Tonnage cannot compare 100 kg × 5 against a 60-second plank, and it flatters whichever lifts
-happen to move the most absolute weight. Counting sets is how the hypertrophy literature
-expresses weekly volume, and it is the unit behind the widely cited 10–20 sets per muscle per
-week guideline. It also means every exercise in the catalog contributes on the same scale,
-whether it is measured in reps, seconds or metres.
+### 🔥 See what you've trained
 
-Recovery uses the same contributions with exponential decay: a hard 12-set session leaves the
-muscle around 14% recovered immediately, 47% at 48 hours, 64% at 72 hours and 90% at six days.
+The **Body** tab colours a front and back figure by what you've actually worked — either this
+week's volume, or how recovered each muscle is right now. It's the fastest way to notice you've
+skipped legs for two weeks.
+
+### 📈 Look back
+
+Every finished workout is kept, with a 7-day rollup and a full breakdown. Each exercise also
+keeps its own history, so you can see what you lifted last time before deciding today's weight.
 
 ---
 
-## Licensing
+## Questions
 
-FitRam is licensed under the [Apache License 2.0](LICENSE).
+**Does it cost anything?**
+No. No subscription, no account, no ads.
 
-The exercise data comes from [free-exercise-db](https://github.com/yuhonas/free-exercise-db)
-under the Unlicense (public domain).
+**Where is my data?**
+On your phone, and nowhere else. There's no server and no account, so nothing is uploaded and
+nobody — including me — can see your training.
 
-The exercise photographs are loaded from the upstream repository at runtime and are not bundled
-here. Their copyright status was never established upstream, which is one of the reasons this
-app is never published — private use of images is a very different matter from redistributing
-them. Details in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+**Will I lose my workouts when it updates?**
+No. Updates apply automatically the next time you open it, and your data carries across. This is
+tested against real data from older versions.
 
-FitRam is not affiliated with or endorsed by Fitbod.
+**Do my two phones share data?**
+No. Each phone keeps its own separate log, because nothing is synced through a server. Pick one
+as your gym phone.
+
+**Can I use it with no internet?**
+Yes, once it's installed. That's the point.
+
+**What actually deletes my data?**
+Only removing the app from your home screen, clearing your browser storage, or tapping
+**Erase all data** in the Profile tab.
+
+---
+
+## For developers
+
+Setup, architecture, testing and deployment: **[DEVELOPER_README.md](DEVELOPER_README.md)**
+
+FitRam is [Apache 2.0](LICENSE) licensed. It is **never published to an app store** — see
+[docs/DISTRIBUTION.md](docs/DISTRIBUTION.md). All exercise artwork is original; the exercise data
+is public domain. Full accounting in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+Not affiliated with or endorsed by Fitbod.

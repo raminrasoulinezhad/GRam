@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { getExercise, imageUrl, SET_KIND_LABEL } from '@/catalog';
+import { getExercise, SET_KIND_LABEL } from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDate, formatSet, relativeTime, titleCase } from '@/lib/format';
 import { exerciseHistory, selectSessions, useStore } from '@/store/useStore';
 import { Body, Card, Chip, Dim, Empty, H2, Screen } from '@/ui/components';
+import { MuscleGlyph } from '@/ui/MuscleGlyph';
 import { theme } from '@/ui/theme';
 
 export default function ExerciseDetailScreen() {
@@ -38,22 +39,20 @@ export default function ExerciseDetailScreen() {
           <Chip label={SET_KIND_LABEL[exercise.kind]} />
         </View>
 
-        {/* The dataset ships a start and an end frame - shown side by side, they read as the movement. */}
-        {exercise.images.length > 0 ? (
-          <View style={s.images}>
-            {exercise.images.map((path, i) => (
-              <View key={path} style={s.imageWrap}>
-                <Image
-                  source={{ uri: imageUrl(path) }}
-                  style={s.image}
-                  resizeMode="cover"
-                  accessibilityLabel={`${exercise.name}, position ${i + 1}`}
-                />
-                <Text style={s.imageCaption}>{i === 0 ? 'Start' : 'Finish'}</Text>
-              </View>
-            ))}
+        <Card style={s.glyphCard}>
+          <MuscleGlyph muscle={exercise.primaryMuscles[0]} size={132} />
+          <View style={{ flex: 1 }}>
+            <Dim>Primary target</Dim>
+            <Text style={s.glyphMuscle}>
+              {exercise.primaryMuscles.map((m) => MUSCLE_LABEL[m]).join(', ')}
+            </Text>
+            <Dim style={{ marginTop: theme.space(2) }}>
+              {exercise.secondaryMuscles.length > 0
+                ? `Also works ${exercise.secondaryMuscles.map((m) => MUSCLE_LABEL[m]).join(', ').toLowerCase()}.`
+                : 'No significant assisting muscles.'}
+            </Dim>
           </View>
-        ) : null}
+        </Card>
 
         <Card>
           <H2>Muscles worked</H2>
@@ -121,22 +120,8 @@ const s = StyleSheet.create({
   content: { padding: theme.space(4), gap: theme.space(3), paddingBottom: theme.space(12) },
   title: { color: theme.color.text, fontSize: theme.font.h1, fontWeight: '800', letterSpacing: -0.5 },
   facts: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space(1.5) },
-  images: { flexDirection: 'row', gap: theme.space(2) },
-  imageWrap: { flex: 1 },
-  image: {
-    width: '100%',
-    aspectRatio: 4 / 3,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.color.surfaceAlt,
-  },
-  imageCaption: {
-    color: theme.color.textFaint,
-    fontSize: theme.font.tiny,
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginTop: theme.space(1),
-    textAlign: 'center',
-  },
+  glyphCard: { flexDirection: 'row', alignItems: 'center', gap: theme.space(4) },
+  glyphMuscle: { color: theme.color.text, fontSize: theme.font.h3, fontWeight: '700' },
   muscleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space(1.5), marginTop: theme.space(1.5) },
   step: { flexDirection: 'row', gap: theme.space(3), marginTop: theme.space(3) },
   stepNum: {
