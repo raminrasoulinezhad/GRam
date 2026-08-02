@@ -6,13 +6,11 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before 
 
 ## Versioning and tagging
 
-**Commit only when Ramin asks.** Each deploy costs a build, so work accumulates locally and
-goes out in batches rather than one commit per feature. Keep working, keep the tree green, and
-wait to be told.
+**Commit each feature as it lands.** One finished piece of work, one commit — don't sit on a
+green tree waiting to be told.
 
 **Every commit bumps the version and is tagged.** No exceptions, including documentation-only
-commits — the tag history is how a device's version is traced back to a state of the code. A
-batched commit still gets one bump, sized by what is in it.
+commits — the tag history is how a device's version is traced back to a state of the code.
 
 | Asked for | What changes |
 |---|---|
@@ -22,12 +20,21 @@ batched commit still gets one bump, sized by what is in it.
 
 The version lives in **both** `package.json` and `app.json`, and a test fails if they disagree.
 
+**Push only on a minor or major bump.** Every push triggers a Netlify build, and builds cost
+credits, so patch commits accumulate on the local `main` and ride out with the next minor or
+major. Pushing then carries the whole run of them — branch *and* every tag made since the last
+push:
+
 ```bash
-# after staging, for a patch bump to 1.2.1
+# a patch: commit and tag, and stop there
 git commit -m "..."
-git tag -a v1.2.1 -m "..."
-git push origin main && git push origin v1.2.1
+git tag -a v1.2.7 -m "..."
+
+# a minor: same, then ship everything that has piled up behind it
+git push origin main --follow-tags
 ```
+
+Ramin can always ask for a push out of band; the rule is about what happens unprompted.
 
 ## What a minor bump additionally requires
 

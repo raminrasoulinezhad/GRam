@@ -116,6 +116,24 @@ The default is a patch bump; minor and major happen only when asked for.
 
 `version` lives in `app.json` and `package.json` — keep them equal.
 
+### Committing is local; pushing is a release
+
+A push to `origin main` triggers a Netlify build, and builds are metered. So the two halves come
+apart deliberately:
+
+- **Commit and tag every feature**, patch bump, immediately, locally.
+- **Push only when the bump is minor or major.** That push carries the accumulated patch commits
+  and their tags with it — `git push origin main --follow-tags`.
+
+A run of patch tags therefore exists locally before it exists on GitHub. That is fine: the tags
+are numbered from the same `package.json` the commit changed, so nothing renumbers when they
+finally go out. What it does mean is that **the version visible to a phone only ever moves on a
+minor or major release** — the patch numbers in between are a local audit trail, not shipped
+builds.
+
+It also puts the exercise-recommendation review (below) squarely on the release boundary rather
+than somewhere inside the batch, which is where a review is worth doing anyway.
+
 **Build numbers are not your problem.** `eas.json` sets `appVersionSource: "remote"` and
 `autoIncrement` on the production profile, so EAS assigns the iOS build number and Android
 `versionCode`. Both stores reject an upload whose build number did not increase, and
@@ -141,7 +159,8 @@ npm run licenses                  # if dependencies changed
 - [ ] **Exercise recommendations re-reviewed** — see below. The suite will not go green until
       this is done.
 - [ ] `CHANGELOG.md` updated.
-- [ ] Tagged: `git tag -a v0.2.0 -m "..." && git push --tags`
+- [ ] Tagged: `git tag -a v0.2.0 -m "..."` — and pushed with
+      `git push origin main --follow-tags` only if this is a minor or major bump.
 
 ### Re-reviewing the exercise recommendations
 

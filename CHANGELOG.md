@@ -6,6 +6,18 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.7] — 2026-08-02
+
+Storage schema **v7** — unchanged. Documentation only; the app itself is identical to 1.2.6.
+
+### Changed
+
+- **Committing and pushing are now separate decisions.** Each finished feature gets its own
+  commit and patch tag right away, but a push — which triggers a metered Netlify build — waits
+  for a minor or major bump and carries the accumulated patch commits out with it. Written up in
+  [AGENTS.md](AGENTS.md) and
+  [docs/RELEASING.md](docs/RELEASING.md#committing-is-local-pushing-is-a-release).
+
 ## [1.2.6] — 2026-08-02
 
 Storage schema **v7** — unchanged, so this is an ordinary upgrade.
