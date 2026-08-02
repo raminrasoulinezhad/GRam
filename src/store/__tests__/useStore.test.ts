@@ -256,6 +256,48 @@ describe('the workout loop', () => {
     expect(set.loggedAt).not.toBeNull();
   });
 
+  it('carries an edit into the sets that come after it', () => {
+    const { sessionId, entryId } = setup();
+    const setId = store().sessions[0].entries[0].sets[0].id;
+
+    store().updateSet(sessionId, entryId, setId, { weightKg: 70 });
+
+    // The whole exercise is now on 70: one edit, not one per set.
+    expect(store().sessions[0].entries[0].sets.map((x) => x.weightKg)).toEqual([70, 70, 70]);
+  });
+
+  it('carries only the fields being changed', () => {
+    const { sessionId, entryId } = setup();
+    const sets = store().sessions[0].entries[0].sets;
+    store().updateSet(sessionId, entryId, sets[2].id, { reps: 12 });
+
+    // Correcting the weight of the first set must not undo that last set's rep target.
+    store().updateSet(sessionId, entryId, sets[0].id, { weightKg: 70 });
+
+    expect(store().sessions[0].entries[0].sets[2]).toMatchObject({ weightKg: 70, reps: 12 });
+  });
+
+  it('never rewrites a set that has been recorded', () => {
+    const { sessionId, entryId } = setup();
+    const sets = store().sessions[0].entries[0].sets;
+    store().toggleSetLogged(sessionId, entryId, sets[1].id);
+
+    store().updateSet(sessionId, entryId, sets[0].id, { weightKg: 70 });
+
+    const after = store().sessions[0].entries[0].sets;
+    expect(after[1].weightKg).toBe(20); // recorded: what was actually lifted, untouched
+    expect(after[2].weightKg).toBe(70); // still only a target, so it follows
+  });
+
+  it('leaves the sets above alone - they have already happened', () => {
+    const { sessionId, entryId } = setup();
+    const sets = store().sessions[0].entries[0].sets;
+
+    store().updateSet(sessionId, entryId, sets[1].id, { weightKg: 70 });
+
+    expect(store().sessions[0].entries[0].sets.map((x) => x.weightKg)).toEqual([20, 70, 70]);
+  });
+
   it('removes a set, before or after recording it', () => {
     const { sessionId, entryId } = setup();
     const [a, b] = store().sessions[0].entries[0].sets.map((s) => s.id);

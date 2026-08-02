@@ -447,13 +447,33 @@ export const useStore = create<State & Actions>()(
           ),
         })),
 
+      /**
+       * Changes one set's numbers, and carries them into the sets after it.
+       *
+       * A set that has not been recorded is a target, not a result - it says what you intend to
+       * lift next, and the intention for the rest of the exercise almost always follows the set
+       * you just corrected. So finding the bar loaded differently from the plan is one edit
+       * rather than one per remaining set.
+       *
+       * Only the fields actually being changed travel, so fixing a weight leaves the reps
+       * alone, and only sets *after* this one are touched - the ones above have already
+       * happened. A recorded set is never rewritten by an edit to another set, which is also
+       * what keeps this quiet in the history editor: every set in a finished workout is
+       * recorded, so correcting one there changes exactly the one you are looking at.
+       */
       updateSet: (sessionId, entryId, setId, values) =>
         set((s) => ({
           sessions: withSession(s.sessions, sessionId, (session) =>
-            withEntry(session, entryId, (entry) => ({
-              ...entry,
-              sets: entry.sets.map((x) => (x.id === setId ? { ...x, ...values } : x)),
-            })),
+            withEntry(session, entryId, (entry) => {
+              const at = entry.sets.findIndex((x) => x.id === setId);
+              if (at < 0) return entry;
+              return {
+                ...entry,
+                sets: entry.sets.map((x, i) =>
+                  i === at || (i > at && x.loggedAt === null) ? { ...x, ...values } : x,
+                ),
+              };
+            }),
           ),
         })),
 

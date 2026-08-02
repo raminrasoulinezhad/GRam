@@ -6,6 +6,22 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.10] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **Correcting a set now corrects the ones after it.** Find the bar loaded at 60 instead of the
+  50 you planned, fix the first set, and the remaining sets follow. It used to take one edit per
+  set.
+  - **Recorded sets are never rewritten.** A recorded set is what you actually lifted; an
+    unrecorded one is only a target, and targets are what this updates.
+  - Only the field you changed travels. Fixing a weight leaves a rep target alone.
+  - Sets *above* the one you edited are left alone — they have already happened.
+  - Correcting a past workout in History is unaffected: every set in a finished workout is
+    recorded, so the edit changes exactly the set you are looking at.
+
 ## [1.2.9] — 2026-08-02
 
 Storage schema **v7** — unchanged.
