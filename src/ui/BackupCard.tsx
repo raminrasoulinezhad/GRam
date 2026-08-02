@@ -3,6 +3,7 @@ import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
 import {
+  BACKUP_FILENAME,
   backupFilename,
   buildBackup,
   parseBackup,
@@ -90,26 +91,65 @@ export function BackupCard() {
   );
   const reminder = stalenessMessage(stale);
 
+  /**
+   * Export, which after the first time goes back to the same place on its own.
+   *
+   * Three behaviours, in descending order of how good they are, picked by what the platform
+   * offers rather than by a setting:
+   *
+   *   1. A destination is already remembered - write straight to it, no dialog at all. This is
+   *      what "the same address as the first export" means in practice.
+   *   2. The browser can remember one (Chrome, Edge) but none is chosen yet - ask once, then
+   *      case 1 applies forever after.
+   *   3. It cannot (Safari, and so every iPhone) - hand the file to the share sheet. The
+   *      filename is fixed, so saving it to the same folder replaces the previous copy rather
+   *      than piling up beside it. One tap, same address, just not automatic.
+   */
   async function handleExport() {
+    setError(null);
     const now = Date.now();
-    const filename = backupFilename(now);
+    const filename = backupFilename();
 
-    // Recorded before the snapshot is taken, so the file's own backup record describes this
-    // export rather than the one before it.
     recordExport(now, current.loggedSets);
+    void requestPersistentStorage();
 
     const text = serialiseBackup(buildBackup(exportState(), appVersion, now));
     setExported({ text, filename });
-    setNote(null);
-    // Persistent storage does nothing about deliberate deletion, but it does stop a browser
-    // reclaiming space from a site it thinks is idle. Asked for here because a user who just
-    // exported has demonstrably decided this data matters.
-    void requestPersistentStorage();
+
+    if (autoSupported) {
+      const remembered = await autoExportTarget();
+      if (remembered !== null) {
+        const written = await writeBackupFile(text);
+        if (written === 'written') {
+          setNote(`Saved to ${remembered}, the same file as last time.`);
+          return;
+        }
+        // The handle went stale; fall through and ask for it again.
+        await forgetBackupFile();
+        setTarget(null);
+      }
+
+      const chosen = await chooseBackupFile(filename);
+      if (chosen.ok) {
+        setTarget(chosen.name);
+        const written = await writeBackupFile(text);
+        setNote(
+          written === 'written'
+            ? `Saved to ${chosen.name}. Every export from now on goes to this same file.`
+            : 'That file could not be written to.',
+        );
+        return;
+      }
+      if (chosen.reason === 'cancelled') {
+        setNote('Nothing saved. The text below is still yours to copy.');
+        return;
+      }
+    }
 
     const outcome = await exportText(text, filename);
     setNote(
       outcome === 'shared'
-        ? 'Sent to the share sheet. "Save to Files" keeps it somewhere deleting the app cannot reach.'
+        ? `Sent to the share sheet. "Save to Files" into the same folder each time and ${filename} is replaced rather than duplicated.`
         : outcome === 'downloaded'
           ? `Saved as ${filename}.`
           : outcome === 'copied'
@@ -145,7 +185,7 @@ export function BackupCard() {
 
   async function handleArmAutoExport() {
     setError(null);
-    const chosen = await chooseBackupFile(backupFilename(Date.now()));
+    const chosen = await chooseBackupFile(backupFilename());
     if (!chosen.ok) {
       if (chosen.reason === 'error') setError('That file could not be opened for writing.');
       return;
@@ -191,8 +231,8 @@ export function BackupCard() {
       <Card testID="backup-card">
         <H2>Backup and transfer</H2>
         <Dim style={{ marginTop: theme.space(1) }}>
-          Your training lives on this device only. A backup is one file holding every plan,
-          workout and setting.
+          Your training lives on this device only. A backup is one file — {BACKUP_FILENAME} —
+          holding every plan, workout and setting. Export goes back to wherever you put it last.
         </Dim>
 
         {reminder !== null ? (
@@ -265,12 +305,14 @@ export function BackupCard() {
         <View style={s.auto} testID="auto-export">
           {!autoSupported ? (
             <>
-              <Text style={s.moveTitle}>Automatic backups</Text>
+              <Text style={s.moveTitle}>Where exports go</Text>
               <Dim testID="auto-export-unsupported">
-                This browser cannot let an app write to a file on its own — Safari and Chrome on
-                Android both refuse, for good reasons. GRam will remind you above when there is
-                enough new training to be worth exporting. On a desktop Chrome or Edge, this
-                becomes a real automatic backup to a file you choose.
+                Every export is the same file, {BACKUP_FILENAME}. Save it to the same folder each
+                time and it replaces the previous one instead of piling up beside it.
+                {'\n\n'}
+                It cannot write itself: Safari gives no web app standing permission to a file on
+                your device, so each save needs your tap. GRam will tell you above when there is
+                enough new training to be worth one.
               </Dim>
             </>
           ) : backupRecord.autoExport ? (
@@ -302,10 +344,11 @@ export function BackupCard() {
             </>
           ) : (
             <>
-              <Text style={s.moveTitle}>Automatic backups</Text>
+              <Text style={s.moveTitle}>Hands-free backups</Text>
               <Dim style={{ marginBottom: theme.space(2) }}>
-                Choose a file once and GRam keeps it up to date by itself, every time you train.
-                Put it in a synced folder and the backup leaves this device too.
+                Export already remembers where it saved and goes back there. Turn this on and it
+                stops needing the tap: the file is rewritten a couple of seconds after anything
+                changes. Put it in a synced folder and the backup leaves this device too.
               </Dim>
               <Button
                 label="Choose a file and turn on"

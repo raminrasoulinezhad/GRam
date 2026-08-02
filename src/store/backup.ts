@@ -45,9 +45,21 @@ export function serialiseBackup(backup: BackupFile): string {
   return JSON.stringify(backup, null, 2);
 }
 
-/** `gram-backup-2026-08-01.json` - sorts chronologically and says what it is. */
-export function backupFilename(now: number): string {
-  return `gram-backup-${new Date(now).toISOString().slice(0, 10)}.json`;
+/**
+ * The backup filename. Stable, deliberately.
+ *
+ * It used to carry the date - `gram-backup-2026-08-01.json` - which meant every export created
+ * a *new* file and a folder slowly filled with near-identical copies, none of them obviously
+ * the current one. A fixed name means the second export lands on the first: "Save to Files"
+ * offers to replace it, and the folder holds one file that is always the latest.
+ *
+ * The date has not been lost - `exportedAt` is inside the file, and the app shows it. Anyone
+ * wanting dated copies can duplicate one; that is a choice, where accumulating them was not.
+ */
+export const BACKUP_FILENAME = 'gram-backup.json';
+
+export function backupFilename(): string {
+  return BACKUP_FILENAME;
 }
 
 export type BackupSummary = {

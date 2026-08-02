@@ -6,6 +6,18 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.4] — 2026-08-02
+
+### Changed
+
+- **Export goes back to where it went last time.** On a browser that can hold a file permission
+  (Chrome, Edge) the first Export asks where to save and every one after writes straight there,
+  no dialog. Elsewhere — including every iPhone — it hands the file to the share sheet, but the
+  filename is now fixed, so saving into the same folder replaces the previous copy.
+- **The backup filename is stable: `gram-backup.json`.** It used to carry the date, which meant
+  every export created a *new* file and a folder slowly filled with near-identical copies, none
+  of them obviously current. The date is still recorded inside the file.
+
 ## [1.2.3] — 2026-08-02
 
 ### Changed
