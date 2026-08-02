@@ -6,6 +6,27 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.11] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **A workout opens on the numbers you lifted last time.** Start a plan and every exercise you
+  have trained before is pre-filled with that session's weights and reps, set by set, so last
+  time is in front of you while you decide today's. Exercises you have never done fall back to
+  the plan's own template.
+  - **Set by set, in the order you did them** — a back-off set stays a back-off set. Plan a
+    fourth set where you did three and it repeats the last one.
+  - **Nothing is recorded by this.** They are targets, editable as always, and a set only counts
+    once you tick it.
+  - Only sets you actually recorded count as "last time"; numbers typed into a workout you never
+    ticked off are ignored.
+  - "Last time" follows the day you trained, not the order workouts were created — so moving a
+    workout to its real date in History changes what the next one opens on.
+  - Adding an exercise mid-workout does the same. Adding one while correcting a past workout
+    looks at what came before *that* day, not at this week.
+
 ## [1.2.10] — 2026-08-02
 
 Storage schema **v7** — unchanged.

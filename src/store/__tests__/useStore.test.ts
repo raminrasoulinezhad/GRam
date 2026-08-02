@@ -520,6 +520,151 @@ describe('the weight unit', () => {
   });
 });
 
+// ------------------------------------------------- starting from last time
+
+describe('starting an exercise from what you did last time', () => {
+  /** Records a finished workout of one exercise with exactly these numbers, in order. */
+  function recordWorkout(exerciseId: string, values: { weightKg: number; reps: number }[]) {
+    const sessionId = store().startEmptySession();
+    store().addSessionExercise(sessionId, exerciseId);
+    const entryId = store().sessions.find((x) => x.id === sessionId)!.entries[0].id;
+    const setsNow = () =>
+      store().sessions.find((x) => x.id === sessionId)!.entries[0].sets;
+
+    for (const extra of setsNow().slice(values.length)) {
+      store().removeSet(sessionId, entryId, extra.id);
+    }
+    while (setsNow().length < values.length) store().addSet(sessionId, entryId);
+
+    setsNow().forEach((set, i) => {
+      store().updateSet(sessionId, entryId, set.id, values[i]);
+      store().toggleSetLogged(sessionId, entryId, set.id);
+    });
+    store().endSession(sessionId);
+    return sessionId;
+  }
+
+  /** A Monday plan holding one exercise, with its templates set to `weightKg`/`reps`. */
+  function planFor(exerciseId: string, weightKg = 20, reps = 8) {
+    const planId = store().createPlan('monday');
+    store().addPlanItem(planId, exerciseId);
+    const item = store().plans[0].items[0];
+    for (const t of item.templates) {
+      store().updatePlanTemplate(planId, item.id, t.id, { weightKg, reps });
+    }
+    return planId;
+  }
+
+  const startedSets = (sessionId: string) =>
+    store().sessions.find((x) => x.id === sessionId)!.entries[0].sets;
+
+  it('uses the plan template when the exercise has never been recorded', () => {
+    const planId = planFor(BENCH, 60, 8);
+    const sessionId = store().startSession(planId)!;
+    expect(startedSets(sessionId).map((x) => x.weightKg)).toEqual([60, 60, 60]);
+  });
+
+  it('opens on last time`s numbers instead', () => {
+    recordWorkout(BENCH, [
+      { weightKg: 100, reps: 5 },
+      { weightKg: 100, reps: 5 },
+      { weightKg: 95, reps: 5 },
+    ]);
+    const planId = planFor(BENCH, 60, 8);
+
+    const sessionId = store().startSession(planId)!;
+
+    // Set by set, in the order they were done - not one number smeared across the exercise.
+    expect(startedSets(sessionId).map((x) => x.weightKg)).toEqual([100, 100, 95]);
+    expect(startedSets(sessionId).map((x) => x.reps)).toEqual([5, 5, 5]);
+  });
+
+  it('leaves them unrecorded - they are targets, not results', () => {
+    recordWorkout(BENCH, [{ weightKg: 100, reps: 5 }]);
+    const planId = planFor(BENCH);
+    const sessionId = store().startSession(planId)!;
+    expect(startedSets(sessionId).every((x) => x.loggedAt === null)).toBe(true);
+  });
+
+  it('repeats last time`s final set when today plans more of them', () => {
+    recordWorkout(BENCH, [
+      { weightKg: 100, reps: 5 },
+      { weightKg: 90, reps: 5 },
+    ]);
+    const planId = planFor(BENCH); // three templates against two recorded sets
+    const sessionId = store().startSession(planId)!;
+    expect(startedSets(sessionId).map((x) => x.weightKg)).toEqual([100, 90, 90]);
+  });
+
+  it('ignores sets that were never recorded', () => {
+    // A workout where the numbers were typed but the sets never got ticked off.
+    const sessionId = store().startEmptySession();
+    store().addSessionExercise(sessionId, BENCH);
+    const entryId = store().sessions[0].entries[0].id;
+    const setId = store().sessions[0].entries[0].sets[0].id;
+    store().updateSet(sessionId, entryId, setId, { weightKg: 300 });
+
+    const planId = planFor(BENCH, 60, 8);
+    const started = store().startSession(planId)!;
+
+    expect(startedSets(started)[0].weightKg).toBe(60);
+  });
+
+  it('follows the day the training happened, not the order sessions were created', () => {
+    const older = recordWorkout(BENCH, [{ weightKg: 80, reps: 5 }]);
+    recordWorkout(BENCH, [{ weightKg: 100, reps: 5 }]);
+    // The 80kg workout is moved to next week, which makes it the most recent one.
+    store().setSessionStart(older, Date.now() + 7 * 86_400_000);
+
+    const planId = planFor(BENCH);
+    const sessionId = store().startSession(planId)!;
+
+    expect(startedSets(sessionId)[0].weightKg).toBe(80);
+  });
+
+  it('keeps a template number that last time has nothing to say about', () => {
+    // Recorded as weight x reps; the plan item asks for time as well.
+    recordWorkout(BENCH, [{ weightKg: 100, reps: 5 }]);
+    const planId = store().createPlan('monday');
+    store().addPlanItem(planId, BENCH);
+    const item = store().plans[0].items[0];
+    store().updatePlanTemplate(planId, item.id, item.templates[0].id, { timeSec: 45 });
+
+    const sessionId = store().startSession(planId)!;
+
+    expect(startedSets(sessionId)[0]).toMatchObject({ weightKg: 100, reps: 5, timeSec: 45 });
+  });
+
+  it('seeds an exercise added to a live workout as well', () => {
+    recordWorkout(BENCH, [{ weightKg: 100, reps: 5 }]);
+    const sessionId = store().startEmptySession();
+
+    store().addSessionExercise(sessionId, BENCH);
+
+    expect(startedSets(sessionId)[0]).toMatchObject({ weightKg: 100, reps: 5 });
+  });
+
+  it('seeds an exercise added to a past workout from before that day, not after', () => {
+    const DAY = 86_400_000;
+    const old = recordWorkout(BENCH, [{ weightKg: 80, reps: 5 }]);
+    store().setSessionStart(old, Date.now() - 30 * DAY);
+    recordWorkout(BENCH, [{ weightKg: 120, reps: 5 }]);
+
+    // Correcting a workout from a fortnight ago: what came before it was the 80kg day.
+    const editing = store().startEmptySession();
+    store().addSessionExercise(editing, SQUAT);
+    const squatSet = store().sessions.find((x) => x.id === editing)!.entries[0];
+    store().toggleSetLogged(editing, squatSet.id, squatSet.sets[0].id);
+    store().endSession(editing);
+    store().setSessionStart(editing, Date.now() - 14 * DAY);
+
+    store().addSessionExercise(editing, BENCH);
+
+    const added = store().sessions.find((x) => x.id === editing)!.entries[1];
+    expect(added.sets[0]).toMatchObject({ weightKg: 80, reps: 5 });
+  });
+});
+
 describe('the rest timer duration', () => {
   /** A plan with one exercise, plus a live workout started from it. */
   function planAndWorkout() {

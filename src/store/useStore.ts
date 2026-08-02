@@ -339,29 +339,38 @@ export const useStore = create<State & Actions>()(
         })),
 
       // ------------------------------------------------------------- sessions
+      /**
+       * Turns a plan into a live workout, pre-filled with what you did last time.
+       *
+       * The plan's own numbers are only the starting point. Where an exercise has been recorded
+       * before, its sets open on the weights and reps of the last time you trained it - so the
+       * previous session is in front of you while you decide today's, instead of a plan template
+       * you set months ago. Nothing is recorded by this: they are targets, editable as always.
+       */
       startSession: (planId) => {
         const plan = get().plans.find((p) => p.id === planId);
         if (!plan) return null;
+        const sessions = get().sessions;
         const session: Session = {
           id: uid('s'),
           planId: plan.id,
           planName: WEEKDAY_LABEL[plan.day],
           startedAt: Date.now(),
           endedAt: null,
-          entries: plan.items.map((item) => ({
-            id: uid('se'),
-            exerciseId: item.exerciseId,
-            kind: item.kind,
-            restSec: item.restSec,
-            sets: item.templates.map((t) => ({
-              id: uid('ss'),
-              weightKg: t.weightKg,
-              reps: t.reps,
-              timeSec: t.timeSec,
-              distanceM: t.distanceM,
-              loggedAt: null,
-            })),
-          })),
+          entries: plan.items.map((item) => {
+            const previous = lastPerformance(sessions, item.exerciseId);
+            return {
+              id: uid('se'),
+              exerciseId: item.exerciseId,
+              kind: item.kind,
+              restSec: item.restSec,
+              sets: item.templates.map((t, i) => ({
+                id: uid('ss'),
+                ...seedFromLast(t, previous, i),
+                loggedAt: null,
+              })),
+            };
+          }),
         };
         set((s) => ({ sessions: [session, ...s.sessions], activeSessionId: session.id }));
         return session.id;
@@ -392,14 +401,17 @@ export const useStore = create<State & Actions>()(
          * correcting last Tuesday would show up on the body map as training done just now.
          */
         const count = finished === null ? defaultSetCount : 1;
+        // Last time's numbers, as of the day of the workout - so an exercise added while
+        // correcting last Tuesday opens on what came before Tuesday, not on this week's.
+        const previous = lastPerformance(get().sessions, exerciseId, finished ?? Infinity);
         const entry: SessionEntry = {
           id: uid('se'),
           exerciseId,
           kind: exercise.kind,
           restSec: defaultRestSec,
-          sets: Array.from({ length: count }, () => ({
-            ...seedTemplate(exercise.kind),
+          sets: Array.from({ length: count }, (_, i) => ({
             id: uid('ss'),
+            ...seedFromLast(seedTemplate(exercise.kind), previous, i),
             loggedAt: finished,
           })),
         };
@@ -729,6 +741,57 @@ export const useStore = create<State & Actions>()(
 /** Finished sessions, newest first - what the History tab and the body map read. */
 export function completedSessions(sessions: Session[]): Session[] {
   return sessions.filter((x) => x.endedAt !== null).sort((a, b) => b.startedAt - a.startedAt);
+}
+
+/** Only the numbers that are actually set, so a spread can never blank out what it lands on. */
+function definedValues(set: SetValues): SetValues {
+  const out: SetValues = {};
+  if (set.weightKg !== undefined) out.weightKg = set.weightKg;
+  if (set.reps !== undefined) out.reps = set.reps;
+  if (set.timeSec !== undefined) out.timeSec = set.timeSec;
+  if (set.distanceM !== undefined) out.distanceM = set.distanceM;
+  return out;
+}
+
+/**
+ * What was recorded the last time this exercise was trained, set by set, in the order it was
+ * done. Empty if it has never been recorded.
+ *
+ * "Last time" is the entry holding the most recent recorded set of that exercise, which is not
+ * necessarily the newest session - a workout can be moved to another date after the fact, and
+ * the numbers that matter are the ones from the day you actually trained. Pass `before` to ask
+ * the same question as of a moment in the past.
+ */
+export function lastPerformance(
+  sessions: Session[],
+  exerciseId: string,
+  before = Infinity,
+): SetValues[] {
+  let bestAt = -Infinity;
+  let best: SetValues[] = [];
+  for (const session of sessions) {
+    for (const entry of session.entries) {
+      if (entry.exerciseId !== exerciseId) continue;
+      const done = entry.sets.filter((x) => x.loggedAt !== null && x.loggedAt < before);
+      if (done.length === 0) continue;
+      const at = Math.max(...done.map((x) => x.loggedAt as number));
+      if (at > bestAt) {
+        bestAt = at;
+        best = done.map(definedValues);
+      }
+    }
+  }
+  return best;
+}
+
+/**
+ * The numbers to start set `index` of an exercise on: last time's, falling back to the
+ * template's. Past the end of last time's sets it repeats the final one, which is the right
+ * guess for a fourth set when you did three.
+ */
+function seedFromLast(template: SetValues, previous: SetValues[], index: number): SetValues {
+  if (previous.length === 0) return definedValues(template);
+  return { ...definedValues(template), ...previous[Math.min(index, previous.length - 1)] };
 }
 
 export type HistoryRow = { session: Session; set: SessionSet; kind: SetKind };
