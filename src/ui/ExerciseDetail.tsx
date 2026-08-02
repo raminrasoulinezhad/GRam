@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { getExercise, imageUrl, SET_KIND_LABEL } from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDate, formatSet, relativeTime, titleCase } from '@/lib/format';
 import { exerciseHistory, selectSessions, useStore } from '@/store/useStore';
 import { Body, Card, Chip, Dim, Empty, H2 } from './components';
 import { BodyMap, exerciseMuscleValues } from './BodyMap';
+import { ImageViewer } from './ImageViewer';
 import { theme } from './theme';
 
 /**
@@ -22,6 +23,18 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
   const bodyGender = useStore((s) => s.settings.bodyGender);
   const showPhotos = useStore((s) => s.settings.showExercisePhotos);
   const history = useMemo(() => exerciseHistory(sessions, exerciseId), [sessions, exerciseId]);
+  /** Which photo is open full screen, if any. */
+  const [viewing, setViewing] = useState<number | null>(null);
+  const photos = useMemo(
+    () =>
+      (exercise?.images ?? []).map((path, i) => ({
+        uri: imageUrl(path),
+        // The dataset always ships exactly two frames, and the pair only means anything as a
+        // before and after; anything beyond them is numbered rather than mislabelled.
+        caption: i === 0 ? 'START' : i === 1 ? 'FINISH' : `FRAME ${i + 1}`,
+      })),
+    [exercise],
+  );
   const muscleValues = useMemo(
     () => exerciseMuscleValues(exercise?.primaryMuscles ?? [], exercise?.secondaryMuscles ?? []),
     [exercise],
@@ -42,22 +55,35 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
           <Chip label={SET_KIND_LABEL[exercise.kind]} />
         </View>
 
-        {/* The dataset ships a start and an end frame; side by side they read as the movement. */}
-        {showPhotos && exercise.images.length > 0 ? (
+        {/*
+          * The dataset ships a start and an end frame; side by side they read as the movement.
+          * Side by side is also small, so either one opens full screen and zoomable on a tap -
+          * where the elbow is, or how far the bar travels, is not legible at this size.
+          */}
+        {showPhotos && photos.length > 0 ? (
           <View style={s.images}>
-            {exercise.images.map((path, i) => (
-              <View key={path} style={s.imageWrap}>
+            {photos.map((photo, i) => (
+              <Pressable
+                key={photo.uri}
+                accessibilityRole="button"
+                accessibilityLabel={`${exercise.name}, ${photo.caption.toLowerCase()} position. Opens full screen.`}
+                testID={`photo-${i}`}
+                onPress={() => setViewing(i)}
+                style={s.imageWrap}
+              >
                 <Image
-                  source={{ uri: imageUrl(path) }}
+                  source={{ uri: photo.uri }}
                   style={s.image}
                   resizeMode="cover"
                   accessibilityLabel={`${exercise.name}, position ${i + 1}`}
                 />
-                <Text style={s.imageCaption}>{i === 0 ? 'START' : 'FINISH'}</Text>
-              </View>
+                <Text style={s.imageCaption}>{photo.caption}</Text>
+              </Pressable>
             ))}
           </View>
         ) : null}
+
+        <ImageViewer images={photos} index={viewing} onClose={() => setViewing(null)} />
 
         <Card>
           <H2>Muscles involved</H2>

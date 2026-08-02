@@ -6,6 +6,22 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.14] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **Tap an exercise photo to open it full screen.** Pinch to zoom, drag to move around, double
+  tap to jump in and back out, and a close button top right. Where the elbow is, or how far the
+  bar travels, is not legible in a thumbnail.
+  - **Zoom buttons as well as the pinch.** Pinching needs two free hands, and this gets read
+    mid-set with one — and it is the only way in at all with a mouse.
+  - **Step between the start and finish frames without closing**, since the pair only means
+    something read together. Moving to the other frame returns it to fitted.
+  - A fitted photo cannot be dragged off the screen, and zooming out always pulls the image back
+    inside the frame rather than leaving it stranded against one edge.
+
 ## [1.2.13] — 2026-08-02
 
 Storage schema **v7** — unchanged.
