@@ -15,7 +15,7 @@ import type { Plan, Profile, Session, Settings } from './types';
  *   3. Add the old payload to the fixtures in __tests__/migrations.test.ts.
  * Never edit an existing step - someone out there is still on that version.
  */
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export const DEFAULT_SETTINGS: Settings = {
   unit: 'kg',
@@ -53,7 +53,18 @@ export type PersistedState = {
   ignoredBalanceGroups: string[];
   /** When a backup was last taken, and how much training has happened since. */
   backup: BackupRecord;
+  /** Every app version this install has run, oldest first. */
+  versionHistory: VersionSeen[];
 };
+
+/**
+ * A version this device has actually run, and when it first did.
+ *
+ * Recorded because there is no server and no crash reporting, so when something looks wrong on
+ * a phone the first question - which build is this? - has no other answer. It also settles the
+ * one that kept coming up during the icon saga: whether an update had reached the device at all.
+ */
+export type VersionSeen = { version: string; firstSeenAt: number };
 
 /**
  * What the app remembers about backups.
@@ -122,6 +133,13 @@ const MIGRATIONS: Record<number, Migration> = {
     ...state,
     backup: { ...DEFAULT_BACKUP, ...(asRecord(state.backup) ?? {}) },
   }),
+  // v5 -> v6: the version log behind Profile > About. An upgrading install has no history to
+  // recover - nothing recorded it before now - so it starts empty and gains its first entry on
+  // this launch, which is honest: that is the first version we can vouch for having run.
+  6: (state) => ({
+    ...state,
+    versionHistory: Array.isArray(state.versionHistory) ? state.versionHistory : [],
+  }),
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -175,5 +193,8 @@ export function coerce(state: Record<string, unknown>): PersistedState {
       (x) => typeof x === 'string',
     ),
     backup: { ...DEFAULT_BACKUP, ...(asRecord(state.backup) ?? {}) },
+    versionHistory: asArray<VersionSeen>(state.versionHistory).filter(
+      (v) => asRecord(v) !== null && typeof (v as VersionSeen).version === 'string',
+    ),
   };
 }

@@ -159,6 +159,36 @@ describe('upgrading from v3', () => {
   });
 });
 
+/** A v5 payload: backup bookkeeping present, no record of which versions have run. */
+const V5_PAYLOAD = {
+  ...V3_PAYLOAD,
+  ignoredBalanceGroups: ['biceps'],
+  backup: { lastExportedAt: 1_800_000_000_000, lastExportedSets: 42, autoExport: true },
+};
+
+describe('upgrading from v5', () => {
+  const migrated = migratePersisted(V5_PAYLOAD, 5);
+
+  it('keeps the training log and everything already recorded', () => {
+    expect(migrated.sessions[0].entries[0].sets).toHaveLength(2);
+    expect(migrated.celebratedMilestones).toEqual(['workouts:10']);
+    expect(migrated.ignoredBalanceGroups).toEqual(['biceps']);
+  });
+
+  it('does not disturb the backup record, including an armed auto-export', () => {
+    expect(migrated.backup).toEqual({
+      lastExportedAt: 1_800_000_000_000,
+      lastExportedSets: 42,
+      autoExport: true,
+    });
+  });
+
+  it('starts the version log empty rather than inventing history', () => {
+    // Nothing recorded which builds ran before this one, so claiming any would be a guess.
+    expect(migrated.versionHistory).toEqual([]);
+  });
+});
+
 describe('upgrading from an unversioned install', () => {
   it('runs every step in order from v0', () => {
     const migrated = migratePersisted(V1_PAYLOAD, 0);

@@ -19,11 +19,18 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: theme.color.bg },
       }}
     >
+      {/*
+        * "My week", not "Plans". The plans on this tab are not a library to pick from - they
+        * are the days of one training week, read together and checked for balance at the
+        * bottom of the screen. Naming it after the week is what makes that make sense.
+        */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Plans',
-          tabBarIcon: ({ color, size }) => <Ionicons name="list" color={color} size={size} />,
+          title: 'My week',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar" color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen

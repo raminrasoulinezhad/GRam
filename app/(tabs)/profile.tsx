@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Constants from 'expo-constants';
+import { EXERCISES } from '@/catalog';
 import { ageFrom, bmi, preferredUnit, readDeviceProfile } from '@/lib/device';
-import { fromDisplayWeight, titleCase, toDisplayWeight } from '@/lib/format';
+import { formatDate, fromDisplayWeight, titleCase, toDisplayWeight } from '@/lib/format';
+import { SCHEMA_VERSION } from '@/store/migrations';
 import { completedSessions, selectSessions, useStore } from '@/store/useStore';
 import { countLoggedSets } from '@/analytics/volume';
 import { Button, Card, Chip, Dim, H2, NumberField, Screen } from '@/ui/components';
@@ -12,6 +15,8 @@ import { theme } from '@/ui/theme';
 const SEXES = ['male', 'female', 'unspecified'] as const;
 export default function ProfileScreen() {
   const profile = useStore((s) => s.profile);
+  const versionHistory = useStore((s) => s.versionHistory);
+  const appVersion = Constants.expoConfig?.version ?? 'unknown';
   const settings = useStore((s) => s.settings);
   const allSessions = useStore(selectSessions);
   const updateProfile = useStore((s) => s.updateProfile);
@@ -174,35 +179,43 @@ export default function ProfileScreen() {
             network and carry no third-party rights. See THIRD-PARTY-NOTICES.md.
           </Dim>
         </Card>
-        <Card>
-          <H2>This device</H2>
-          <Dim style={s.hint}>
-            Read from the phone itself. Nothing here needs a permission and nothing leaves the
-            device.
-          </Dim>
-          <Row label="Device" value={device.model ?? 'Unknown'} />
-          {device.manufacturer ? <Row label="Made by" value={device.manufacturer} /> : null}
+        {/*
+          * About, with the log of every build this device has run.
+          *
+          * There is no server and no crash reporting, so "which version are you actually on?"
+          * has no other answer - and during the app-icon problem that question went several
+          * rounds before anyone could answer it. Now it is one glance, and the dates show
+          * whether updates are arriving at all.
+          */}
+        <Card testID="about">
+          <H2>About</H2>
+          <Row label="Version" value={appVersion} />
+          <Row label="Data format" value={`v${SCHEMA_VERSION}`} />
+          <Row label="Exercises" value={String(EXERCISES.length)} />
+          {/*
+            * The rest of what the phone reports - model, language, region, time zone - used to
+            * have a card of its own. Nothing read any of it, and nothing acted on it, so it was
+            * a list of facts the user already knew about their own phone. The system string
+            * stays because it is the one line worth quoting when something is wrong.
+            */}
           <Row label="System" value={device.osLabel} />
-          <Row label="Language" value={device.locale} />
-          {device.region ? <Row label="Region" value={device.region} /> : null}
-          {device.timeZone ? <Row label="Time zone" value={device.timeZone} /> : null}
-          <Row label="Measurements" value={device.measurementSystem ?? 'unknown'} />
-          {!device.isPhysicalDevice ? (
-            <Dim style={{ marginTop: theme.space(2) }}>
-              Running in a simulator or browser, so these values describe the host, not a phone.
-            </Dim>
-          ) : null}
-        </Card>
-        <Card>
-          <H2>Health app sync</H2>
-          <Dim style={s.hint}>
-            Importing height, weight and workouts from Apple Health or Health Connect needs
-            native modules, which do not run inside Expo Go. It will arrive with the first
-            development build - see docs/ROADMAP.md. Until then the fields above are yours to
-            fill in.
+
+          <Text style={[s.label, s.spaced]}>VERSIONS THIS DEVICE HAS RUN</Text>
+          {versionHistory.length === 0 ? (
+            <Dim>Nothing recorded yet — this launch will be the first.</Dim>
+          ) : (
+            [...versionHistory]
+              .reverse()
+              .map((v) => (
+                <Row key={v.version} label={v.version} value={formatDate(v.firstSeenAt)} />
+              ))
+          )}
+          <Dim style={{ marginTop: theme.space(2) }}>
+            Recorded on this device only, the first time each build runs. An imported backup does
+            not change it.
           </Dim>
-          <Chip label={device.platform === 'ios' ? 'Apple Health - not connected' : 'Health Connect - not connected'} />
         </Card>
+
         <Button label="Erase all data" variant="danger" testID="erase" onPress={() => void handleReset()} />
       </ScrollView>
     </Screen>

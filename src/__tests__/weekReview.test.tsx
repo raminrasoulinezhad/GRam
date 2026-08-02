@@ -39,7 +39,7 @@ describe('the Plans screen layout', () => {
     // Both present; the review is last, the add box after the plan list.
     expect(screen.getByTestId('new-plan-name')).toBeTruthy();
     expect(screen.getByTestId('week-review')).toBeTruthy();
-    expect(screen.getByPlaceholderText('Add a plan, e.g. Push day')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Add a training day, e.g. Push')).toBeTruthy();
   });
 
   it('still creates a plan and opens it', async () => {

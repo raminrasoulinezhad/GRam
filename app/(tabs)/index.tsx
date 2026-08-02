@@ -70,8 +70,8 @@ export default function PlansScreen() {
 
         {plans.length === 0 ? (
           <Empty
-            title="No plans yet"
-            hint="A plan is a reusable list of exercises with your default sets. Add one below, then start it at the gym."
+            title="No training days yet"
+            hint="Each plan is one day of your week - Push, Pull, Legs, or whatever suits you. Add one below, then start it at the gym."
           />
         ) : null}
 
@@ -117,7 +117,7 @@ export default function PlansScreen() {
             testID="new-plan-name"
             value={draftName}
             onChangeText={setDraftName}
-            placeholder="Add a plan, e.g. Push day"
+            placeholder="Add a training day, e.g. Push"
             placeholderTextColor={theme.color.textFaint}
             style={s.addInput}
             onSubmitEditing={handleCreate}

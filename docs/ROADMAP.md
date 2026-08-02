@@ -40,18 +40,32 @@ function. This is mostly a scoring function and a screen.
 - Max Effort days to re-anchor 1RM estimates
 - Plate calculator
 
-## v0.6 — Health app import
+## Health app import — blocked, and honestly so
 
-Height, weight, age and cardio load from **Apple HealthKit** and **Android Health Connect**,
-so that a run or a ride feeds the recovery model rather than being invisible to it.
+Height, weight and cardio load from **Apple HealthKit** or **Android Health Connect** would let
+a run or a ride feed the recovery model instead of being invisible to it. It is the most
+requested-sounding feature on this list and the one least likely to happen. The reasons are
+worth writing down so nobody re-litigates them every few months.
 
-⚠️ **This is the one item with a hard prerequisite.** Both need native modules, which cannot run
-inside Expo Go. Adopting it means moving to an EAS development build — from that point on,
-running the app on a phone requires building a binary rather than scanning a QR code. Worth
-doing, but it changes the day-to-day workflow, so it is deliberately late in the order.
+**There is no web API for either.** HealthKit is not exposed to Safari, to a home-screen web
+app, or to any browser. Health Connect is not exposed to Chrome. No amount of PWA work reaches
+them; this is not a gap to be engineered around.
 
-The profile screen already reads what the phone offers without permissions (region, locale,
-device, time zone) and states plainly that health import is not yet connected.
+**So it needs a native build**, which means leaving Expo Go and building a binary with EAS.
+That is a workflow change but not a blocker on its own.
+
+**On iOS it then needs a paid Apple Developer account.** The HealthKit entitlement is not
+available to a free personal team, so the $99/year membership is a hard prerequisite —
+and this project's constraints are zero payment and never publishing to a store. Those
+constraints and this feature cannot both hold. The constraints win.
+
+**On Android it is actually reachable.** Health Connect needs a native build but no paid
+account, because an APK can be installed directly. If the day-to-day phone were Android, this
+would move from "blocked" to "a few days' work".
+
+Until one of those facts changes, height and weight are typed into the profile by hand, and
+cardio is logged as an exercise like anything else — the catalog carries the movements for it,
+including the ones the upstream dataset was missing.
 
 ## Later
 

@@ -6,6 +6,34 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.2] — 2026-08-02
+
+Storage schema **v6** — adds a version log; nothing existing changes.
+
+### Added
+
+- **About**, at the bottom of Profile: app version, data-format version, catalogue size, and
+  **a log of every build this device has run**, with the date each first appeared. There is no
+  server and no crash reporting, so "which version am I actually on?" had no answer — a question
+  that went several rounds during the app-icon problem. The log is per device and an imported
+  backup does not change it.
+
+### Changed
+
+- **The Plans tab is now "My week".** Its plans were never a library to pick from; they are the
+  days of one training week, read together and checked for balance at the bottom of the screen.
+  The name now says so, and the empty state and the add field talk about training days.
+- **Removed the "This device" card.** Model, manufacturer, language, region and time zone were
+  read from the phone and then never used for anything — a list of facts you already knew about
+  your own phone. The one line worth quoting when something is wrong, the system string, moved
+  into About.
+- **Removed the "Health app sync" card.** It said the feature would arrive with the first
+  development build, which is not true under this project's constraints, and a promise the app
+  cannot keep is worse than silence. [docs/ROADMAP.md](docs/ROADMAP.md) now explains why: there
+  is no web API for HealthKit or Health Connect, a native build is required, and on iOS the
+  HealthKit entitlement needs a paid Apple Developer account — which zero-payment rules out.
+  On Android it would be reachable.
+
 ## [1.2.1] — 2026-08-02
 
 ### Changed

@@ -7,6 +7,7 @@ import { ExerciseSheetProvider } from '@/ui/ExerciseSheet';
 import { MilestoneCelebration } from '@/ui/Milestones';
 import { Splash } from '@/ui/Splash';
 import { useAutoBackup } from '@/ui/useAutoBackup';
+import { useVersionLog } from '@/ui/useVersionLog';
 import { useViewportHeight } from '@/ui/useViewportHeight';
 import { theme } from '@/ui/theme';
 
@@ -15,6 +16,8 @@ export default function RootLayout() {
   useAutoBackup();
   // Keeps the layout inside the space the on-screen keyboard leaves.
   useViewportHeight();
+  // Records which builds this device has run, for Profile > About.
+  useVersionLog();
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.color.bg }}>

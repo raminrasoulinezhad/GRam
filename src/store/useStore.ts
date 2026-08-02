@@ -11,6 +11,7 @@ import {
   migratePersisted,
   type BackupRecord,
   type PersistedState,
+  type VersionSeen,
 } from './migrations';
 import { STORAGE_KEY, createBackingStorage } from './storage';
 import type {
@@ -50,6 +51,7 @@ type State = {
   /** Training groups whose week-balance advice has been dismissed. */
   ignoredBalanceGroups: string[];
   backup: BackupRecord;
+  versionHistory: VersionSeen[];
 };
 
 type Actions = {
@@ -103,6 +105,8 @@ type Actions = {
   /** Records that a backup was taken, so the app can tell how stale the next one is. */
   recordExport: (at: number, sets: number) => void;
   setAutoExport: (on: boolean) => void;
+  /** Notes that this build has run. First call for a version stamps it; later calls do nothing. */
+  recordVersion: (version: string, at: number) => void;
   /** Replaces every persisted field from an imported backup. See src/store/backup.ts. */
   replaceAll: (state: PersistedState) => void;
   resetAll: () => void;
@@ -144,6 +148,7 @@ export const useStore = create<State & Actions>()(
       celebratedMilestones: [],
       ignoredBalanceGroups: [],
       backup: DEFAULT_BACKUP,
+      versionHistory: [],
 
       // ---------------------------------------------------------------- plans
       createPlan: (name) => {
@@ -466,6 +471,7 @@ export const useStore = create<State & Actions>()(
           celebratedMilestones: s.celebratedMilestones,
           ignoredBalanceGroups: s.ignoredBalanceGroups,
           backup: s.backup,
+          versionHistory: s.versionHistory,
         };
       },
 
@@ -473,6 +479,13 @@ export const useStore = create<State & Actions>()(
         set((s) => ({ backup: { ...s.backup, lastExportedAt: at, lastExportedSets: sets } })),
 
       setAutoExport: (on) => set((s) => ({ backup: { ...s.backup, autoExport: on } })),
+
+      recordVersion: (version, at) =>
+        set((s) =>
+          s.versionHistory.some((v) => v.version === version)
+            ? s
+            : { versionHistory: [...s.versionHistory, { version, firstSeenAt: at }] },
+        ),
 
       /*
        * Replaces the lot, field by field rather than with a spread of the argument, so a key
@@ -490,6 +503,9 @@ export const useStore = create<State & Actions>()(
           // Not next.backup: a restored file describes when *that* device last exported. This
           // device has a fresh copy in hand right now, which is what the import just proved.
           backup: { ...get().backup, lastExportedAt: Date.now(), lastExportedSets: 0 },
+          // Kept from this device: the history describes which builds ran *here*, and importing
+          // someone else's file does not change what this phone has run.
+          versionHistory: get().versionHistory,
         }),
 
       resetAll: () =>
@@ -502,6 +518,7 @@ export const useStore = create<State & Actions>()(
           celebratedMilestones: [],
           ignoredBalanceGroups: [],
           backup: DEFAULT_BACKUP,
+          versionHistory: [],
         }),
     }),
     {
@@ -517,6 +534,7 @@ export const useStore = create<State & Actions>()(
         celebratedMilestones: s.celebratedMilestones,
         ignoredBalanceGroups: s.ignoredBalanceGroups,
         backup: s.backup,
+        versionHistory: s.versionHistory,
       }),
       version: SCHEMA_VERSION,
       // Synchronous by contract - see the note in migrations.ts. An async migrate silently
