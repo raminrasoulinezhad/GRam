@@ -118,8 +118,33 @@ npm run licenses                  # if dependencies changed
 - [ ] If the stored shape changed: `SCHEMA_VERSION` bumped, migration step added, fixture added,
       test asserts the old data survives.
 - [ ] Version bumped in **both** `app.json` and `package.json`.
+- [ ] **Exercise recommendations re-reviewed** — see below. The suite will not go green until
+      this is done.
 - [ ] `CHANGELOG.md` updated.
-- [ ] Tagged: `git tag -a v0.1.0 -m "..." && git push --tags`
+- [ ] Tagged: `git tag -a v0.2.0 -m "..." && git push --tags`
+
+### Re-reviewing the exercise recommendations
+
+[`src/catalog/recommended.ts`](../src/catalog/recommended.ts) names the two best exercises per
+muscle, and they decide what a search by muscle puts at the top. The evidence behind them moves,
+and a list nobody revisits turns into folklore, so **every version bump forces a review**:
+`RECOMMENDED_REVIEWED_FOR` must equal `package.json`'s version, and
+`src/catalog/__tests__/recommended.test.ts` fails until it does.
+
+Bumping to a new minor or major version therefore means:
+
+1. Redo the research. The sources and the criteria used last time are in
+   [STUDY.md §6](STUDY.md#6-which-exercise-should-the-app-put-first). Look for newer per-muscle
+   rankings from the same coaches and any new trials.
+2. Change the picks where the evidence has moved, and update the comment saying why. The comment
+   is the audit trail — a pick with no stated reason is indistinguishable from a guess.
+3. Set `RECOMMENDED_REVIEWED_FOR` to the new version and `RECOMMENDED_REVIEWED_ON` to today.
+4. Run the suite. It checks that every id exists, that each pick actually trains the muscle it
+   is filed under, and that no stretch was recommended as training.
+
+A patch release that changes nothing about exercise selection can simply re-stamp
+`RECOMMENDED_REVIEWED_FOR` after a quick look — the point is that the decision is conscious, not
+that the file must change.
 
 **Ship a JS-only change** (no native code touched):
 

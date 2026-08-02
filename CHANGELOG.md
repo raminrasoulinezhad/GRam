@@ -6,6 +6,40 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.2.0] — 2026-08-01
+
+Search that finds things. Storage schema **v3**, unchanged — nothing to migrate.
+
+### Added
+
+- **Forgiving search.** A term is matched against the exercise name, the muscles it trains, the
+  equipment and the category, through rungs that get progressively looser: exact word, prefix,
+  singular/plural, punctuation-free run, gym shorthand, then a bounded typo. "pushup" finds
+  Push-Up, "db curl" finds Dumbbell Curl, "squt" finds squats, "rdl" finds the Romanian
+  deadlift.
+- **Search by muscle.** Typing "chest", "pecs", "abs", "quads" or "legs" returns everything that
+  trains it, not only the handful with the word in the name.
+- **Recommended-first ordering.** A search that names a muscle comes back in three bands: the
+  two exercises the evidence recommends for that muscle, then everything you have actually
+  recorded — most-recorded first — then the rest by relevance. The picks carry a **TOP PICK**
+  badge. An ordinary name search is left alone. Basis and sources in
+  [docs/STUDY.md §6](docs/STUDY.md#6-which-exercise-should-the-app-put-first).
+- **Six movements the dataset was missing** — incline treadmill walk, hiking, rucking, swimming,
+  fan bike and battle ropes. free-exercise-db carries only fourteen cardio entries, and none of
+  them was an incline walk.
+
+### Changed
+
+- The recommendations must be re-reviewed on every version bump; a test fails until the stamp in
+  `src/catalog/recommended.ts` matches `package.json`. See
+  [docs/RELEASING.md](docs/RELEASING.md#re-reviewing-the-exercise-recommendations).
+
+### Performance
+
+- Search costs ~1.3 ms per keystroke, ~2.9 ms through the typo path. Typo correction only runs
+  when the query matched nothing read literally, and a 26-bit letter-set comparison rejects
+  candidates before any edit-distance matrix is allocated.
+
 ## [0.1.0] — 2026-08-01
 
 First proof of concept. Storage schema **v2**.

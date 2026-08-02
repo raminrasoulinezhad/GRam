@@ -135,6 +135,69 @@ See [ROADMAP.md](ROADMAP.md) for what is planned.
 
 ---
 
+## 6. Which exercise should the app put first?
+
+The catalog knows that two hundred exercises train the chest. It has no idea which of them
+anyone should do. Left to relevance alone, searching "chest" led with *Chest Push (multiple
+response)*, a medicine-ball drill, because the word happens to be in its name.
+
+[`src/catalog/recommended.ts`](../src/catalog/recommended.ts) supplies the missing judgement:
+two picks per muscle, drawn from two bodies of evidence weighted in this order.
+
+**1. Current hypertrophy coaching consensus.** Jeff Nippard and Brad Schoenfeld's 2024 narrative
+review on training technique, and Nippard's per-muscle rankings, which score an exercise on
+three criteria: tension through a long muscle length, joint comfort, and how well it accepts
+progressive overload. This is the primary source because it is about what grows muscle over
+months rather than what registers on an electrode during one set.
+
+**2. ACE-sponsored EMG studies** — biceps (2014), triceps, abdominals, glutes — as corroboration.
+Activation during a single set is a weak proxy for growth, so these break ties rather than
+settle them.
+
+Two adjustments were made deliberately:
+
+- **Where the sources disagreed, consensus won.** The ACE study ranks the incline curl last;
+  current thinking rates the stretched long-head position highly. The incline curl is the
+  second biceps pick.
+- **Where a source named equipment most people do not have,** the nearest widely available
+  catalog equivalent was chosen. Nippard's top chest pick is a Smith machine incline press and
+  his top biceps pick a Bayesian cable curl; a recommendation you cannot perform is not one.
+
+### How the ordering uses them
+
+A search that names a muscle — the filter chip, or a word like "chest", "pecs" or "quads" — is
+returned in three bands:
+
+1. the two recommended exercises for that muscle, best first;
+2. everything the user has actually recorded, most-recorded first;
+3. everything else, by relevance.
+
+An ordinary name search is left alone. Asking for "bench press" should return bench presses, not
+a coach's opinion.
+
+### Keeping it from becoming folklore
+
+`RECOMMENDED_REVIEWED_FOR` must equal the version in `package.json`, and a test enforces it. A
+version bump therefore fails the build until someone has revisited the picks. A date-based check
+was rejected: a clock-driven test starts failing at a moment nobody chose, which teaches people
+to ignore it.
+
+### Sources for the recommendations
+
+- [Optimizing Resistance Training Technique to Maximize Muscle Hypertrophy: A Narrative Review](https://www.mdpi.com/2411-5142/9/1/9) — Schoenfeld, Nippard et al.
+- [Best Exercises for Every Muscle According to Jeff Nippard](https://www.boxrox.com/best-exercises-for-every-muscle-jeff-nippard/)
+- [Jeff Nippard Uses Science to Rank the Best Glute Exercises](https://barbend.com/news/jeff-nippard-best-glute-exercises/)
+- [ACE Study Reveals Best Biceps Exercises](https://www.acefitness.org/continuing-education/prosource/august-2014/4933/ace-study-reveals-best-biceps-exercises/)
+- [ACE-sponsored Study: Best and Worst Abdominal Exercises](https://www.acefitness.org/about-ace/press-room/in-the-news/246/american-council-on-exercise-ace-sponsored-study-reveals-best-and-worst-abdominal-exercises/)
+- [ACE Study Identifies Best Triceps Exercises](https://www.acefitness.org/certifiednewsarticle/3008/ace-study-identifies-best-triceps-exercises/)
+- [ACE Lists Best Butt Exercises](https://www.acefitness.org/about-ace/press-room/press-releases/383/ace-lists-best-butt-exercises-exclusive-ace-research-announces-most-effective-gluteus-maximus-training/)
+- [Triceps surae hypertrophy is greater after standing versus seated calf-raise training](https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2023.1272106/epub)
+- [Forearm Training Guide: Volume, Exercises & Hypertrophy Tips — RP Strength](https://rpstrength.com/blogs/articles/forearm-hypertrophy-training-tips)
+- [The Best Trap Exercises & Workouts for a Bigger Back — Barbell Medicine](https://www.barbellmedicine.com/blog/best-trap-exercises-for-a-bigger-stronger-back/)
+- [The 12 Best EMG Backed Exercises For Every Muscle Group](https://www.setforset.com/blogs/news/best-emg-backed-exercises-for-every-muscle-group)
+
+---
+
 ## Sources
 
 - [How Fitbod Generates Your Personalized Workouts: Meet The Fitbod Algorithm](https://fitbod.me/blog/fitbod-algorithm/)

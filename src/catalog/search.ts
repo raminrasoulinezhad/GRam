@@ -1,4 +1,5 @@
 import { EXERCISES } from './data';
+import { MUSCLES, type Muscle } from './generated';
 
 /**
  * Forgiving text search over the catalog.
@@ -367,4 +368,31 @@ export function scoreQuery(query: string): Map<string, number> | null {
   if (literal.size > 0) return literal;
 
   return pass(terms, wholeSquashed, true);
+}
+
+const MUSCLE_SET: ReadonlySet<string> = new Set(MUSCLES);
+const MUSCLE_STEMS: ReadonlyMap<string, Muscle> = new Map(MUSCLES.map((m) => [stem(m), m]));
+
+/**
+ * The muscles a query is asking about, if any.
+ *
+ * "chest", "pecs" and "legs" are all muscle searches; "bench press" is not. This is what turns
+ * on the recommendation ordering, so it deliberately only fires on words that name a muscle -
+ * an exercise name that merely happens to train something does not count.
+ */
+export function muscleTermsIn(query: string): Muscle[] {
+  const found = new Set<Muscle>();
+  for (const raw of tokenize(query)) {
+    if (MUSCLE_SET.has(raw)) {
+      found.add(raw as Muscle);
+      continue;
+    }
+    const byStem = MUSCLE_STEMS.get(stem(raw));
+    if (byStem) found.add(byStem);
+    // "abs" -> abdominals, "legs" -> four separate muscles.
+    for (const phrase of SYNONYMS[raw] ?? []) {
+      if (MUSCLE_SET.has(phrase)) found.add(phrase as Muscle);
+    }
+  }
+  return [...found];
 }

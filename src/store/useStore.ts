@@ -479,5 +479,24 @@ export function exerciseHistory(sessions: Session[], exerciseId: string): Histor
   return rows.sort((a, b) => (b.set.loggedAt ?? 0) - (a.set.loggedAt ?? 0));
 }
 
+/**
+ * exerciseId -> how many sets of it have ever been recorded.
+ *
+ * Feeds the ordering of a search by muscle: below the recommended picks, the exercises you
+ * actually do come before the eight hundred you have never touched. Counting sets rather than
+ * sessions means an exercise you do three sets of every week outranks one you tried once.
+ */
+export function setCountsByExercise(sessions: Session[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const session of sessions) {
+    for (const entry of session.entries) {
+      let logged = 0;
+      for (const set of entry.sets) if (set.loggedAt !== null) logged += 1;
+      if (logged > 0) counts.set(entry.exerciseId, (counts.get(entry.exerciseId) ?? 0) + logged);
+    }
+  }
+  return counts;
+}
+
 /** Stable-reference selector: the raw session list. Safe to pass to useStore(). */
 export const selectSessions = (s: State) => s.sessions;

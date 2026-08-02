@@ -7,12 +7,15 @@ import {
   EXERCISES,
   LEVELS,
   MUSCLES,
+  focusMuscles,
+  recommendedRanks,
   searchExercises,
   type Exercise,
   type Muscle,
 } from '@/catalog';
 import { titleCase } from '@/lib/format';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
+import { selectSessions, setCountsByExercise, useStore } from '@/store/useStore';
 import { Chip, ChipRow, Empty } from './components';
 import { ExerciseThumb } from './ExerciseThumb';
 import { theme } from './theme';
@@ -32,9 +35,19 @@ export function ExerciseList({ onSelect, accessory, header }: Props) {
   const [level, setLevel] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  const sessions = useStore(selectSessions);
+  const history = useMemo(() => setCountsByExercise(sessions), [sessions]);
+
   const results = useMemo(
-    () => searchExercises({ query, muscle, equipment, category, level }),
-    [query, muscle, equipment, category, level],
+    () => searchExercises({ query, muscle, equipment, category, level, history }),
+    [query, muscle, equipment, category, level, history],
+  );
+
+  // When the search is about a muscle, the first two rows are the evidence-based picks for it.
+  // Labelling them is the difference between a helpful order and an arbitrary one.
+  const topPicks = useMemo(
+    () => recommendedRanks(focusMuscles({ query, muscle })),
+    [query, muscle],
   );
 
   const activeFilters = [muscle, equipment, category, level].filter(Boolean).length;
@@ -117,7 +130,15 @@ export function ExerciseList({ onSelect, accessory, header }: Props) {
           >
             <ExerciseThumb exerciseId={item.id} />
             <View style={{ flex: 1 }}>
-              <Text style={s.name}>{item.name}</Text>
+              <View style={s.nameRow}>
+                {topPicks.has(item.id) ? (
+                  <View style={s.pick} testID={`top-pick-${item.id}`}>
+                    <Ionicons name="star" size={10} color={theme.color.bg} />
+                    <Text style={s.pickText}>TOP PICK</Text>
+                  </View>
+                ) : null}
+                <Text style={s.name}>{item.name}</Text>
+              </View>
               <View style={s.meta}>
                 {item.primaryMuscles.map((m) => (
                   <Chip key={m} label={MUSCLE_LABEL[m]} tone="primary" />
@@ -176,6 +197,22 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.color.border,
   },
+  nameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: theme.space(1.5) },
   name: { color: theme.color.text, fontSize: theme.font.body, fontWeight: '600' },
+  pick: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: theme.space(1.5),
+    paddingVertical: 2,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.color.accent,
+  },
+  pickText: {
+    color: theme.color.bg,
+    fontSize: theme.font.tiny,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   meta: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space(1), marginTop: theme.space(1.5) },
 });

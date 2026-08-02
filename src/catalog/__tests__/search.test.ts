@@ -86,7 +86,9 @@ describe('searching by muscle', () => {
   });
 
   it('puts exercises named for the muscle above ones that merely use it', () => {
-    const results = searchExercises({ query: 'chest' });
+    // Below the two recommended picks, which lead a muscle search by design - see
+    // recommended.test.ts. This is about the relevance ordering of everything after them.
+    const results = searchExercises({ query: 'chest' }).slice(2);
     const named = (e: (typeof results)[number]) => e.name.toLowerCase().includes('chest');
     const first = results.findIndex(named);
     const primaryOnly = results.findIndex((e) => !named(e) && e.primaryMuscles.includes('chest'));
