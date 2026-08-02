@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { EQUIPMENT } from '@/catalog';
 import { ageFrom, bmi, preferredUnit, readDeviceProfile } from '@/lib/device';
 import { fromDisplayWeight, titleCase, toDisplayWeight } from '@/lib/format';
-import type { Experience, TrainingGoal } from '@/store/types';
 import { completedSessions, selectSessions, useStore } from '@/store/useStore';
 import { countLoggedSets } from '@/analytics/volume';
 import { Button, Card, Chip, Dim, H2, NumberField, Screen } from '@/ui/components';
@@ -11,35 +9,22 @@ import { useConfirm } from '@/ui/confirm';
 import { BackupCard } from '@/ui/BackupCard';
 import { MilestonesCard } from '@/ui/Milestones';
 import { theme } from '@/ui/theme';
-
-const GOALS: { value: TrainingGoal; label: string; blurb: string }[] = [
-  { value: 'strength', label: 'Strength', blurb: '1-6 reps, long rests' },
-  { value: 'hypertrophy', label: 'Muscle', blurb: '6-12 reps, 10-20 sets per muscle weekly' },
-  { value: 'general', label: 'General fitness', blurb: 'Higher reps, short rests' },
-];
-
-const LEVELS: Experience[] = ['beginner', 'intermediate', 'advanced'];
 const SEXES = ['male', 'female', 'unspecified'] as const;
-
 export default function ProfileScreen() {
   const profile = useStore((s) => s.profile);
   const settings = useStore((s) => s.settings);
   const allSessions = useStore(selectSessions);
   const updateProfile = useStore((s) => s.updateProfile);
-  const toggleEquipment = useStore((s) => s.toggleEquipment);
   const updateSettings = useStore((s) => s.updateSettings);
   const seedUnitFromDevice = useStore((s) => s.seedUnitFromDevice);
   const resetAll = useStore((s) => s.resetAll);
   const confirm = useConfirm();
-
   // Read once per mount - none of it changes while the app is open.
   const [device] = useState(readDeviceProfile);
-
   // The phone's region picks kg or lb the first time, then never again.
   useEffect(() => {
     seedUnitFromDevice(preferredUnit(device));
   }, [device, seedUnitFromDevice]);
-
   const stats = useMemo(() => {
     const done = completedSessions(allSessions);
     return {
@@ -48,10 +33,8 @@ export default function ProfileScreen() {
       since: done.length > 0 ? done[done.length - 1].startedAt : null,
     };
   }, [allSessions]);
-
   const age = ageFrom(profile.birthDate);
   const index = bmi(profile.heightCm, profile.weightKg);
-
   async function handleReset() {
     const ok = await confirm({
       title: 'Erase everything?',
@@ -61,7 +44,6 @@ export default function ProfileScreen() {
     });
     if (ok) resetAll();
   }
-
   return (
     <Screen>
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
@@ -82,14 +64,12 @@ export default function ProfileScreen() {
             {index !== null ? <Stat value={String(index)} label="BMI" /> : null}
           </View>
         </Card>
-
         <Card>
           <H2>Body</H2>
           <Dim style={s.hint}>
             Used for the body figure and, later, to size your starting weights. It stays on this
             device.
           </Dim>
-
           <Text style={[s.label, s.spaced]}>SEX</Text>
           <View style={s.row}>
             {SEXES.map((value) => (
@@ -105,7 +85,6 @@ export default function ProfileScreen() {
               />
             ))}
           </View>
-
           <Text style={[s.label, s.spaced]}>DATE OF BIRTH</Text>
           <TextInput
             testID="profile-birthdate"
@@ -117,7 +96,6 @@ export default function ProfileScreen() {
             autoCorrect={false}
             style={s.input}
           />
-
           <View style={s.measureRow}>
             <View>
               <Text style={s.label}>HEIGHT</Text>
@@ -151,57 +129,16 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Card>
-
         <MilestonesCard />
-
         <BackupCard />
-
-        <Card>
-          <H2>Training</H2>
-          <Text style={[s.label, s.spaced]}>GOAL</Text>
-          {GOALS.map((g) => (
-            <View key={g.value} style={s.goalRow}>
-              <Chip
-                label={g.label}
-                active={profile.goal === g.value}
-                onPress={() => updateProfile({ goal: g.value })}
-              />
-              <Dim style={{ flex: 1 }}>{g.blurb}</Dim>
-            </View>
-          ))}
-
-          <Text style={[s.label, s.spaced]}>EXPERIENCE</Text>
-          <View style={s.row}>
-            {LEVELS.map((level) => (
-              <Chip
-                key={level}
-                label={titleCase(level)}
-                active={profile.experience === level}
-                onPress={() => updateProfile({ experience: level })}
-              />
-            ))}
-          </View>
-        </Card>
-
-        <Card>
-          <H2>Equipment</H2>
-          <Dim style={s.hint}>
-            {profile.equipment.length === 0
-              ? 'Nothing selected, so the catalog shows every exercise.'
-              : `${profile.equipment.length} selected.`}
-          </Dim>
-          <View style={[s.row, s.wrap]}>
-            {EQUIPMENT.map((e) => (
-              <Chip
-                key={e}
-                label={titleCase(e)}
-                active={profile.equipment.includes(e)}
-                onPress={() => toggleEquipment(e)}
-              />
-            ))}
-          </View>
-        </Card>
-
+        {/*
+          * Goal, experience and available equipment used to be collected here. All three were
+          * write-only: nothing in the app read them back, and the equipment card went further
+          * and claimed the catalog was filtered by it, which was never true. Inputs that do
+          * nothing are worse than absent ones - they cost attention and imply a behaviour that
+          * does not exist. The fields remain in the stored profile, so the questions can come
+          * back the day something actually uses them; see docs/ROADMAP.md.
+          */}
         <Card>
           <H2>Units</H2>
           <View style={[s.row, s.spaced]}>
@@ -218,7 +155,6 @@ export default function ProfileScreen() {
             Defaulted from your phone's region settings. Weights are always stored in kilograms,
             so switching never rewrites your history.
           </Dim>
-
           <Text style={[s.label, s.spaced]}>EXERCISE PHOTOS</Text>
           <View style={s.row}>
             <Chip
@@ -238,7 +174,6 @@ export default function ProfileScreen() {
             network and carry no third-party rights. See THIRD-PARTY-NOTICES.md.
           </Dim>
         </Card>
-
         <Card>
           <H2>This device</H2>
           <Dim style={s.hint}>
@@ -258,7 +193,6 @@ export default function ProfileScreen() {
             </Dim>
           ) : null}
         </Card>
-
         <Card>
           <H2>Health app sync</H2>
           <Dim style={s.hint}>
@@ -269,13 +203,11 @@ export default function ProfileScreen() {
           </Dim>
           <Chip label={device.platform === 'ios' ? 'Apple Health - not connected' : 'Health Connect - not connected'} />
         </Card>
-
         <Button label="Erase all data" variant="danger" testID="erase" onPress={() => void handleReset()} />
       </ScrollView>
     </Screen>
   );
 }
-
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <View>
@@ -284,7 +216,6 @@ function Stat({ value, label }: { value: string; label: string }) {
     </View>
   );
 }
-
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <View style={s.infoRow}>
@@ -295,7 +226,6 @@ function Row({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
-
 const s = StyleSheet.create({
   content: { padding: theme.space(4), gap: theme.space(3), paddingBottom: theme.space(12) },
   label: {
@@ -320,7 +250,6 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', gap: theme.space(1.5), alignItems: 'center' },
   wrap: { flexWrap: 'wrap', marginTop: theme.space(2) },
   measureRow: { flexDirection: 'row', gap: theme.space(4), marginTop: theme.space(3) },
-  goalRow: { flexDirection: 'row', alignItems: 'center', gap: theme.space(2), marginTop: theme.space(1.5) },
   statRow: { flexDirection: 'row', gap: theme.space(5), marginTop: theme.space(3) },
   statValue: { color: theme.color.text, fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
   statLabel: { color: theme.color.textFaint, fontSize: theme.font.tiny, fontWeight: '600' },

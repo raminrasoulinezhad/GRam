@@ -3,17 +3,21 @@ import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   EXERCISES,
-  MUSCLES,
   focusMuscles,
   recommendedRanks,
   searchExercises,
   type Exercise,
-  type Muscle,
 } from '@/catalog';
 import { titleCase } from '@/lib/format';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
+import {
+  GROUP_LABEL,
+  GROUP_MUSCLES,
+  TRAINING_GROUPS,
+  type TrainingGroup,
+} from '@/analytics/balance';
 import { selectSessions, setCountsByExercise, useStore } from '@/store/useStore';
-import { Chip, ChipRow, Empty } from './components';
+import { Chip, Empty } from './components';
 import { ExerciseThumb } from './ExerciseThumb';
 import { theme } from './theme';
 
@@ -32,7 +36,8 @@ type Props = {
 
 export function ExerciseList({ onSelect, accessory, header, initialQuery = '' }: Props) {
   const [query, setQuery] = useState(initialQuery);
-  const [muscle, setMuscle] = useState<Muscle | null>(null);
+  const [group, setGroup] = useState<TrainingGroup | null>(null);
+  const muscle = group ? GROUP_MUSCLES[group] : null;
 
   const sessions = useStore(selectSessions);
   const history = useMemo(() => setCountsByExercise(sessions), [sessions]);
@@ -77,23 +82,35 @@ export function ExerciseList({ onSelect, accessory, header, initialQuery = '' }:
       </View>
 
       {/*
-       * The only filter. It keeps exercises whose PRIMARY muscle this is, so tapping Chest gets
-       * you chest exercises rather than the hundred movements that involve the chest somewhere.
+       * The only filter, and every option is on screen at once.
        *
-       * Equipment, category and difficulty used to have chip rows of their own behind a toggle.
-       * They are gone: nobody opened them, and the text search reads all three fields anyway -
-       * "dumbbell chest", "beginner squat" and "cardio" all work, and rank better than a filter
-       * would have, so removing the rows lost no capability and gave the list back its space.
+       * Nine tags fit in two wrapped lines, so nothing hides behind a horizontal scroll the way
+       * seventeen muscles did - a filter you have to go looking for is one nobody uses. These
+       * are the eight groups people actually plan around, the same ones the week review checks;
+       * calves, abs, forearms and the rest are still a word away in the search box.
+       *
+       * Filtering keeps exercises whose PRIMARY muscle is in the group, so tapping Chest gets
+       * chest exercises rather than the hundred movements that involve the chest somewhere.
+       * Equipment, category and difficulty had rows of their own behind a toggle once; they are
+       * gone, because the text search reads all three anyway.
        */}
-      <ChipRow
-        options={MUSCLES.map((m) => MUSCLE_LABEL[m])}
-        value={muscle ? MUSCLE_LABEL[muscle] : null}
-        onChange={(label) =>
-          setMuscle(label === null ? null : (MUSCLES.find((m) => MUSCLE_LABEL[m] === label) ?? null))
-        }
-        allLabel="All muscles"
-        testIDPrefix="muscle"
-      />
+      <View style={s.filters}>
+        <Chip
+          label="All"
+          active={group === null}
+          onPress={() => setGroup(null)}
+          testID="muscle-all"
+        />
+        {TRAINING_GROUPS.map((g) => (
+          <Chip
+            key={g}
+            label={GROUP_LABEL[g]}
+            active={group === g}
+            onPress={() => setGroup(group === g ? null : g)}
+            testID={`muscle-${GROUP_LABEL[g]}`}
+          />
+        ))}
+      </View>
 
       <Text style={s.count}>
         {results.length} exercise{results.length === 1 ? '' : 's'}
@@ -182,6 +199,14 @@ const s = StyleSheet.create({
     color: theme.color.text,
     fontSize: theme.font.body,
     paddingVertical: theme.space(3),
+  },
+  filters: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.space(1.5),
+    paddingHorizontal: theme.space(4),
+    paddingTop: theme.space(2),
+    paddingBottom: theme.space(2.5),
   },
   count: {
     color: theme.color.textFaint,

@@ -5,7 +5,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { getExercise } from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { useStore } from '@/store/useStore';
-import { Button, Card, Dim, Empty, Screen } from '@/ui/components';
+import { Button, Card, Dim, Empty, NameField, Screen } from '@/ui/components';
 import { ExerciseCard } from '@/ui/ExerciseCard';
 import { useConfirm } from '@/ui/confirm';
 import { SetFields } from '@/ui/SetFields';
@@ -35,16 +35,9 @@ export default function PlanEditorScreen() {
     );
   }
 
-  async function handleStart() {
+  // An empty plan starts like any other - see the note on the Plans screen.
+  function handleStart() {
     if (!plan) return;
-    if (plan.items.length === 0) {
-      await confirm({
-        title: 'Empty plan',
-        message: 'Add at least one exercise before starting.',
-        cancelLabel: null,
-      });
-      return;
-    }
     const sessionId = startSession(plan.id);
     if (sessionId) router.replace(`/session/${sessionId}`);
   }
@@ -57,18 +50,21 @@ export default function PlanEditorScreen() {
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         <Card>
           <Text style={s.label}>PLAN NAME</Text>
-          <TextInput
+          {/*
+            * key={plan.id} so switching plans re-seeds the field. NameField holds its own text
+            * rather than reading plan.name back on every keystroke - that round-trip is what
+            * made the last character undeletable.
+            */}
+          <NameField
+            key={plan.id}
             testID="plan-name"
-            value={plan.name}
-            onChangeText={(t) => renamePlan(plan.id, t)}
-            // Named only once the user has stopped typing, so clearing the field to retype is
-            // possible. Naming it mid-keystroke is what made the last character stick.
-            onBlur={() => {
-              if (plan.name.trim().length === 0) renamePlan(plan.id, 'Untitled plan');
+            initialValue={plan.name}
+            onChange={(t) => renamePlan(plan.id, t)}
+            onCommit={(t) => {
+              if (t.trim().length === 0) renamePlan(plan.id, 'Untitled plan');
             }}
             placeholder="Untitled plan"
             style={s.nameInput}
-            placeholderTextColor={theme.color.textFaint}
           />
           <Dim>
             {plan.items.length} exercise{plan.items.length === 1 ? '' : 's'} · {totalSets} sets
@@ -173,7 +169,7 @@ export default function PlanEditorScreen() {
       </ScrollView>
 
       <View style={s.footer}>
-        <Button label="Start this workout" onPress={() => void handleStart()} testID="start-plan" />
+        <Button label="Start this workout" onPress={handleStart} testID="start-plan" />
       </View>
     </Screen>
   );

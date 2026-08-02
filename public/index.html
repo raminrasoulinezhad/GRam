@@ -46,9 +46,10 @@
          * becomes scrollable - tap the search box and the header, the filter chips and the tab
          * bar all start sliding around. Only the results list should ever scroll.
          *
-         * --vvh is set from window.visualViewport by src/ui/useViewportHeight.ts, and falls
-         * back to dvh then vh where that has not run yet. It lives in the bundle rather than in
-         * an inline script here because the CSP has no script-src and so forbids inline JS.
+         * --vvh is set by src/ui/useViewportHeight.ts, and ONLY while a keyboard is actually
+         * covering part of the screen. The rest of the time it is unset and the 100dvh below
+         * applies, so the app paints the full screen - under the status bar and the home
+         * indicator - which is what viewport-fit=cover and black-translucent are for.
          */
         height: 100vh;
         height: 100dvh;

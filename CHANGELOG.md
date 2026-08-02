@@ -6,6 +6,38 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.1] — 2026-08-02
+
+### Changed
+
+- **Every commit now bumps the version and carries a tag.** Patch by default; minor and major
+  only when asked for, resetting the levels below them. Written up in
+  [AGENTS.md](AGENTS.md) and [docs/RELEASING.md](docs/RELEASING.md).
+- **The exercise-recommendation review is tied to the minor series**, not to every version.
+  `RECOMMENDED_REVIEWED_FOR` now holds `"1.2"` rather than `"1.2.0"`. With a patch bump on every
+  commit, demanding a re-review each time would make the check noise, and noise gets stamped
+  past without reading.
+- **The muscle filter shows all its tags at once.** Eight groups — the same ones the week review
+  checks — wrapped over two lines instead of seventeen muscles in a horizontal scroller that hid
+  most of them. Tapping *Back* covers lats and mid back together. Calves, abs and the rest are
+  still a word away in the search box.
+- **Removed the goal, experience and equipment inputs from Profile.** All three were write-only:
+  nothing in the app read them back, and the equipment card claimed the catalog was filtered by
+  it, which was never true. The fields stay in stored data so the questions can return when
+  something uses them.
+
+### Fixed
+
+- **The last character of a plan name still resisted deletion.** The previous fix addressed the
+  store; the real cause was the input reading its value back out of the store on every keystroke,
+  which on react-native-web races the browser and resets the field. The field now owns its own
+  text — the same fix `NumberField` already carried, for the same reason.
+- **A plan with no exercises could still not be started from the plan editor.** The Plans screen
+  guard was removed in 1.2.0; the editor had a second copy of it.
+- **The app did not fill the iPhone screen.** 1.2.0 pinned the layout to `visualViewport.height`
+  at all times, which on iOS is not the full screen when the app paints under the status bar and
+  home indicator. It now only does so while a keyboard is actually covering part of the screen.
+
 ## [1.2.0] — 2026-08-02
 
 Backups that take themselves, where the browser allows it. Storage schema **v5** — adds a

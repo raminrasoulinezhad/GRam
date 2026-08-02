@@ -148,21 +148,18 @@ describe('plan editor', () => {
     expect(mockRouter.replace).toHaveBeenCalledWith(`/session/${store().sessions[0].id}`);
   });
 
-  it('refuses to start an empty plan', async () => {
+  it('starts an empty plan rather than refusing', async () => {
+    // Consistent with "Start an empty workout" on the Plans screen: turning up and building the
+    // session as you go is normal training, and the session screen can add exercises live.
     makePlan();
     await renderScreen(<PlanEditorScreen />);
 
     await fireEvent.press(screen.getByTestId('start-plan'));
 
-    expect(store().sessions).toHaveLength(0);
-    expect(mockRouter.replace).not.toHaveBeenCalled();
-    expect(screen.getByText('Empty plan')).toBeTruthy();
-    expect(screen.getByText('Add at least one exercise before starting.')).toBeTruthy();
-
-    // A notice has nothing to cancel, so it shows a single acknowledge button.
-    expect(screen.queryByTestId('confirm-cancel')).toBeNull();
-    await confirmDialog();
     expect(dialogOpen()).toBe(false);
+    expect(mockRouter.replace).toHaveBeenCalledWith(
+      expect.stringContaining('/session/'),
+    );
   });
 
   it('prompts to add exercises when the plan is empty', async () => {

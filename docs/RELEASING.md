@@ -105,11 +105,14 @@ original is still on the device and recoverable rather than overwritten.
 said the schema and feature set were not yet stable; 1.0.0 says they are. Breaking changes now
 need a major bump, and the storage schema only ever moves forward through a migration.
 
-| Change | Bump | Example |
+**Every commit bumps the version and carries a tag** — including documentation-only commits.
+The default is a patch bump; minor and major happen only when asked for.
+
+| Asked for | Bump | Example |
 |---|---|---|
-| Bug fix, no new behaviour | patch | 0.1.0 → 0.1.1 |
-| New feature, existing data still works | minor | 0.1.1 → 0.2.0 |
-| Rework that changes expectations | major | 0.9.0 → 1.0.0 |
+| nothing said (the default) | patch | 1.2.0 → 1.2.1 |
+| "minor" — new feature, existing data still works | minor, patch to zero | 1.2.7 → 1.3.0 |
+| "major" — rework that changes expectations | major, minor and patch to zero | 1.3.4 → 2.0.0 |
 
 `version` lives in `app.json` and `package.json` — keep them equal.
 
@@ -144,9 +147,12 @@ npm run licenses                  # if dependencies changed
 
 [`src/catalog/recommended.ts`](../src/catalog/recommended.ts) names the two best exercises per
 muscle, and they decide what a search by muscle puts at the top. The evidence behind them moves,
-and a list nobody revisits turns into folklore, so **every version bump forces a review**:
-`RECOMMENDED_REVIEWED_FOR` must equal `package.json`'s version, and
-`src/catalog/__tests__/recommended.test.ts` fails until it does.
+and a list nobody revisits turns into folklore, so **every minor bump forces a review**:
+`RECOMMENDED_REVIEWED_FOR` holds a minor *series* — `"1.2"`, not `"1.2.0"` — and must equal the
+major.minor of `package.json`, or `src/catalog/__tests__/recommended.test.ts` fails.
+
+Patch releases are exempt on purpose. With a patch bump on every commit, demanding a re-review
+each time would turn the check into noise, and noise gets stamped past without thinking.
 
 Bumping to a new minor or major version therefore means:
 
@@ -159,9 +165,8 @@ Bumping to a new minor or major version therefore means:
 4. Run the suite. It checks that every id exists, that each pick actually trains the muscle it
    is filed under, and that no stretch was recommended as training.
 
-A patch release that changes nothing about exercise selection can simply re-stamp
-`RECOMMENDED_REVIEWED_FOR` after a quick look — the point is that the decision is conscious, not
-that the file must change.
+If the research turns up nothing new, re-stamp and move on — the point is that the decision is
+conscious, not that the file must change.
 
 **Ship a JS-only change** (no native code touched):
 

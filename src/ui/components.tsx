@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -184,6 +184,56 @@ export function ChipRow({
         />
       ))}
     </ScrollView>
+  );
+}
+
+/**
+ * A single-line text field that owns the string being typed.
+ *
+ * Binding a TextInput straight to a store value round-trips every keystroke through the store
+ * and back into `value`. On react-native-web that is a race: the re-render can land after the
+ * browser has already applied the next key, and the DOM value is reset to the previous one. The
+ * symptom is oddly specific and was reported twice - the last character refuses to be deleted,
+ * because backspacing to empty is exactly when the round-trip result differs from what is on
+ * screen.
+ *
+ * So the field keeps its own text and only ever pushes outward. It is seeded once; give it a
+ * `key` tied to the thing being named, and it re-seeds when that identity changes.
+ *
+ * NumberField solves the same problem for the same reason - see the note there.
+ */
+export function NameField({
+  initialValue,
+  onChange,
+  onCommit,
+  placeholder,
+  style,
+  testID,
+}: {
+  initialValue: string;
+  /** Called on every keystroke, including with an empty string. */
+  onChange: (next: string) => void;
+  /** Called when editing finishes, for defaulting an abandoned blank. */
+  onCommit?: (current: string) => void;
+  placeholder?: string;
+  style?: StyleProp<TextStyle>;
+  testID?: string;
+}) {
+  const [text, setText] = useState(initialValue);
+
+  return (
+    <TextInput
+      testID={testID}
+      value={text}
+      onChangeText={(next) => {
+        setText(next);
+        onChange(next);
+      }}
+      onBlur={() => onCommit?.(text)}
+      placeholder={placeholder}
+      placeholderTextColor={theme.color.textFaint}
+      style={style}
+    />
   );
 }
 

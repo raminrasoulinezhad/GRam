@@ -55,13 +55,20 @@ describe('the recommendation list is real', () => {
 describe('the review trigger', () => {
   /*
    * This is the mechanism the whole file hangs on. The evidence behind these picks moves, and a
-   * list nobody revisits becomes folklore. Tying the stamp to the app version means you cannot
-   * ship a new version without either redoing the research or consciously re-stamping it - the
-   * build fails until you do. A date alone would not work: a clock-based test starts failing on
-   * its own, at a moment nobody chose, which teaches people to ignore it.
+   * list nobody revisits becomes folklore. Tying the stamp to the minor series means you cannot
+   * ship a feature release without either redoing the research or consciously re-stamping it -
+   * the build fails until you do. A date alone would not work: a clock-based test starts failing
+   * on its own, at a moment nobody chose, which teaches people to ignore it.
    */
-  it('was reviewed for the version being shipped', () => {
-    expect(RECOMMENDED_REVIEWED_FOR).toBe(pkg.version);
+  it('was reviewed for the minor series being shipped', () => {
+    // Minor, not patch: with a patch bump on every commit, requiring a re-review each time
+    // would make the check noise, and noise gets stamped past without thinking.
+    const series = pkg.version.split('.').slice(0, 2).join('.');
+    expect(RECOMMENDED_REVIEWED_FOR).toBe(series);
+  });
+
+  it('is stamped as a minor series rather than a full version', () => {
+    expect(RECOMMENDED_REVIEWED_FOR).toMatch(/^\d+\.\d+$/);
   });
 
   it('is stamped with the same version the app reports', () => {

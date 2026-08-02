@@ -28,12 +28,16 @@ import { MUSCLES, type Muscle } from './generated';
  * Sources are listed in docs/STUDY.md.
  *
  * WHEN TO REDO THIS
- * The stamp below must equal the version in package.json, and a test enforces it. Bumping the
- * app version therefore fails the build until someone has revisited these picks - which is the
- * point: the evidence moves, and a list frozen in 2026 would quietly become folklore. Redo the
- * research, update the picks and the two constants together.
+ * The stamp below is a MINOR series - "1.2", not "1.2.0" - and a test requires it to match the
+ * major.minor of package.json. So every minor release fails the build until someone has
+ * revisited these picks, and the patch releases in between do not, which is what keeps the
+ * check meaningful: a prompt on every commit is a prompt nobody reads. The evidence moves, and
+ * a list frozen in 2026 would quietly become folklore.
+ *
+ * To redo it: repeat the research (sources and criteria in docs/STUDY.md §6), change the picks
+ * where the evidence has moved, update the comment saying why, and set both constants below.
  */
-export const RECOMMENDED_REVIEWED_FOR = '1.2.0';
+export const RECOMMENDED_REVIEWED_FOR = '1.2';
 
 /** Calendar date of the last review, so staleness is visible even between version bumps. */
 export const RECOMMENDED_REVIEWED_ON = '2026-08-01';

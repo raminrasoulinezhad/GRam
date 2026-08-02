@@ -32,14 +32,16 @@ export function imageUrl(path: string): string {
 export type CatalogFilters = {
   query?: string;
   /**
-   * Keeps only exercises whose PRIMARY muscle this is.
+   * Keeps only exercises whose PRIMARY muscle this is. Several may be given, which is how a
+   * group like "back" works - the dataset splits it into lats and middle back, and nobody
+   * filters for one without the other.
    *
    * Deliberately stricter than the text search, which also matches assistance work and ranks it
    * lower. The chip is a shortcut to "show me chest exercises", and answering it with the
    * hundred movements that merely involve the chest makes it useless as a shortcut. If you want
    * the wider set, type the muscle instead.
    */
-  muscle?: Muscle | null;
+  muscle?: Muscle | Muscle[] | null;
   equipment?: string | null;
   category?: string | null;
   level?: string | null;
@@ -66,6 +68,7 @@ export type CatalogFilters = {
  */
 export function searchExercises(filters: CatalogFilters): Exercise[] {
   const scores = scoreQuery(filters.query ?? '');
+  const chosen = asMuscles(filters.muscle);
   const focus = focusMuscles(filters);
   const ranks = focus.length > 0 ? recommendedRanks(focus) : null;
   const out: Exercise[] = [];
@@ -77,7 +80,11 @@ export function searchExercises(filters: CatalogFilters): Exercise[] {
     // muscle's list. The Romanian deadlift is one of the two best glute exercises and the
     // dataset files glutes as secondary to hamstrings; hiding it from the Glutes chip would be
     // the classification winning an argument it should not be in.
-    if (filters.muscle && !e.primaryMuscles.includes(filters.muscle) && !ranks?.has(e.id)) {
+    if (
+      chosen.length > 0 &&
+      !e.primaryMuscles.some((m) => chosen.includes(m)) &&
+      !ranks?.has(e.id)
+    ) {
       continue;
     }
     if (filters.equipment && e.equipment !== filters.equipment) continue;
@@ -109,9 +116,15 @@ export function searchExercises(filters: CatalogFilters): Exercise[] {
   return out;
 }
 
+/** Normalises the one-or-many muscle filter to a list. */
+function asMuscles(value: Muscle | Muscle[] | null | undefined): Muscle[] {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
 /** Which muscles this search is about: the filter chip, plus any muscle named in the text. */
 export function focusMuscles(filters: CatalogFilters): Muscle[] {
   const fromQuery = muscleTermsIn(filters.query ?? '');
-  if (!filters.muscle) return fromQuery;
-  return fromQuery.includes(filters.muscle) ? fromQuery : [filters.muscle, ...fromQuery];
+  const chosen = asMuscles(filters.muscle).filter((m) => !fromQuery.includes(m));
+  return [...chosen, ...fromQuery];
 }
