@@ -8,8 +8,9 @@ import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDuration, relativeTime } from '@/lib/format';
 import type { SessionEntry, SessionSet, SetValues } from '@/store/types';
 import { useStore } from '@/store/useStore';
-import { Button, Card, Chip, Dim, Empty, Screen } from '@/ui/components';
+import { Button, Chip, Dim, Empty, Screen } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
+import { ExerciseCard } from '@/ui/ExerciseCard';
 import { RestTimer } from '@/ui/RestTimer';
 import { SetFields } from '@/ui/SetFields';
 import { theme } from '@/ui/theme';
@@ -81,6 +82,8 @@ const SetRow = memo(function SetRow({
 const EntryCard = memo(function EntryCard({
   entry,
   unit,
+  expanded,
+  onToggleExpanded,
   onChange,
   onToggle,
   onRemoveSet,
@@ -89,6 +92,8 @@ const EntryCard = memo(function EntryCard({
 }: {
   entry: SessionEntry;
   unit: 'kg' | 'lb';
+  expanded: boolean;
+  onToggleExpanded: (entryId: string) => void;
   onChange: (entryId: string, setId: string, patch: SetValues) => void;
   onToggle: (entryId: string, setId: string, restSec: number) => void;
   onRemoveSet: (entryId: string, setId: string) => void;
@@ -97,6 +102,7 @@ const EntryCard = memo(function EntryCard({
 }) {
   const name = exerciseName(entry.exerciseId);
   const done = entry.sets.filter((x) => x.loggedAt !== null).length;
+  const complete = entry.sets.length > 0 && done === entry.sets.length;
 
   const handleChange = useCallback(
     (setId: string, patch: SetValues) => onChange(entry.id, setId, patch),
@@ -112,31 +118,20 @@ const EntryCard = memo(function EntryCard({
   );
 
   return (
-    <Card>
-      <View style={s.entryHeader}>
-        <Pressable style={{ flex: 1 }} onPress={() => router.push(`/exercise/${entry.exerciseId}`)}>
-          <Text style={s.entryName}>{name}</Text>
-          <Dim>
-            {done}/{entry.sets.length} sets recorded
-            {entry.restSec > 0 ? ` · ${formatDuration(entry.restSec)} rest` : ''}
-          </Dim>
-        </Pressable>
-        <Pressable
-          accessibilityLabel="How to"
-          hitSlop={6}
-          onPress={() => router.push(`/exercise/${entry.exerciseId}`)}
-        >
-          <Ionicons name="help-circle-outline" size={22} color={theme.color.textDim} />
-        </Pressable>
-        <Pressable
-          accessibilityLabel="Remove exercise"
-          hitSlop={6}
-          onPress={() => void onRemoveEntry(entry.id, name)}
-        >
-          <Ionicons name="close" size={20} color={theme.color.danger} />
-        </Pressable>
-      </View>
-
+    <ExerciseCard
+      exerciseId={entry.exerciseId}
+      subtitle={
+        entry.restSec > 0
+          ? `${entry.sets.length} sets · ${formatDuration(entry.restSec)} rest`
+          : `${entry.sets.length} sets`
+      }
+      status={`${done}/${entry.sets.length}`}
+      done={complete}
+      expanded={expanded}
+      onToggle={() => onToggleExpanded(entry.id)}
+      onHowTo={() => router.push(`/exercise/${entry.exerciseId}`)}
+      testID={`entry-${entry.id}`}
+    >
       {entry.sets.length === 0 ? (
         <Dim style={{ paddingVertical: theme.space(2) }}>
           No sets. Add one below, or remove this exercise.
@@ -156,14 +151,22 @@ const EntryCard = memo(function EntryCard({
         ))
       )}
 
-      <Button
-        label="+ Add set"
-        variant="secondary"
-        style={{ marginTop: theme.space(2) }}
-        onPress={() => onAddSet(entry.id)}
-        testID={`add-set-${entry.id}`}
-      />
-    </Card>
+      <View style={s.entryActions}>
+        <Button
+          label="+ Add set"
+          variant="secondary"
+          style={{ flex: 1 }}
+          onPress={() => onAddSet(entry.id)}
+          testID={`add-set-${entry.id}`}
+        />
+        <Button
+          label="Remove"
+          variant="danger"
+          onPress={() => void onRemoveEntry(entry.id, name)}
+          testID={`remove-entry-${entry.id}`}
+        />
+      </View>
+    </ExerciseCard>
   );
 });
 
@@ -181,6 +184,23 @@ export default function SessionScreen() {
   const confirm = useConfirm();
 
   const [rest, setRest] = useState<{ startedAt: number; seconds: number } | null>(null);
+
+  /*
+   * Which exercise is open. Initialised to the first one with sets still to record, so
+   * reopening a workout mid-session lands you on what you were doing rather than a list of
+   * closed rows. Only one is open at a time - the point of collapsing was to see the shape of
+   * the session, which a screen full of open cards would undo.
+   */
+  const [openEntryId, setOpenEntryId] = useState<string | null>(() => {
+    const current = useStore.getState().sessions.find((x) => x.id === id);
+    const next = current?.entries.find((e) => e.sets.some((set) => set.loggedAt === null));
+    return next?.id ?? current?.entries[0]?.id ?? null;
+  });
+
+  const handleToggleExpanded = useCallback(
+    (entryId: string) => setOpenEntryId((open) => (open === entryId ? null : entryId)),
+    [],
+  );
 
   const handleChange = useCallback(
     (entryId: string, setId: string, patch: SetValues) => updateSet(id, entryId, setId, patch),
@@ -306,6 +326,8 @@ export default function SessionScreen() {
             key={entry.id}
             entry={entry}
             unit={unit}
+            expanded={openEntryId === entry.id}
+            onToggleExpanded={handleToggleExpanded}
             onChange={handleChange}
             onToggle={handleToggle}
             onRemoveSet={handleRemoveSet}
@@ -358,13 +380,7 @@ const s = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   content: { padding: theme.space(4), gap: theme.space(3), paddingBottom: theme.space(6) },
-  entryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.space(3),
-    marginBottom: theme.space(2),
-  },
-  entryName: { color: theme.color.text, fontSize: theme.font.h3, fontWeight: '700' },
+  entryActions: { flexDirection: 'row', gap: theme.space(2), marginTop: theme.space(2) },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',

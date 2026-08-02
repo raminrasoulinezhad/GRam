@@ -123,7 +123,7 @@ export default function ProfileScreen() {
                 testID="profile-height"
                 value={profile.heightCm ?? undefined}
                 suffix="cm"
-                width={104}
+                width={132}
                 step={1}
                 onChange={(n) => updateProfile({ heightCm: n ?? null })}
               />
@@ -138,7 +138,7 @@ export default function ProfileScreen() {
                     : toDisplayWeight(profile.weightKg, settings.unit)
                 }
                 suffix={settings.unit}
-                width={104}
+                width={132}
                 step={0.5}
                 onChange={(n) =>
                   updateProfile({

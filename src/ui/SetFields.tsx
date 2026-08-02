@@ -33,7 +33,7 @@ export function SetFields({
             testID={tid('weight')}
             value={values.weightKg === undefined ? undefined : toDisplayWeight(values.weightKg, unit)}
             suffix={unit}
-            width={82}
+            width={104}
             step={2.5}
             onChange={(n) =>
               onChange({ weightKg: n === undefined ? undefined : fromDisplayWeight(n, unit) })
@@ -44,7 +44,7 @@ export function SetFields({
             testID={tid('reps')}
             value={values.reps}
             suffix="reps"
-            width={82}
+            width={92}
             step={1}
             onChange={(n) => onChange({ reps: n })}
           />
@@ -58,7 +58,7 @@ export function SetFields({
             testID={tid('reps')}
             value={values.reps}
             suffix="reps"
-            width={94}
+            width={104}
             step={1}
             onChange={(n) => onChange({ reps: n })}
           />
@@ -72,7 +72,7 @@ export function SetFields({
             testID={tid('time')}
             value={values.timeSec}
             suffix="sec"
-            width={94}
+            width={104}
             step={5}
             onChange={(n) => onChange({ timeSec: n })}
           />
@@ -86,7 +86,7 @@ export function SetFields({
             testID={tid('distance')}
             value={values.distanceM}
             suffix="m"
-            width={90}
+            width={100}
             step={100}
             onChange={(n) => onChange({ distanceM: n })}
           />
@@ -94,7 +94,7 @@ export function SetFields({
             testID={tid('time')}
             value={values.timeSec}
             suffix="sec"
-            width={90}
+            width={100}
             step={10}
             onChange={(n) => onChange({ timeSec: n })}
           />

@@ -30,6 +30,7 @@ function startWorkout(exerciseId = BENCH) {
 }
 
 const setIds = () => store().sessions[0].entries[0].sets.map((x) => x.id);
+const entryId = () => store().sessions[0].entries[0].id;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -43,7 +44,7 @@ describe('active workout screen', () => {
     await renderScreen(<SessionScreen />);
 
     expect(screen.getByText('Barbell Bench Press - Medium Grip')).toBeTruthy();
-    expect(screen.getByText(/0\/3 sets recorded/)).toBeTruthy();
+    expect(screen.getByText('0/3')).toBeTruthy();
 
     const sets = store().sessions.find((s) => s.id === sessionId)!.entries[0].sets;
     for (const set of sets) expect(screen.getByTestId(`log-${set.id}`)).toBeTruthy();
@@ -57,7 +58,7 @@ describe('active workout screen', () => {
 
     const session = store().sessions.find((s) => s.id === sessionId)!;
     expect(session.entries[0].sets[0].loggedAt).not.toBeNull();
-    expect(screen.getByText(/1\/3 sets recorded/)).toBeTruthy();
+    expect(screen.getByText('1/3')).toBeTruthy();
   });
 
   it('un-records a set on a second tap', async () => {
@@ -69,7 +70,7 @@ describe('active workout screen', () => {
     await fireEvent.press(screen.getByTestId(`log-${setId}`));
 
     expect(store().sessions[0].entries[0].sets[0].loggedAt).toBeNull();
-    expect(screen.getByText(/0\/3 sets recorded/)).toBeTruthy();
+    expect(screen.getByText('0/3')).toBeTruthy();
   });
 
   it('edits weight and reps through the set fields', async () => {
@@ -109,7 +110,7 @@ describe('active workout screen', () => {
     await fireEvent.press(screen.getByTestId(`add-set-${entryId}`));
 
     expect(store().sessions[0].entries[0].sets).toHaveLength(4);
-    expect(screen.getByText(/0\/4 sets recorded/)).toBeTruthy();
+    expect(screen.getByText('0/4')).toBeTruthy();
   });
 
   it('deletes a set from the row', async () => {
@@ -132,7 +133,7 @@ describe('active workout screen', () => {
     await fireEvent.press(screen.getByTestId(`del-${setId}`));
 
     expect(store().sessions[0].entries[0].sets).toHaveLength(2);
-    expect(screen.getByText(/0\/2 sets recorded/)).toBeTruthy();
+    expect(screen.getByText('0/2')).toBeTruthy();
   });
 
   it('shows the right fields for a timed exercise and no weight input', async () => {
@@ -240,14 +241,53 @@ describe('active workout screen', () => {
       await fireEvent.press(screen.getByTestId(`del-${setId}`));
     }
     expect(screen.getByText(/No sets\./)).toBeTruthy();
-    expect(screen.getByText(/0\/0 sets recorded/)).toBeTruthy();
+    expect(screen.getByText('0/0')).toBeTruthy();
   });
 
-  it('navigates to the how-to page for an exercise', async () => {
+  it('navigates to the how-to page from the opened exercise', async () => {
     startWorkout();
     await renderScreen(<SessionScreen />);
 
-    await fireEvent.press(screen.getByText('Barbell Bench Press - Medium Grip'));
+    await fireEvent.press(screen.getByTestId(`howto-${BENCH}`));
     expect(mockRouter.push).toHaveBeenCalledWith(`/exercise/${BENCH}`);
+  });
+
+  it('opens the first unfinished exercise so you land on what you were doing', async () => {
+    startWorkout();
+    await renderScreen(<SessionScreen />);
+
+    // Sets are reachable immediately rather than behind a tap.
+    expect(screen.getByTestId(`log-${setIds()[0]}`)).toBeTruthy();
+  });
+
+  it('collapses an exercise to a single row when tapped', async () => {
+    startWorkout();
+    await renderScreen(<SessionScreen />);
+
+    const first = setIds()[0];
+    await fireEvent.press(screen.getByTestId(`entry-${entryId()}`));
+    expect(screen.queryByTestId(`log-${first}`)).toBeNull();
+
+    // The summary stays visible while closed.
+    expect(screen.getByText('Barbell Bench Press - Medium Grip')).toBeTruthy();
+    expect(screen.getByText('0/3')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId(`entry-${entryId()}`));
+    expect(screen.getByTestId(`log-${first}`)).toBeTruthy();
+  });
+
+  it('marks an exercise done once every set is recorded', async () => {
+    startWorkout();
+    await renderScreen(<SessionScreen />);
+
+    const id0 = entryId();
+    expect(screen.queryByTestId(`entry-${id0}-done`)).toBeNull();
+
+    for (const id of setIds()) await fireEvent.press(screen.getByTestId(`log-${id}`));
+
+    // A finished exercise swaps its "2/3" counter for a completion badge.
+    expect(screen.getByTestId(`entry-${id0}-done`)).toBeTruthy();
+    expect(screen.queryByText('3/3')).toBeNull();
+    expect(store().sessions[0].entries[0].sets.every((x) => x.loggedAt !== null)).toBe(true);
   });
 });

@@ -27,6 +27,11 @@ function makePlan(...exerciseIds: string[]) {
 
 const plan = () => store().plans[0];
 
+/** Exercises are collapsed to a row by default; open one to reach its sets. */
+async function openItem(index = 0) {
+  await fireEvent.press(screen.getByTestId(`item-${plan().items[index].id}`));
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   store().resetAll();
@@ -41,6 +46,23 @@ describe('plan editor', () => {
     expect(screen.getByText('Barbell Bench Press - Medium Grip')).toBeTruthy();
     expect(screen.getByText('Barbell Full Squat')).toBeTruthy();
     expect(screen.getByText(/2 exercises · 6 sets/)).toBeTruthy();
+
+    // Collapsed by default: the summary is visible, the set fields are not.
+    expect(screen.queryByTestId(/^tpl-/)).toBeNull();
+  });
+
+  it('opens an exercise to reveal its sets, and closes it again', async () => {
+    makePlan(BENCH);
+    await renderScreen(<PlanEditorScreen />);
+
+    const templateId = plan().items[0].templates[0].id;
+    expect(screen.queryByTestId(`tpl-${templateId}-weight`)).toBeNull();
+
+    await openItem();
+    expect(screen.getByTestId(`tpl-${templateId}-weight`)).toBeTruthy();
+
+    await openItem();
+    expect(screen.queryByTestId(`tpl-${templateId}-weight`)).toBeNull();
   });
 
   it('renames the plan', async () => {
@@ -63,6 +85,7 @@ describe('plan editor', () => {
     makePlan(BENCH);
     await renderScreen(<PlanEditorScreen />);
 
+    await openItem();
     await fireEvent.press(screen.getByTestId(`add-template-${plan().items[0].id}`));
     expect(plan().items[0].templates).toHaveLength(4);
     expect(screen.getByText(/1 exercise · 4 sets/)).toBeTruthy();
@@ -72,6 +95,7 @@ describe('plan editor', () => {
     makePlan(BENCH);
     await renderScreen(<PlanEditorScreen />);
 
+    await openItem();
     const templateId = plan().items[0].templates[0].id;
     await fireEvent.changeText(screen.getByTestId(`tpl-${templateId}-weight`), '100');
     await fireEvent.changeText(screen.getByTestId(`tpl-${templateId}-reps`), '3');
@@ -83,6 +107,7 @@ describe('plan editor', () => {
     makePlan(BENCH, SQUAT);
     await renderScreen(<PlanEditorScreen />);
 
+    await openItem();
     await fireEvent.press(screen.getByTestId(`remove-item-${plan().items[0].id}`));
 
     expect(plan().items).toHaveLength(1);

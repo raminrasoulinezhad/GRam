@@ -13,6 +13,7 @@ import {
 import { titleCase } from '@/lib/format';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { Chip, ChipRow, Empty } from './components';
+import { ExerciseThumb } from './ExerciseThumb';
 import { theme } from './theme';
 
 type Props = {
@@ -113,6 +114,7 @@ export function ExerciseList({ onSelect, accessory, header }: Props) {
             style={({ pressed }) => [s.row, pressed && { backgroundColor: theme.color.surfaceAlt }]}
             testID={`exercise-${item.id}`}
           >
+            <ExerciseThumb exerciseId={item.id} />
             <View style={{ flex: 1 }}>
               <Text style={s.name}>{item.name}</Text>
               <View style={s.meta}>

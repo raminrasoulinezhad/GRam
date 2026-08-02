@@ -7,6 +7,7 @@ import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDuration } from '@/lib/format';
 import { useStore } from '@/store/useStore';
 import { Button, Card, Chip, Dim, Empty, Screen } from '@/ui/components';
+import { ExerciseCard } from '@/ui/ExerciseCard';
 import { useConfirm } from '@/ui/confirm';
 import { SetFields } from '@/ui/SetFields';
 import { theme } from '@/ui/theme';
@@ -83,58 +84,18 @@ export default function PlanEditorScreen() {
         {plan.items.map((item, index) => {
           const exercise = getExercise(item.exerciseId);
           const isOpen = expanded === item.id;
+          const muscles = exercise?.primaryMuscles.map((m) => MUSCLE_LABEL[m]).join(', ') ?? '';
           return (
-            <Card key={item.id}>
-              <View style={s.itemHeader}>
-                <Pressable
-                  style={{ flex: 1 }}
-                  onPress={() => router.push(`/exercise/${item.exerciseId}`)}
-                >
-                  <Text style={s.itemName}>{exercise?.name ?? 'Unknown exercise'}</Text>
-                  <View style={s.itemMeta}>
-                    {exercise?.primaryMuscles.map((m) => (
-                      <Chip key={m} label={MUSCLE_LABEL[m]} tone="primary" />
-                    ))}
-                  </View>
-                </Pressable>
-                <View style={s.reorder}>
-                  <Pressable
-                    accessibilityLabel="Move up"
-                    hitSlop={6}
-                    disabled={index === 0}
-                    onPress={() => movePlanItem(plan.id, item.id, -1)}
-                  >
-                    <Ionicons
-                      name="chevron-up"
-                      size={20}
-                      color={index === 0 ? theme.color.border : theme.color.textDim}
-                    />
-                  </Pressable>
-                  <Pressable
-                    accessibilityLabel="Move down"
-                    hitSlop={6}
-                    disabled={index === plan.items.length - 1}
-                    onPress={() => movePlanItem(plan.id, item.id, 1)}
-                  >
-                    <Ionicons
-                      name="chevron-down"
-                      size={20}
-                      color={
-                        index === plan.items.length - 1 ? theme.color.border : theme.color.textDim
-                      }
-                    />
-                  </Pressable>
-                </View>
-                <Pressable
-                  accessibilityLabel="Remove exercise"
-                  hitSlop={6}
-                  onPress={() => removePlanItem(plan.id, item.id)}
-                  testID={`remove-item-${item.id}`}
-                >
-                  <Ionicons name="trash-outline" size={20} color={theme.color.danger} />
-                </Pressable>
-              </View>
-
+            <ExerciseCard
+              key={item.id}
+              exerciseId={item.exerciseId}
+              subtitle={muscles ? `${item.templates.length} sets · ${muscles}` : `${item.templates.length} sets`}
+              status={`${item.templates.length}`}
+              expanded={isOpen}
+              onToggle={() => setExpanded(isOpen ? null : item.id)}
+              onHowTo={() => router.push(`/exercise/${item.exerciseId}`)}
+              testID={`item-${item.id}`}
+            >
               {item.templates.map((template, i) => (
                 <View key={template.id} style={s.setRow}>
                   <Text style={s.setNum}>{i + 1}</Text>
@@ -156,50 +117,65 @@ export default function PlanEditorScreen() {
                 </View>
               ))}
 
-              <View style={s.itemActions}>
-                <Button
-                  label="+ Add set"
-                  variant="secondary"
-                  onPress={() => addPlanTemplate(plan.id, item.id)}
-                  testID={`add-template-${item.id}`}
-                />
-                <Button
-                  label={isOpen ? 'Hide options' : `Rest ${formatDuration(item.restSec)}`}
-                  variant="ghost"
-                  onPress={() => setExpanded(isOpen ? null : item.id)}
-                />
-              </View>
+              <Button
+                label="+ Add set"
+                variant="secondary"
+                style={{ marginTop: theme.space(2) }}
+                onPress={() => addPlanTemplate(plan.id, item.id)}
+                testID={`add-template-${item.id}`}
+              />
 
-              {isOpen ? (
-                <View style={s.options}>
-                  <Text style={s.label}>REST BETWEEN SETS</Text>
-                  <View style={s.optionRow}>
-                    {REST_OPTIONS.map((sec) => (
-                      <Chip
-                        key={sec}
-                        label={sec === 0 ? 'None' : formatDuration(sec)}
-                        active={item.restSec === sec}
-                        onPress={() => setPlanItemRest(plan.id, item.id, sec)}
-                      />
-                    ))}
-                  </View>
-                  <Text style={[s.label, { marginTop: theme.space(3) }]}>WHAT THIS SET RECORDS</Text>
-                  <View style={s.optionRow}>
-                    {KINDS.map((k) => (
-                      <Chip
-                        key={k}
-                        label={SET_KIND_LABEL[k]}
-                        active={item.kind === k}
-                        onPress={() => setPlanItemKind(plan.id, item.id, k)}
-                      />
-                    ))}
-                  </View>
-                  <Dim style={{ marginTop: theme.space(2) }}>
-                    Changing this resets the sets above, since the old numbers no longer apply.
-                  </Dim>
+              <View style={s.options}>
+                <Text style={s.label}>REST BETWEEN SETS</Text>
+                <View style={s.optionRow}>
+                  {REST_OPTIONS.map((sec) => (
+                    <Chip
+                      key={sec}
+                      label={sec === 0 ? 'None' : formatDuration(sec)}
+                      active={item.restSec === sec}
+                      onPress={() => setPlanItemRest(plan.id, item.id, sec)}
+                    />
+                  ))}
                 </View>
-              ) : null}
-            </Card>
+
+                <Text style={[s.label, { marginTop: theme.space(3) }]}>WHAT THIS SET RECORDS</Text>
+                <View style={s.optionRow}>
+                  {KINDS.map((k) => (
+                    <Chip
+                      key={k}
+                      label={SET_KIND_LABEL[k]}
+                      active={item.kind === k}
+                      onPress={() => setPlanItemKind(plan.id, item.id, k)}
+                    />
+                  ))}
+                </View>
+                <Dim style={{ marginTop: theme.space(2) }}>
+                  Changing this resets the sets above, since the old numbers no longer apply.
+                </Dim>
+
+                <View style={s.itemActions}>
+                  <Button
+                    label="Move up"
+                    variant="secondary"
+                    disabled={index === 0}
+                    onPress={() => movePlanItem(plan.id, item.id, -1)}
+                  />
+                  <Button
+                    label="Move down"
+                    variant="secondary"
+                    disabled={index === plan.items.length - 1}
+                    onPress={() => movePlanItem(plan.id, item.id, 1)}
+                  />
+                  <View style={{ flex: 1 }} />
+                  <Button
+                    label="Remove"
+                    variant="danger"
+                    onPress={() => removePlanItem(plan.id, item.id)}
+                    testID={`remove-item-${item.id}`}
+                  />
+                </View>
+              </View>
+            </ExerciseCard>
           );
         })}
 
@@ -239,15 +215,6 @@ const s = StyleSheet.create({
     paddingVertical: theme.space(2.5),
     marginBottom: theme.space(2),
   },
-  itemHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: theme.space(3),
-    marginBottom: theme.space(2),
-  },
-  itemName: { color: theme.color.text, fontSize: theme.font.h3, fontWeight: '700' },
-  itemMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space(1), marginTop: theme.space(1) },
-  reorder: { alignItems: 'center' },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',

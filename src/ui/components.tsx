@@ -288,23 +288,42 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.color.border,
     paddingHorizontal: theme.space(1.5),
+    // Anything that does overflow is clipped rather than allowed to sit on top of the
+    // neighbouring field.
+    overflow: 'hidden',
   },
   numInput: {
     flex: 1,
+    /*
+     * Without minWidth the field overflows its own box on web.
+     *
+     * An <input> carries an intrinsic width of roughly 200px from its default `size`, and a
+     * flex item will not shrink below its intrinsic minimum while min-width is `auto`. So
+     * `flex: 1` grew it to 201px inside a 104px container and pushed the unit label and the
+     * +/- buttons outside the border entirely. Native RN has no such intrinsic width, which
+     * is why this only showed up in the browser and the installed web app.
+     */
+    minWidth: 0,
     color: theme.color.text,
     fontSize: theme.font.body,
     fontWeight: '600',
     paddingVertical: theme.space(2),
+    paddingHorizontal: 0,
     textAlign: 'center',
   },
-  numSuffix: { color: theme.color.textFaint, fontSize: theme.font.tiny, paddingRight: 2 },
-  stepper: { justifyContent: 'center', paddingLeft: 2 },
+  numSuffix: {
+    color: theme.color.textFaint,
+    fontSize: theme.font.tiny,
+    paddingHorizontal: 2,
+    flexShrink: 0,
+  },
+  stepper: { justifyContent: 'center', paddingLeft: 2, flexShrink: 0 },
   stepText: {
     color: theme.color.textDim,
-    fontSize: 11,
-    lineHeight: 13,
+    fontSize: 12,
+    lineHeight: 14,
     fontWeight: '800',
-    paddingHorizontal: 2,
+    paddingHorizontal: 3,
   },
   empty: { alignItems: 'center', padding: theme.space(10), gap: theme.space(2) },
   emptyTitle: { color: theme.color.textDim, fontSize: theme.font.h3, fontWeight: '600' },
