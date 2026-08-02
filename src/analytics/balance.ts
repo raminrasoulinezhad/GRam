@@ -1,5 +1,5 @@
 import { getExercise, RECOMMENDED, type Muscle } from '@/catalog';
-import type { Plan } from '@/store/types';
+import { WEEKDAY_LABEL, type Plan } from '@/store/types';
 
 /**
  * Does this week's set of plans train the whole body?
@@ -82,7 +82,7 @@ export type GroupCoverage = {
   group: TrainingGroup;
   /** Ids of the plans that train it as a primary muscle - one entry per day. */
   planIds: string[];
-  /** Names of those plans, for the advice text. */
+  /** Weekday labels of those plans, for the advice text. */
   planNames: string[];
   /** How many more days it needs. 0 when the target is met. */
   shortBy: number;
@@ -133,7 +133,7 @@ export function reviewWeek(plans: Plan[], ignored: readonly string[] = []): Week
     return {
       group,
       planIds: hits.map((p) => p.id),
-      planNames: hits.map((p) => p.name),
+      planNames: hits.map((p) => WEEKDAY_LABEL[p.day]),
       shortBy: Math.max(0, DAYS_PER_WEEK_TARGET - hits.length),
       covered: hits.length >= DAYS_PER_WEEK_TARGET,
       ignored: dismissedSet.has(group),

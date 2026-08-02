@@ -20,9 +20,63 @@ export type PlanItem = {
   templates: SetTemplate[];
 };
 
+/**
+ * Days of the week, Monday first.
+ *
+ * Monday rather than Sunday because a training week is planned as one - "Monday push, Wednesday
+ * pull" - and the balance rules count days, not calendar weeks.
+ */
+export const WEEKDAYS = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+] as const;
+
+export type Weekday = (typeof WEEKDAYS)[number];
+
+export const WEEKDAY_LABEL: Record<Weekday, string> = {
+  monday: 'Monday',
+  tuesday: 'Tuesday',
+  wednesday: 'Wednesday',
+  thursday: 'Thursday',
+  friday: 'Friday',
+  saturday: 'Saturday',
+  sunday: 'Sunday',
+};
+
+/** Three letters, for chips and tight rows. */
+export const WEEKDAY_SHORT: Record<Weekday, string> = {
+  monday: 'Mon',
+  tuesday: 'Tue',
+  wednesday: 'Wed',
+  thursday: 'Thu',
+  friday: 'Fri',
+  saturday: 'Sat',
+  sunday: 'Sun',
+};
+
+/**
+ * One training day.
+ *
+ * A plan IS a day of the week rather than something with a name of its own. That was already
+ * the truth - the week review reads plans as days and checks that muscles are trained on two
+ * different ones - but it was left implicit, and a free-text name let the two drift apart. Now
+ * the day is the identity: at most seven plans, one per weekday, and "different days" means
+ * exactly what it says.
+ *
+ * `name` is retained but no longer shown or edited. Plans written before this carried names
+ * like "Push day" and discarding them in a migration would be throwing away something the user
+ * typed; it costs nothing to keep, and it is the only record of what they called it.
+ */
 export type Plan = {
   id: string;
-  name: string;
+  day: Weekday;
+  /** Legacy free-text name from before plans became weekdays. Not displayed. */
+  name?: string;
   note?: string;
   items: PlanItem[];
   createdAt: number;

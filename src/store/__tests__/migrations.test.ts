@@ -189,6 +189,67 @@ describe('upgrading from v5', () => {
   });
 });
 
+/** A v6 payload: plans still carry free-text names and no weekday. */
+const V6_PAYLOAD = {
+  ...V5_PAYLOAD,
+  versionHistory: [{ version: '1.2.2', firstSeenAt: 1_800_000_000_000 }],
+  plans: [
+    { ...V1_PAYLOAD.plans[0], id: 'p1', name: 'Push day' },
+    { ...V1_PAYLOAD.plans[0], id: 'p2', name: 'Pull day' },
+    { ...V1_PAYLOAD.plans[0], id: 'p3', name: 'Legs' },
+  ],
+};
+
+describe('upgrading from v6, when plans became weekdays', () => {
+  const migrated = migratePersisted(V6_PAYLOAD, 6);
+
+  it('deals existing plans onto weekdays in the order they were created', () => {
+    // Nothing in the old data says which day anyone trained, so creation order is the only
+    // signal there is. It is a starting point the user can change in two taps.
+    expect(migrated.plans.map((p) => p.day)).toEqual(['monday', 'tuesday', 'wednesday']);
+  });
+
+  it('keeps the names people typed rather than discarding them', () => {
+    expect(migrated.plans.map((p) => p.name)).toEqual(['Push day', 'Pull day', 'Legs']);
+  });
+
+  it('keeps every exercise in every plan', () => {
+    for (const plan of migrated.plans) expect(plan.items).toHaveLength(1);
+  });
+
+  it('honours a plan already named after a day', () => {
+    const named = {
+      ...V6_PAYLOAD,
+      plans: [
+        { ...V1_PAYLOAD.plans[0], id: 'a', name: 'Push' },
+        { ...V1_PAYLOAD.plans[0], id: 'b', name: 'Wednesday' },
+      ],
+    };
+    const result = migratePersisted(named, 6);
+    // Wednesday keeps the day it was called; Push takes the first day left.
+    expect(result.plans.find((p) => p.id === 'b')!.day).toBe('wednesday');
+    expect(result.plans.find((p) => p.id === 'a')!.day).toBe('monday');
+  });
+
+  it('does not lose a plan when there are more than seven', () => {
+    const crowded = {
+      ...V6_PAYLOAD,
+      plans: Array.from({ length: 9 }, (_, i) => ({
+        ...V1_PAYLOAD.plans[0],
+        id: `p${i}`,
+        name: `Day ${i}`,
+      })),
+    };
+    const result = migratePersisted(crowded, 6);
+    expect(result.plans).toHaveLength(9);
+    for (const plan of result.plans) expect(plan.day).toBeDefined();
+  });
+
+  it('keeps the training log untouched', () => {
+    expect(migrated.sessions[0].entries[0].sets).toHaveLength(2);
+  });
+});
+
 describe('upgrading from an unversioned install', () => {
   it('runs every step in order from v0', () => {
     const migrated = migratePersisted(V1_PAYLOAD, 0);

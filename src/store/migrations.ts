@@ -15,7 +15,7 @@ import type { Plan, Profile, Session, Settings } from './types';
  *   3. Add the old payload to the fixtures in __tests__/migrations.test.ts.
  * Never edit an existing step - someone out there is still on that version.
  */
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export const DEFAULT_SETTINGS: Settings = {
   unit: 'kg',
@@ -140,7 +140,56 @@ const MIGRATIONS: Record<number, Migration> = {
     ...state,
     versionHistory: Array.isArray(state.versionHistory) ? state.versionHistory : [],
   }),
+  /*
+   * v6 -> v7: a plan is a day of the week rather than a free-text name.
+   *
+   * Existing plans are dealt onto weekdays in the order they were created - the first becomes
+   * Monday, the second Tuesday - because there is nothing in the old data that says which day
+   * anyone actually trained. It is a starting point the user can change in two taps, and it
+   * preserves their ordering, which is the only signal the old shape carried.
+   *
+   * A plan whose name already IS a weekday keeps that day; someone who called one "Wednesday"
+   * meant it. Their old names are kept in `name` either way rather than discarded.
+   */
+  7: (state) => {
+    const plans = Array.isArray(state.plans) ? [...(state.plans as Record<string, unknown>[])] : [];
+    const taken = new Set<string>();
+
+    const named = plans.map((plan) => {
+      const raw = typeof plan.name === 'string' ? plan.name.trim().toLowerCase() : '';
+      const match = WEEKDAY_VALUES.find((d) => d === raw);
+      if (match && !taken.has(match)) {
+        taken.add(match);
+        return { plan, day: match };
+      }
+      return { plan, day: null as string | null };
+    });
+
+    let next = 0;
+    for (const row of named) {
+      if (row.day !== null) continue;
+      while (next < WEEKDAY_VALUES.length && taken.has(WEEKDAY_VALUES[next])) next += 1;
+      // More than seven plans is more than a week; the surplus doubles up on Sunday rather
+      // than being dropped, and the user sorts it out.
+      const day = WEEKDAY_VALUES[Math.min(next, WEEKDAY_VALUES.length - 1)];
+      taken.add(day);
+      row.day = day;
+    }
+
+    return { ...state, plans: named.map(({ plan, day }) => ({ ...plan, day })) };
+  },
 };
+
+/** Duplicated from types.ts so a migration never changes meaning when that file is edited. */
+const WEEKDAY_VALUES = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+] as const;
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

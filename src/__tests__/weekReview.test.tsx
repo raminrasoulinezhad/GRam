@@ -2,6 +2,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { renderScreen } from '@/test-utils';
 import { useStore } from '@/store/useStore';
 import { TRAINING_GROUPS, suggestionFor } from '@/analytics/balance';
+import type { Weekday } from '@/store/types';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
 
@@ -18,13 +19,13 @@ const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
 const SQUAT = 'Barbell_Squat';
 const store = () => useStore.getState();
 
-function makePlan(name: string, ...exerciseIds: string[]) {
-  const id = store().createPlan(name);
+function makePlan(day: Weekday, ...exerciseIds: string[]) {
+  const id = store().createPlan(day);
   for (const exerciseId of exerciseIds) store().addPlanItem(id, exerciseId);
   return id;
 }
 
-const planNamed = (name: string) => store().plans.find((p) => p.name === name)!;
+const planOn = (day: Weekday) => store().plans.find((p) => p.day === day)!;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -32,23 +33,40 @@ beforeEach(() => {
 });
 
 describe('the Plans screen layout', () => {
-  it('puts the add-plan box after the plans, not above them', async () => {
-    makePlan('Push day', BENCH);
+  it('puts the day picker after the plans, not above them', async () => {
+    makePlan('monday', BENCH);
     await renderScreen(<PlansScreen />);
 
-    // Both present; the review is last, the add box after the plan list.
-    expect(screen.getByTestId('new-plan-name')).toBeTruthy();
+    expect(screen.getByTestId('add-day')).toBeTruthy();
     expect(screen.getByTestId('week-review')).toBeTruthy();
-    expect(screen.getByPlaceholderText('Add a training day, e.g. Push')).toBeTruthy();
   });
 
-  it('still creates a plan and opens it', async () => {
+  it('offers every weekday, and shows the taken ones rather than hiding them', async () => {
+    // A gap on Thursday should be visible; a missing chip would not show it.
+    makePlan('monday', BENCH);
     await renderScreen(<PlansScreen />);
-    await fireEvent.changeText(screen.getByTestId('new-plan-name'), 'Leg day');
-    await fireEvent.press(screen.getByTestId('create-plan'));
 
-    expect(store().plans.map((p) => p.name)).toContain('Leg day');
+    for (const day of ['monday', 'thursday', 'sunday']) {
+      expect(screen.getByTestId(`add-${day}`)).toBeTruthy();
+    }
+  });
+
+  it('creates the day that was tapped, and opens it', async () => {
+    await renderScreen(<PlansScreen />);
+    await fireEvent.press(screen.getByTestId('add-thursday'));
+
+    expect(store().plans.map((p) => p.day)).toEqual(['thursday']);
     expect(mockRouter.push).toHaveBeenCalledWith(`/plan/${store().plans[0].id}`);
+  });
+
+  it('says so once the whole week is planned', async () => {
+    for (const day of ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const) {
+      makePlan(day, BENCH);
+    }
+    await renderScreen(<PlansScreen />);
+
+    expect(screen.getByTestId('add-day')).toBeTruthy();
+    expect(screen.getByText('Every day of the week has a plan.')).toBeTruthy();
   });
 });
 
@@ -61,7 +79,7 @@ describe('too few days to be balanced', () => {
   });
 
   it('is still shown for a single plan, however complete', async () => {
-    makePlan('Full body', ...TRAINING_GROUPS.map(suggestionFor));
+    makePlan('monday', ...TRAINING_GROUPS.map(suggestionFor));
     await renderScreen(<PlansScreen />);
     expect(screen.getByTestId('week-issue-days')).toBeTruthy();
     expect(screen.queryByTestId('week-review-balanced')).toBeNull();
@@ -69,24 +87,25 @@ describe('too few days to be balanced', () => {
 
   it('cannot be ignored', async () => {
     // It is a precondition, not an opinion.
-    makePlan('Push day', BENCH);
+    makePlan('monday', BENCH);
     await renderScreen(<PlansScreen />);
     expect(screen.getByTestId('week-issue-days')).toBeTruthy();
     expect(screen.queryByTestId('ignore-days')).toBeNull();
   });
 
   it('creates a plan and opens it', async () => {
-    makePlan('Push day', BENCH);
+    makePlan('monday', BENCH);
     await renderScreen(<PlansScreen />);
 
     await fireEvent.press(screen.getByTestId('add-plan-day'));
     expect(store().plans).toHaveLength(2);
-    expect(mockRouter.push).toHaveBeenCalledWith(`/plan/${store().plans[0].id}`);
+    // The new day is the first free one, Tuesday.
+    expect(store().plans.map((p) => p.day)).toEqual(['monday', 'tuesday']);
   });
 
   it('gives way to the muscle advice once there are two days', async () => {
-    makePlan('Push day', BENCH);
-    makePlan('Leg day', SQUAT);
+    makePlan('monday', BENCH);
+    makePlan('wednesday', SQUAT);
     await renderScreen(<PlansScreen />);
 
     expect(screen.queryByTestId('week-issue-days')).toBeNull();
@@ -102,8 +121,8 @@ describe('the week review', () => {
   });
 
   it('raises an issue for every group the week misses', async () => {
-    makePlan('Push day', BENCH);
-    makePlan('Leg day', SQUAT);
+    makePlan('monday', BENCH);
+    makePlan('wednesday', SQUAT);
     await renderScreen(<PlansScreen />);
 
     // One chest day is not two, and most groups are not trained at all.
@@ -114,8 +133,8 @@ describe('the week review', () => {
 
   it('says nothing is outstanding once the week is balanced', async () => {
     const picks = TRAINING_GROUPS.map(suggestionFor);
-    makePlan('Day 1', ...picks);
-    makePlan('Day 2', ...picks);
+    makePlan('monday', ...picks);
+    makePlan('tuesday', ...picks);
     await renderScreen(<PlansScreen />);
 
     expect(screen.getByTestId('week-review-balanced')).toBeTruthy();
@@ -123,8 +142,8 @@ describe('the week review', () => {
   });
 
   it('drops advice the user ignores, and remembers the choice', async () => {
-    makePlan('Push day', BENCH);
-    makePlan('Leg day', SQUAT);
+    makePlan('monday', BENCH);
+    makePlan('wednesday', SQUAT);
     await renderScreen(<PlansScreen />);
 
     await fireEvent.press(screen.getByTestId('ignore-biceps'));
@@ -136,8 +155,8 @@ describe('the week review', () => {
   });
 
   it('lists what has been dismissed rather than hiding it', async () => {
-    makePlan('Push day', BENCH);
-    makePlan('Leg day', SQUAT);
+    makePlan('monday', BENCH);
+    makePlan('wednesday', SQUAT);
     await renderScreen(<PlansScreen />);
     await fireEvent.press(screen.getByTestId('ignore-biceps'));
 
@@ -145,8 +164,8 @@ describe('the week review', () => {
   });
 
   it('brings dismissed advice back on a re-review', async () => {
-    makePlan('Push day', BENCH);
-    makePlan('Leg day', SQUAT);
+    makePlan('monday', BENCH);
+    makePlan('wednesday', SQUAT);
     await renderScreen(<PlansScreen />);
 
     await fireEvent.press(screen.getByTestId('ignore-biceps'));
@@ -161,8 +180,8 @@ describe('the week review', () => {
 describe('fixing an issue from the review', () => {
   /** Two days, so the structural blocker is out of the way and muscle advice is showing. */
   const twoDays = async () => {
-    makePlan('Push day', BENCH);
-    makePlan('Leg day', SQUAT);
+    makePlan('monday', BENCH);
+    makePlan('wednesday', SQUAT);
     await renderScreen(<PlansScreen />);
   };
 
@@ -178,10 +197,10 @@ describe('fixing an issue from the review', () => {
   it('asks for the day only after an exercise is chosen', async () => {
     await twoDays();
     await fireEvent.press(screen.getByTestId('fix-chest'));
-    expect(screen.queryByTestId(`fix-into-${planNamed('Leg day').id}`)).toBeNull();
+    expect(screen.queryByTestId(`fix-into-${planOn('wednesday').id}`)).toBeNull();
 
     await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
-    expect(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`)).toBeTruthy();
+    expect(screen.getByTestId(`fix-into-${planOn('wednesday').id}`)).toBeTruthy();
   });
 
   it('offers the days that do not already train the group', async () => {
@@ -190,17 +209,17 @@ describe('fixing an issue from the review', () => {
     await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
 
     // Leg day is offered; Push day already has a chest exercise.
-    expect(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`)).toBeTruthy();
-    expect(screen.queryByTestId(`fix-into-${planNamed('Push day').id}`)).toBeNull();
+    expect(screen.getByTestId(`fix-into-${planOn('wednesday').id}`)).toBeTruthy();
+    expect(screen.queryByTestId(`fix-into-${planOn('monday').id}`)).toBeNull();
   });
 
   it('adds the exercise the user chose to the day the user chose', async () => {
     await twoDays();
     await fireEvent.press(screen.getByTestId('fix-chest'));
     await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
-    await fireEvent.press(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`));
+    await fireEvent.press(screen.getByTestId(`fix-into-${planOn('wednesday').id}`));
 
-    expect(planNamed('Leg day').items.map((i) => i.exerciseId)).toContain(suggestionFor('chest'));
+    expect(planOn('wednesday').items.map((i) => i.exerciseId)).toContain(suggestionFor('chest'));
   });
 
   it('lets the user pick something other than the recommendation', async () => {
@@ -210,9 +229,9 @@ describe('fixing an issue from the review', () => {
     // Search the whole catalog from inside the fix flow and take a different chest exercise.
     await fireEvent.changeText(screen.getByTestId('exercise-search'), 'dumbbell flyes');
     await fireEvent.press(screen.getByTestId('exercise-Dumbbell_Flyes'));
-    await fireEvent.press(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`));
+    await fireEvent.press(screen.getByTestId(`fix-into-${planOn('wednesday').id}`));
 
-    const ids = planNamed('Leg day').items.map((i) => i.exerciseId);
+    const ids = planOn('wednesday').items.map((i) => i.exerciseId);
     expect(ids).toContain('Dumbbell_Flyes');
     expect(ids).not.toContain(suggestionFor('chest'));
   });
@@ -243,7 +262,7 @@ describe('fixing an issue from the review', () => {
     // so the id matches twice while the label is what a user actually has to find.
     await fireEvent.press(screen.getByLabelText('Back to the exercise list'));
     expect(screen.getByTestId('exercise-search')).toBeTruthy();
-    expect(screen.queryByTestId(`fix-into-${planNamed('Leg day').id}`)).toBeNull();
+    expect(screen.queryByTestId(`fix-into-${planOn('wednesday').id}`)).toBeNull();
   });
 
   it('closes the issue it was raised for', async () => {
@@ -252,7 +271,7 @@ describe('fixing an issue from the review', () => {
 
     await fireEvent.press(screen.getByTestId('fix-chest'));
     await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
-    await fireEvent.press(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`));
+    await fireEvent.press(screen.getByTestId(`fix-into-${planOn('wednesday').id}`));
 
     expect(screen.queryByTestId('week-issue-chest')).toBeNull();
   });
@@ -263,7 +282,7 @@ describe('fixing an issue from the review', () => {
     await fireEvent.press(screen.getByTestId('fix-close'));
 
     expect(screen.queryByTestId('fix-close')).toBeNull();
-    expect(planNamed('Leg day').items).toHaveLength(1);
+    expect(planOn('wednesday').items).toHaveLength(1);
   });
 
   it('does not leave the picker mounted after use', async () => {
@@ -272,7 +291,7 @@ describe('fixing an issue from the review', () => {
     await twoDays();
     await fireEvent.press(screen.getByTestId('fix-chest'));
     await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
-    await fireEvent.press(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`));
+    await fireEvent.press(screen.getByTestId(`fix-into-${planOn('wednesday').id}`));
 
     expect(screen.queryByTestId('fix-close')).toBeNull();
     expect(screen.queryByTestId('exercise-search')).toBeNull();

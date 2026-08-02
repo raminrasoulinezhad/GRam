@@ -14,6 +14,7 @@ import {
   type VersionSeen,
 } from './migrations';
 import { STORAGE_KEY, createBackingStorage } from './storage';
+import { WEEKDAYS, WEEKDAY_LABEL } from './types';
 import type {
   Plan,
   PlanItem,
@@ -24,6 +25,7 @@ import type {
   SetTemplate,
   SetValues,
   Settings,
+  Weekday,
 } from './types';
 
 /** Sensible starting numbers so a freshly added exercise is editable rather than blank. */
@@ -56,8 +58,10 @@ type State = {
 
 type Actions = {
   // --- plans ---
-  createPlan: (name: string) => string;
-  renamePlan: (planId: string, name: string) => void;
+  /** Creates a training day. Omit the day to take the first free one. */
+  createPlan: (day?: Weekday) => string;
+  /** Moves a plan to another weekday, swapping with whatever is already there. */
+  setPlanDay: (planId: string, day: Weekday) => void;
   deletePlan: (planId: string) => void;
   duplicatePlan: (planId: string) => string | null;
   addPlanItem: (planId: string, exerciseId: string) => void;
@@ -112,6 +116,11 @@ type Actions = {
   resetAll: () => void;
 };
 
+/** Plans always read in weekday order, so the list is the week. */
+function byWeekday(a: Plan, b: Plan): number {
+  return WEEKDAYS.indexOf(a.day) - WEEKDAYS.indexOf(b.day);
+}
+
 /** Applies `fn` to the plan with `planId`, bumping updatedAt. Returns the plans array unchanged if absent. */
 function withPlan(plans: Plan[], planId: string, fn: (plan: Plan) => Plan): Plan[] {
   return plans.map((p) => (p.id === planId ? { ...fn(p), updatedAt: Date.now() } : p));
@@ -151,41 +160,69 @@ export const useStore = create<State & Actions>()(
       versionHistory: [],
 
       // ---------------------------------------------------------------- plans
-      createPlan: (name) => {
+      /**
+       * Creates the training day. Falls back to the first weekday not already taken, so the
+       * common case - tapping Add with nothing chosen - still does something sensible.
+       */
+      createPlan: (day) => {
         const now = Date.now();
+        const taken = new Set(get().plans.map((p) => p.day));
         const plan: Plan = {
           id: uid('p'),
-          name: name.trim() || 'Untitled plan',
+          day: day ?? WEEKDAYS.find((d) => !taken.has(d)) ?? 'monday',
           items: [],
           createdAt: now,
           updatedAt: now,
         };
-        set((s) => ({ plans: [plan, ...s.plans] }));
+        set((s) => ({ plans: [...s.plans, plan].sort(byWeekday) }));
         return plan.id;
       },
 
-      /*
-       * Stores the name exactly as typed, including empty.
+      /**
+       * Moves a plan to another weekday.
        *
-       * This used to fall back to the old name when handed an empty string, which made the
-       * last character of a plan name undeletable: you pressed backspace, the store rejected
-       * the empty value and handed the previous name straight back, and the letter reappeared.
-       * The editor supplies a default on blur instead - the right place for it, because that is
-       * when the user has finished rather than paused.
+       * If that day is already taken the two swap, rather than the move being refused. Refusing
+       * would mean freeing the target day first, which is two operations to express one
+       * intention; swapping is what someone reordering their week actually means.
        */
-      renamePlan: (planId, name) =>
-        set((s) => ({ plans: withPlan(s.plans, planId, (p) => ({ ...p, name })) })),
+      setPlanDay: (planId, day) =>
+        set((s) => {
+          const moving = s.plans.find((p) => p.id === planId);
+          if (!moving || moving.day === day) return s;
+          const now = Date.now();
+          const occupant = s.plans.find((p) => p.day === day);
+          return {
+            plans: s.plans
+              .map((p) => {
+                if (p.id === planId) return { ...p, day, updatedAt: now };
+                if (occupant && p.id === occupant.id) {
+                  return { ...p, day: moving.day, updatedAt: now };
+                }
+                return p;
+              })
+              .sort(byWeekday),
+          };
+        }),
 
       deletePlan: (planId) => set((s) => ({ plans: s.plans.filter((p) => p.id !== planId) })),
 
+      /**
+       * Copies a plan onto the next free weekday.
+       *
+       * Returns null when the week is full - seven plans is seven days, and an eighth would be
+       * a second plan sharing a day, which is the ambiguity the weekday model exists to remove.
+       */
       duplicatePlan: (planId) => {
         const source = get().plans.find((p) => p.id === planId);
         if (!source) return null;
+        const taken = new Set(get().plans.map((p) => p.day));
+        const free = WEEKDAYS.find((d) => !taken.has(d));
+        if (!free) return null;
         const now = Date.now();
         const copy: Plan = {
           ...source,
           id: uid('p'),
-          name: `${source.name} copy`,
+          day: free,
           createdAt: now,
           updatedAt: now,
           items: source.items.map((i) => ({
@@ -194,7 +231,7 @@ export const useStore = create<State & Actions>()(
             templates: i.templates.map((t) => ({ ...t, id: uid('t') })),
           })),
         };
-        set((s) => ({ plans: [copy, ...s.plans] }));
+        set((s) => ({ plans: [...s.plans, copy].sort(byWeekday) }));
         return copy.id;
       },
 
@@ -297,7 +334,7 @@ export const useStore = create<State & Actions>()(
         const session: Session = {
           id: uid('s'),
           planId: plan.id,
-          planName: plan.name,
+          planName: WEEKDAY_LABEL[plan.day],
           startedAt: Date.now(),
           endedAt: null,
           entries: plan.items.map((item) => ({

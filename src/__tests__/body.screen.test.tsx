@@ -18,7 +18,7 @@ const store = () => useStore.getState();
 
 /** Runs a full plan to completion so the heatmap has something to draw. */
 function completeWorkout(exerciseId: string) {
-  const planId = store().createPlan('Session');
+  const planId = store().createPlan('monday');
   store().addPlanItem(planId, exerciseId);
   const sessionId = store().startSession(planId)!;
   const entry = store().sessions[0].entries[0];
@@ -102,7 +102,7 @@ describe('body heatmap', () => {
   });
 
   it('ignores a workout still in progress', async () => {
-    const planId = store().createPlan('Live');
+    const planId = store().createPlan('tuesday');
     store().addPlanItem(planId, BENCH);
     const sessionId = store().startSession(planId)!;
     const entry = store().sessions[0].entries[0];

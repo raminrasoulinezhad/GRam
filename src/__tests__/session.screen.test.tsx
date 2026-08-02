@@ -22,7 +22,7 @@ const store = () => useStore.getState();
 function startWorkout(exerciseId = BENCH) {
   let sessionId = '';
   const s = store();
-  const planId = s.createPlan('Push day');
+  const planId = s.createPlan('monday');
   s.addPlanItem(planId, exerciseId);
   sessionId = s.startSession(planId)!;
   mockParams = { id: sessionId };

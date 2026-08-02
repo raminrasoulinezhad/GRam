@@ -15,14 +15,24 @@ import {
   type BackupSummary,
   type ParsedBackup,
 } from '@/store/backup';
+import { requestPersistentStorage } from '@/lib/autoExport';
 import {
-  autoExportTarget,
-  chooseBackupFile,
-  forgetBackupFile,
-  isAutoExportSupported,
-  requestPersistentStorage,
-  writeBackupFile,
-} from '@/lib/autoExport';
+  ARCHIVE_DIR,
+  buildArchive,
+  changedFiles,
+  readArchive,
+  staleFiles,
+  type ArchiveManifest,
+} from '@/store/archive';
+import {
+  archiveDirectoryName,
+  chooseArchiveDirectory,
+  forgetArchiveDirectory,
+  isDirectoryBackupSupported,
+  pickAndReadArchive,
+  readArchiveDirectory,
+  writeArchive,
+} from '@/lib/directory';
 import { useStore } from '@/store/useStore';
 import { formatDate } from '@/lib/format';
 import { canPickFile, copyText, exportText, pickTextFile } from '@/lib/transfer';
@@ -49,18 +59,17 @@ export function BackupCard() {
   const backupRecord = useStore((s) => s.backup);
   const confirm = useConfirm();
 
-  const [exported, setExported] = useState<{ text: string; filename: string } | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [target, setTarget] = useState<string | null>(null);
 
-  const autoSupported = isAutoExportSupported();
+  const autoSupported = isDirectoryBackupSupported();
 
   // The filename is only known asynchronously, and only matters where auto-export can run.
   useEffect(() => {
     if (!autoSupported) return;
     let live = true;
-    void autoExportTarget().then((name) => {
+    void archiveDirectoryName().then((name) => {
       if (live) setTarget(name);
     });
     return () => {
@@ -105,6 +114,33 @@ export function BackupCard() {
    *      filename is fixed, so saving it to the same folder replaces the previous copy rather
    *      than piling up beside it. One tap, same address, just not automatic.
    */
+  /**
+   * Writes the backup folder, creating it the first time.
+   *
+   * Only the files that actually differ are written - see changedFiles - so logging a set
+   * rewrites this year's shard and the manifest and touches nothing else, however many years
+   * are in there.
+   */
+  async function exportToFolder(now: number): Promise<string | null> {
+    const existing = await readArchiveDirectory();
+    const previous = existing
+      ? ((JSON.parse(existing.get('manifest.json') ?? 'null') as ArchiveManifest | null) ?? null)
+      : null;
+
+    const files = buildArchive(exportState(), appVersion, now);
+    const result = await writeArchive(changedFiles(files, previous), staleFiles(files, previous));
+    if (!result.ok) return null;
+    return `${result.written} file${result.written === 1 ? '' : 's'}`;
+  }
+
+  /**
+   * Export, which after the first time goes back to the same place on its own.
+   *
+   * Where the browser can hold a folder permission, the first export asks where to put the
+   * GRam folder and every one after writes into it with no dialog. Where it cannot - Safari,
+   * and so every iPhone - it hands one file to the share sheet, under a fixed name, so saving
+   * into the same folder replaces the previous copy instead of piling up beside it.
+   */
   async function handleExport() {
     setError(null);
     const now = Date.now();
@@ -113,39 +149,40 @@ export function BackupCard() {
     recordExport(now, current.loggedSets);
     void requestPersistentStorage();
 
-    const text = serialiseBackup(buildBackup(exportState(), appVersion, now));
-    setExported({ text, filename });
-
     if (autoSupported) {
-      const remembered = await autoExportTarget();
-      if (remembered !== null) {
-        const written = await writeBackupFile(text);
-        if (written === 'written') {
-          setNote(`Saved to ${remembered}, the same file as last time.`);
+      const folder = await archiveDirectoryName();
+      if (folder !== null) {
+        const written = await exportToFolder(now);
+        if (written !== null) {
+          setNote(`Saved to ${folder} — ${written} updated.`);
           return;
         }
-        // The handle went stale; fall through and ask for it again.
-        await forgetBackupFile();
+        await forgetArchiveDirectory();
         setTarget(null);
       }
 
-      const chosen = await chooseBackupFile(filename);
+      const chosen = await chooseArchiveDirectory();
       if (chosen.ok) {
         setTarget(chosen.name);
-        const written = await writeBackupFile(text);
+        const written = await exportToFolder(now);
         setNote(
-          written === 'written'
-            ? `Saved to ${chosen.name}. Every export from now on goes to this same file.`
-            : 'That file could not be written to.',
+          written !== null
+            ? `Created ${chosen.name}. Every export from now on goes into this same folder.`
+            : 'That folder could not be written to.',
         );
         return;
       }
       if (chosen.reason === 'cancelled') {
-        setNote('Nothing saved. The text below is still yours to copy.');
+        setNote('Nothing saved.');
+        return;
+      }
+      if (chosen.reason === 'denied') {
+        setError('GRam was not given permission to write to that folder.');
         return;
       }
     }
 
+    const text = serialiseBackup(buildBackup(exportState(), appVersion, now));
     const outcome = await exportText(text, filename);
     setNote(
       outcome === 'shared'
@@ -154,7 +191,7 @@ export function BackupCard() {
           ? `Saved as ${filename}.`
           : outcome === 'copied'
             ? 'Copied to the clipboard — paste it somewhere safe.'
-            : 'Copy the text below and keep it somewhere safe.',
+            : 'Could not save automatically. Try again, or use a different folder.',
     );
   }
 
@@ -185,45 +222,81 @@ export function BackupCard() {
 
   async function handleArmAutoExport() {
     setError(null);
-    const chosen = await chooseBackupFile(backupFilename());
-    if (!chosen.ok) {
-      if (chosen.reason === 'error') setError('That file could not be opened for writing.');
-      return;
+    const folder = (await archiveDirectoryName()) ?? null;
+    if (folder === null) {
+      const chosen = await chooseArchiveDirectory();
+      if (!chosen.ok) {
+        if (chosen.reason === 'error') setError('That folder could not be opened for writing.');
+        return;
+      }
+      setTarget(chosen.name);
     }
-    setTarget(chosen.name);
+
     setAutoExport(true);
     void requestPersistentStorage();
 
-    // Write immediately, so the file exists and is current from the moment it is chosen rather
-    // than after the next change.
     const now = Date.now();
     recordExport(now, current.loggedSets);
-    const written = await writeBackupFile(
-      serialiseBackup(buildBackup(exportState(), appVersion, now)),
-    );
-    if (written === 'written') {
-      setNote(`Auto-export on. ${chosen.name} now updates itself whenever you train.`);
+    const written = await exportToFolder(now);
+    if (written !== null) {
+      setNote(`Hands-free backups on. ${ARCHIVE_DIR} now updates itself whenever you train.`);
     } else {
       setAutoExport(false);
-      setError('GRam could not write to that file, so auto-export is off.');
+      setError('GRam could not write to that folder, so hands-free backups are off.');
     }
   }
 
   async function handleDisarmAutoExport() {
     setAutoExport(false);
-    await forgetBackupFile();
+    await forgetArchiveDirectory();
     setTarget(null);
-    setNote('Auto-export off. Your file is left as it was.');
+    setNote('Hands-free backups off. Your folder is left as it was.');
   }
 
-  async function handlePickFile() {
+  async function handleImport() {
     setError(null);
     try {
+      if (autoSupported) {
+        const folder = await pickAndReadArchive();
+        if (folder !== null) return await applyFolderImport(folder);
+        // Cancelled, or not a folder we could read - fall through to the file picker so a
+        // single exported .json is still importable on the same machine.
+      }
       const text = await pickTextFile();
       if (text !== null) await applyImport(text);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'That file could not be read.');
+      setError(e instanceof Error ? e.message : 'That backup could not be read.');
     }
+  }
+
+  /** Same confirmation as a file import; the difference is only where the state came from. */
+  async function applyFolderImport(files: ReadonlyMap<string, string>) {
+    const result = readArchive(files);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    const ok = await confirm({
+      title: hasData ? 'Replace everything on this device?' : 'Restore this backup?',
+      message: describeImport(current, {
+        state: result.state,
+        summary: result.summary,
+        schemaVersion: result.manifest?.schemaVersion ?? 0,
+        appVersion: result.manifest?.appVersion ?? null,
+        exportedAt: result.manifest?.updatedAt ?? null,
+        fromTheFuture: false,
+      }),
+      confirmLabel: 'Import',
+      destructive: hasData,
+    });
+    if (!ok) return;
+
+    replaceAll(toLiveState(result.state));
+    setNote(
+      result.warnings.length > 0
+        ? `Imported, with ${result.warnings.length} warning${result.warnings.length === 1 ? '' : 's'}: ${result.warnings[0]}`
+        : `Imported ${result.summary.plans} plan${result.summary.plans === 1 ? '' : 's'} and ${result.summary.sessions} workout${result.summary.sessions === 1 ? '' : 's'}.`,
+    );
   }
 
   return (
@@ -274,7 +347,7 @@ export function BackupCard() {
               label="Import"
               variant="secondary"
               testID="import-backup"
-              onPress={() => void handlePickFile()}
+              onPress={() => void handleImport()}
             />
           ) : null}
         </View>
@@ -378,41 +451,6 @@ export function BackupCard() {
         </View>
       </Card>
 
-      {/* The text is always reachable, whatever the share sheet did with it. */}
-      {exported !== null ? (
-        <Card testID="backup-text-card">
-          <View style={s.textHead}>
-            <View style={{ flex: 1 }}>
-              <Text style={s.filename}>{exported.filename}</Text>
-              <Dim>{Math.max(1, Math.round(exported.text.length / 1024))} KB</Dim>
-            </View>
-            <Button
-              label="Copy"
-              variant="secondary"
-              testID="copy-backup"
-              onPress={() => {
-                void copyText(exported.text).then((done) =>
-                  setNote(done ? 'Copied to the clipboard.' : 'Select the text below to copy it.'),
-                );
-              }}
-            />
-            <Button
-              label="Hide"
-              variant="ghost"
-              testID="hide-backup"
-              onPress={() => setExported(null)}
-            />
-          </View>
-          <TextInput
-            testID="backup-text"
-            value={exported.text}
-            multiline
-            editable={false}
-            selectTextOnFocus
-            style={s.textArea}
-          />
-        </Card>
-      ) : null}
 
     </>
   );

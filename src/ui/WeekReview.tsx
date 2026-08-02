@@ -12,6 +12,7 @@ import {
   type GroupCoverage,
   type TrainingGroup,
 } from '@/analytics/balance';
+import { WEEKDAY_LABEL } from '@/store/types';
 import { useStore } from '@/store/useStore';
 import { Body, Button, Card, Dim, H2 } from './components';
 import { ExerciseList } from './ExerciseList';
@@ -98,7 +99,7 @@ export function WeekReview() {
                 label="Add a plan"
                 testID="add-plan-day"
                 style={{ flex: 1 }}
-                onPress={() => router.push(`/plan/${createPlan('')}`)}
+                onPress={() => router.push(`/plan/${createPlan()}`)}
               />
             </View>
             <Dim style={{ marginTop: theme.space(2), fontStyle: 'italic' }}>
@@ -220,7 +221,7 @@ export function WeekReview() {
                         style={({ pressed }) => [s.dayRow, pressed && { opacity: 0.7 }]}
                       >
                         <View style={{ flex: 1 }}>
-                          <Text style={s.dayName}>{plan.name}</Text>
+                          <Text style={s.dayName}>{WEEKDAY_LABEL[plan.day]}</Text>
                           <Dim>
                             {plan.items.length} exercise{plan.items.length === 1 ? '' : 's'}
                           </Dim>

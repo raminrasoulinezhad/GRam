@@ -6,8 +6,13 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before 
 
 ## Versioning and tagging
 
+**Commit only when Ramin asks.** Each deploy costs a build, so work accumulates locally and
+goes out in batches rather than one commit per feature. Keep working, keep the tree green, and
+wait to be told.
+
 **Every commit bumps the version and is tagged.** No exceptions, including documentation-only
-commits — the tag history is how a device's version is traced back to a state of the code.
+commits — the tag history is how a device's version is traced back to a state of the code. A
+batched commit still gets one bump, sized by what is in it.
 
 | Asked for | What changes |
 |---|---|

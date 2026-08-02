@@ -23,7 +23,7 @@ const store = () => useStore.getState();
 
 /** Builds a plan, runs it, and records every set - a user with something to lose. */
 function trainedUser() {
-  const planId = store().createPlan('Push day');
+  const planId = store().createPlan('monday');
   store().addPlanItem(planId, BENCH);
   const sessionId = store().startSession(planId)!;
   const session = store().sessions.find((s) => s.id === sessionId)!;
@@ -58,35 +58,27 @@ describe('what the card reports', () => {
 });
 
 describe('exporting', () => {
-  it('shows the backup text so there is never a dead end', async () => {
+  it('reports where it went instead of dumping the file on screen', async () => {
+    // The JSON used to be shown after every export. Nobody reads it, and it buried the one
+    // thing worth saying: whether it saved, and where.
     trainedUser();
     await renderScreen(<BackupCard />);
 
     await fireEvent.press(screen.getByTestId('export-backup'));
 
-    const field = screen.getByTestId('backup-text');
-    expect(field).toBeTruthy();
-    expect(String(field.props.value)).toContain('"app": "GRam"');
-  });
-
-  it('exports something that parses back into the same data', async () => {
-    trainedUser();
-    await renderScreen(<BackupCard />);
-    await fireEvent.press(screen.getByTestId('export-backup'));
-
-    const text = String(screen.getByTestId('backup-text').props.value);
-    const { parseBackup } = require('@/store/backup');
-    const result = parseBackup(text);
-
-    expect(result.ok).toBe(true);
-    expect(result.backup.state).toEqual(store().exportState());
-  });
-
-  it('can be hidden again', async () => {
-    await renderScreen(<BackupCard />);
-    await fireEvent.press(screen.getByTestId('export-backup'));
-    await fireEvent.press(screen.getByTestId('hide-backup'));
     expect(screen.queryByTestId('backup-text')).toBeNull();
+    expect(screen.getByTestId('backup-note')).toBeTruthy();
+  });
+
+  it('records that a backup was taken, so the reminder clears', async () => {
+    trainedUser();
+    await renderScreen(<BackupCard />);
+    expect(store().backup.lastExportedAt).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('export-backup'));
+
+    expect(store().backup.lastExportedAt).not.toBeNull();
+    expect(store().backup.lastExportedSets).toBeGreaterThan(0);
   });
 });
 
@@ -114,14 +106,14 @@ describe('importing', () => {
     await confirmDialog();
 
     expect(store().plans).toHaveLength(1);
-    expect(store().plans[0].name).toBe('Push day');
+    expect(store().plans[0].day).toBe('monday');
     expect(summarise(store().exportState()).loggedSets).toBeGreaterThan(0);
   });
 
   it('asks before replacing data that is already there', async () => {
     const text = backupText();
     // Something different on the device now.
-    const other = store().createPlan('Leg day');
+    const other = store().createPlan('wednesday');
     store().addPlanItem(other, SQUAT);
 
     await renderScreen(<BackupCard />);
@@ -132,26 +124,26 @@ describe('importing', () => {
 
   it('changes nothing when that is declined', async () => {
     const text = backupText();
-    const other = store().createPlan('Leg day');
+    const other = store().createPlan('wednesday');
     store().addPlanItem(other, SQUAT);
 
     await renderScreen(<BackupCard />);
     await importFile(text);
     await cancelDialog();
 
-    expect(store().plans.map((p) => p.name)).toEqual(['Leg day']);
+    expect(store().plans.map((p) => p.day)).toEqual(['wednesday']);
   });
 
   it('replaces rather than merging, and says so beforehand', async () => {
     const text = backupText();
-    const other = store().createPlan('Leg day');
+    const other = store().createPlan('wednesday');
     store().addPlanItem(other, SQUAT);
 
     await renderScreen(<BackupCard />);
     await importFile(text);
     await confirmDialog();
 
-    expect(store().plans.map((p) => p.name)).toEqual(['Push day']);
+    expect(store().plans.map((p) => p.day)).toEqual(['monday']);
   });
 
   it('reports a file that is not a backup instead of wiping anything', async () => {

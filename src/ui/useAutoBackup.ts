@@ -1,8 +1,13 @@
 import { useEffect, useRef } from 'react';
 import Constants from 'expo-constants';
-import { buildBackup, serialiseBackup, summarise } from '@/store/backup';
+import { summarise } from '@/store/backup';
+import { buildArchive, changedFiles, staleFiles, type ArchiveManifest } from '@/store/archive';
 import { useStore } from '@/store/useStore';
-import { isAutoExportSupported, writeBackupFile } from '@/lib/autoExport';
+import {
+  isDirectoryBackupSupported,
+  readArchiveDirectory,
+  writeArchive,
+} from '@/lib/directory';
 
 /**
  * Keeps the chosen backup file up to date on its own.
@@ -34,7 +39,7 @@ export function useAutoBackup(): void {
   const primed = useRef(false);
 
   useEffect(() => {
-    if (!autoExport || !isAutoExportSupported()) return;
+    if (!autoExport || !isDirectoryBackupSupported()) return;
     if (!primed.current) {
       primed.current = true;
       return;
@@ -42,19 +47,29 @@ export function useAutoBackup(): void {
 
     const timer = setTimeout(() => {
       void (async () => {
-        const state = exportState();
-        const text = serialiseBackup(
-          buildBackup(state, Constants.expoConfig?.version ?? '0.0.0', Date.now()),
-        );
-        const result = await writeBackupFile(text);
+        const existing = await readArchiveDirectory();
+        if (existing === null) {
+          // The folder is gone or permission lapsed. Nothing is being saved, and a switch that
+          // says "on" while saving nothing is the worst available outcome.
+          setAutoExport(false);
+          return;
+        }
 
-        if (result === 'written') {
+        const previous =
+          (JSON.parse(existing.get('manifest.json') ?? 'null') as ArchiveManifest | null) ?? null;
+        const state = exportState();
+        const files = buildArchive(state, Constants.expoConfig?.version ?? '0.0.0', Date.now());
+
+        const result = await writeArchive(
+          changedFiles(files, previous),
+          staleFiles(files, previous),
+        );
+        if (result.ok) {
           recordExport(Date.now(), summarise(state).loggedSets);
-        } else if (result === 'denied' || result === 'no-file') {
-          // Nothing is being saved, and pretending otherwise is worse than stopping.
+        } else if (result.reason === 'denied' || result.reason === 'no-directory') {
           setAutoExport(false);
         }
-        // 'error' is left armed: a transient write failure should not disarm the safety net.
+        // 'error' stays armed: a transient write failure should not disarm the safety net.
       })();
     }, DEBOUNCE_MS);
 

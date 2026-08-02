@@ -6,6 +6,35 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.5] — 2026-08-02
+
+Storage schema **v7**.
+
+### Changed
+
+- **A plan is a day of the week.** No more free-text names: each plan is Monday through Sunday,
+  chosen from a picker, at most one per day. That was already the truth — the week review reads
+  plans as days and checks that muscles are trained on two *different* ones — but it was left
+  implicit, and a name let the two drift apart. Moving a plan onto a day that is taken swaps the
+  two, because rearranging a week should be one tap.
+  - Existing plans are dealt onto weekdays in creation order, and one already named after a day
+    keeps that day. **The names people typed are kept** rather than discarded.
+- **Export writes a folder, not a file**, where the browser allows it. The first Export asks
+  where to put it, creates `GRam/` there, and every export after writes into the same folder.
+
+### Added
+
+- **A sharded archive format.** `manifest.json` indexes everything with checksums; plans and
+  profile are one file each; workouts are split **one file per calendar year**. Only the current
+  year is ever rewritten, so the cost of saving stays flat however long the history gets —
+  tested at 100 years and 15,000 sessions, where logging one more set rewrites two files.
+  Reading is deliberately forgiving: a missing manifest, a missing year, a failed checksum or a
+  truncated shard are warnings, and everything else still comes back.
+
+### Removed
+
+- **"Paste"**, and the JSON dump shown after every export.
+
 ## [1.2.4] — 2026-08-02
 
 ### Changed

@@ -72,7 +72,7 @@ describe('no control is nested inside another', () => {
   });
 
   it('holds for the plan editor, collapsed and expanded', async () => {
-    const planId = store().createPlan('Push day');
+    const planId = store().createPlan('monday');
     store().addPlanItem(planId, BENCH);
     mockParams = { id: planId };
 

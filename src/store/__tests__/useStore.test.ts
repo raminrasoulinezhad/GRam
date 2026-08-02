@@ -14,22 +14,42 @@ beforeEach(() => {
 // ---------------------------------------------------------------------- plans
 
 describe('plans', () => {
-  it('creates a plan and puts it at the top of the list', () => {
-    let first = '';
-    first = store().createPlan('Push day');
-    store().createPlan('Pull day');
-    expect(store().plans.map((p) => p.name)).toEqual(['Pull day', 'Push day']);
+  it('keeps plans in weekday order, so the list reads as the week', () => {
+    const first = store().createPlan('wednesday');
+    store().createPlan('monday');
+    expect(store().plans.map((p) => p.day)).toEqual(['monday', 'wednesday']);
     expect(store().plans.find((p) => p.id === first)?.items).toEqual([]);
   });
 
-  it('falls back to a placeholder name rather than creating a blank plan', () => {
-    store().createPlan('   ');
-    expect(store().plans[0].name).toBe('Untitled plan');
+  it('takes the first free weekday when none is given', () => {
+    store().createPlan();
+    store().createPlan();
+    expect(store().plans.map((p) => p.day)).toEqual(['monday', 'tuesday']);
+  });
+
+  it('moves a plan to another day', () => {
+    const id = store().createPlan('monday');
+    store().setPlanDay(id, 'friday');
+    expect(store().plans[0].day).toBe('friday');
+  });
+
+  it('swaps two plans rather than refusing a day that is taken', () => {
+    // Rearranging a week should be one tap, not "free Wednesday first, then move".
+    const mon = store().createPlan('monday');
+    const wed = store().createPlan('wednesday');
+    store().addPlanItem(mon, BENCH);
+
+    store().setPlanDay(mon, 'wednesday');
+
+    expect(store().plans.find((p) => p.id === mon)!.day).toBe('wednesday');
+    expect(store().plans.find((p) => p.id === wed)!.day).toBe('monday');
+    // The exercises travel with the plan, not with the day.
+    expect(store().plans.find((p) => p.id === mon)!.items).toHaveLength(1);
   });
 
   it('adds an exercise with the default number of seeded sets', () => {
     let id = '';
-    id = store().createPlan('Push');
+    id = store().createPlan('monday');
     store().addPlanItem(id, BENCH);
     const item = store().plans[0].items[0];
     expect(item.exerciseId).toBe(BENCH);
@@ -40,14 +60,14 @@ describe('plans', () => {
 
   it('ignores an unknown exercise id', () => {
     let id = '';
-    id = store().createPlan('Push');
+    id = store().createPlan('monday');
     store().addPlanItem(id, 'not_a_real_exercise');
     expect(store().plans[0].items).toEqual([]);
   });
 
   it('adds, edits and removes template sets', () => {
     let planId = '';
-    planId = store().createPlan('Push');
+    planId = store().createPlan('monday');
     store().addPlanItem(planId, BENCH);
     const itemId = store().plans[0].items[0].id;
 
@@ -65,7 +85,7 @@ describe('plans', () => {
 
   it('copies the last set when adding another', () => {
     let planId = '';
-    planId = store().createPlan('Push');
+    planId = store().createPlan('monday');
     store().addPlanItem(planId, BENCH);
     const itemId = store().plans[0].items[0].id;
     const templates = store().plans[0].items[0].templates;
@@ -81,7 +101,7 @@ describe('plans', () => {
 
   it('reseeds sets when the recorded kind changes, since old numbers no longer apply', () => {
     let planId = '';
-    planId = store().createPlan('Core');
+    planId = store().createPlan('thursday');
     store().addPlanItem(planId, BENCH);
     const itemId = store().plans[0].items[0].id;
     store().setPlanItemKind(planId, itemId, 'time');
@@ -94,7 +114,7 @@ describe('plans', () => {
 
   it('reorders items and clamps at both ends', () => {
     let planId = '';
-    planId = store().createPlan('Full body');
+    planId = store().createPlan('monday');
     store().addPlanItem(planId, BENCH);
     store().addPlanItem(planId, SQUAT);
     const [a, b] = store().plans[0].items.map((i) => i.id);
@@ -112,13 +132,13 @@ describe('plans', () => {
   it('duplicates a plan with fresh ids so edits do not leak between copies', () => {
     let planId = '';
     let copyId: string | null = null;
-    planId = store().createPlan('Push');
+    planId = store().createPlan('monday');
     store().addPlanItem(planId, BENCH);
     copyId = store().duplicatePlan(planId);
     const original = store().plans.find((p) => p.id === planId)!;
     const copy = store().plans.find((p) => p.id === copyId)!;
 
-    expect(copy.name).toBe('Push copy');
+    expect(copy.day).toBe('tuesday');
     expect(copy.items[0].id).not.toBe(original.items[0].id);
     expect(copy.items[0].templates[0].id).not.toBe(original.items[0].templates[0].id);
 
@@ -134,7 +154,7 @@ describe('plans', () => {
 
   it('deletes a plan without touching logged workouts', () => {
     let planId = '';
-    planId = store().createPlan('Push');
+    planId = store().createPlan('monday');
     store().addPlanItem(planId, BENCH);
     const s = store().startSession(planId)!;
     const entry = store().sessions[0].entries[0];
@@ -143,7 +163,7 @@ describe('plans', () => {
     store().deletePlan(planId);
     expect(store().plans).toHaveLength(0);
     expect(store().sessions).toHaveLength(1);
-    expect(store().sessions[0].planName).toBe('Push');
+    expect(store().sessions[0].planName).toBe('Monday');
   });
 });
 
@@ -153,7 +173,7 @@ describe('the workout loop', () => {
   function setup() {
     let planId = '';
     let sessionId = '';
-    planId = store().createPlan('Push day');
+    planId = store().createPlan('monday');
     store().addPlanItem(planId, BENCH);
     sessionId = store().startSession(planId)!;
     const entryId = store().sessions[0].entries[0].id;
@@ -164,17 +184,19 @@ describe('the workout loop', () => {
     const { planId, sessionId } = setup();
     const session = store().sessions.find((s) => s.id === sessionId)!;
     expect(session.planId).toBe(planId);
-    expect(session.planName).toBe('Push day');
+    expect(session.planName).toBe('Monday');
     expect(session.endedAt).toBeNull();
     expect(session.entries[0].sets).toHaveLength(3);
     expect(session.entries[0].sets.every((s) => s.loggedAt === null)).toBe(true);
     expect(store().activeSessionId).toBe(sessionId);
   });
 
-  it('snapshots the plan name so later renames do not rewrite history', () => {
+  it('snapshots the day name, so moving the plan later does not rewrite history', () => {
     const { planId, sessionId } = setup();
-    store().renamePlan(planId, 'Renamed');
-    expect(store().sessions.find((s) => s.id === sessionId)!.planName).toBe('Push day');
+    expect(store().sessions.find((s) => s.id === sessionId)!.planName).toBe('Monday');
+
+    store().setPlanDay(planId, 'friday');
+    expect(store().sessions.find((s) => s.id === sessionId)!.planName).toBe('Monday');
   });
 
   it('refuses to start from a plan that does not exist', () => {
@@ -325,7 +347,7 @@ describe('the workout loop', () => {
 describe('log feeds the body map', () => {
   it('turns recorded sets into muscle volume', () => {
     let sessionId = '';
-    const planId = store().createPlan('Push');
+    const planId = store().createPlan('monday');
     store().addPlanItem(planId, BENCH);
     sessionId = store().startSession(planId)!;
     const entry = store().sessions[0].entries[0];
@@ -341,7 +363,7 @@ describe('log feeds the body map', () => {
   it('un-recording a set removes it from the totals', () => {
     let sessionId = '';
     let entryId = '';
-    const planId = store().createPlan('Push');
+    const planId = store().createPlan('monday');
     store().addPlanItem(planId, BENCH);
     sessionId = store().startSession(planId)!;
     entryId = store().sessions[0].entries[0].id;
@@ -357,7 +379,7 @@ describe('log feeds the body map', () => {
 
 describe('exerciseHistory', () => {
   it('returns only recorded sets of that exercise, newest first', () => {
-    const planId = store().createPlan('Push');
+    const planId = store().createPlan('monday');
     store().addPlanItem(planId, BENCH);
     store().addPlanItem(planId, SQUAT);
     const sessionId = store().startSession(planId)!;
@@ -389,7 +411,7 @@ describe('settings', () => {
   it('honours a changed default set count for newly added exercises', () => {
     let planId = '';
     store().updateSettings({ defaultSetCount: 5 });
-    planId = store().createPlan('Push');
+    planId = store().createPlan('monday');
     store().addPlanItem(planId, BENCH);
     expect(store().plans[0].items[0].templates).toHaveLength(5);
   });

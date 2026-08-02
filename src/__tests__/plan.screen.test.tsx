@@ -19,7 +19,7 @@ const SQUAT = 'Barbell_Full_Squat';
 const store = () => useStore.getState();
 
 function makePlan(...exerciseIds: string[]) {
-  const planId = store().createPlan('Push day');
+  const planId = store().createPlan('monday');
   for (const id of exerciseIds) store().addPlanItem(planId, id);
   mockParams = { id: planId };
   return planId;
@@ -65,34 +65,23 @@ describe('plan editor', () => {
     expect(screen.queryByTestId(`tpl-${templateId}-weight`)).toBeNull();
   });
 
-  it('renames the plan', async () => {
+  it('moves the plan to another day', async () => {
     const planId = makePlan(BENCH);
     await renderScreen(<PlanEditorScreen />);
 
-    await fireEvent.changeText(screen.getByTestId('plan-name'), 'Chest day');
-    expect(store().plans.find((p) => p.id === planId)!.name).toBe('Chest day');
+    await fireEvent.press(screen.getByTestId('day-friday'));
+    expect(store().plans.find((p) => p.id === planId)!.day).toBe('friday');
   });
 
-  it('lets the field be cleared, so a name can be retyped', async () => {
-    // The store used to reject an empty name and hand the old one back, which made the last
-    // character undeletable: backspace, and the letter reappeared.
+  it('offers every weekday, not a name to type', async () => {
+    // A plan is a day now, so there is nothing to name and nothing to get wrong.
     makePlan(BENCH);
     await renderScreen(<PlanEditorScreen />);
 
-    await fireEvent.changeText(screen.getByTestId('plan-name'), '');
-    expect(plan().name).toBe('');
-
-    await fireEvent.changeText(screen.getByTestId('plan-name'), 'Chest day');
-    expect(plan().name).toBe('Chest day');
-  });
-
-  it('names an abandoned blank plan once the field loses focus', async () => {
-    makePlan(BENCH);
-    await renderScreen(<PlanEditorScreen />);
-
-    await fireEvent.changeText(screen.getByTestId('plan-name'), '   ');
-    await fireEvent(screen.getByTestId('plan-name'), 'blur');
-    expect(plan().name).toBe('Untitled plan');
+    for (const day of ['monday', 'wednesday', 'sunday']) {
+      expect(screen.getByTestId(`day-${day}`)).toBeTruthy();
+    }
+    expect(screen.queryByTestId('plan-name')).toBeNull();
   });
 
   it('adds a template set', async () => {
@@ -144,7 +133,7 @@ describe('plan editor', () => {
     await fireEvent.press(screen.getByTestId('start-plan'));
 
     expect(store().sessions).toHaveLength(1);
-    expect(store().sessions[0].planName).toBe('Push day');
+    expect(store().sessions[0].planName).toBe('Monday');
     expect(mockRouter.replace).toHaveBeenCalledWith(`/session/${store().sessions[0].id}`);
   });
 

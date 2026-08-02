@@ -1,14 +1,17 @@
 import { act, render } from '@testing-library/react-native';
 import { useStore } from '@/store/useStore';
 import { useAutoBackup } from '@/ui/useAutoBackup';
+import { buildArchive } from '@/store/archive';
 
 // Prefixed with `mock` so jest allows the factory to close over them.
-const mockWriteBackupFile = jest.fn();
+const mockWriteArchive = jest.fn();
+const mockReadDirectory = jest.fn();
 const mockIsSupported = jest.fn(() => true);
 
-jest.mock('@/lib/autoExport', () => ({
-  isAutoExportSupported: () => mockIsSupported(),
-  writeBackupFile: (text: string) => mockWriteBackupFile(text),
+jest.mock('@/lib/directory', () => ({
+  isDirectoryBackupSupported: () => mockIsSupported(),
+  readArchiveDirectory: () => mockReadDirectory(),
+  writeArchive: (files: unknown, remove: unknown) => mockWriteArchive(files, remove),
 }));
 
 jest.mock('expo-router', () => ({
@@ -35,7 +38,8 @@ async function settle() {
 beforeEach(() => {
   jest.useFakeTimers();
   jest.clearAllMocks();
-  mockWriteBackupFile.mockResolvedValue('written');
+  mockWriteArchive.mockResolvedValue({ ok: true, written: 2 });
+  mockReadDirectory.mockResolvedValue(new Map());
   mockIsSupported.mockReturnValue(true);
   store().resetAll();
 });
@@ -50,11 +54,11 @@ describe('automatic export', () => {
       render(<Harness />);
     });
     await act(async () => {
-      store().createPlan('Push day');
+      store().createPlan('monday');
     });
     await settle();
 
-    expect(mockWriteBackupFile).not.toHaveBeenCalled();
+    expect(mockWriteArchive).not.toHaveBeenCalled();
   });
 
   it('does nothing where the browser cannot support it', async () => {
@@ -64,11 +68,11 @@ describe('automatic export', () => {
       render(<Harness />);
     });
     await act(async () => {
-      store().createPlan('Push day');
+      store().createPlan('monday');
     });
     await settle();
 
-    expect(mockWriteBackupFile).not.toHaveBeenCalled();
+    expect(mockWriteArchive).not.toHaveBeenCalled();
   });
 
   it('does not write merely because the app opened', async () => {
@@ -79,7 +83,7 @@ describe('automatic export', () => {
     });
     await settle();
 
-    expect(mockWriteBackupFile).not.toHaveBeenCalled();
+    expect(mockWriteArchive).not.toHaveBeenCalled();
   });
 
   it('writes after the data changes', async () => {
@@ -89,14 +93,36 @@ describe('automatic export', () => {
     });
 
     await act(async () => {
-      store().createPlan('Push day');
+      store().createPlan('monday');
     });
     await settle();
 
-    expect(mockWriteBackupFile).toHaveBeenCalledTimes(1);
-    const written = JSON.parse(mockWriteBackupFile.mock.calls[0][0]);
-    expect(written.app).toBe('GRam');
-    expect(written.state.plans[0].name).toBe('Push day');
+    expect(mockWriteArchive).toHaveBeenCalledTimes(1);
+    const files = mockWriteArchive.mock.calls[0][0] as { path: string; text: string }[];
+    const plans = JSON.parse(files.find((f) => f.path === 'plans.json')!.text);
+    expect(plans[0].day).toBe('monday');
+    expect(files.some((f) => f.path === 'manifest.json')).toBe(true);
+  });
+
+  it('writes only what changed, using the manifest already in the folder', async () => {
+    // The point of sharding: a set logged today must not rewrite a decade of history.
+    store().setAutoExport(true);
+    // Snapshot the folder as it stands *after* arming, so the only later change is the plan.
+    const first = buildArchive(store().exportState(), '1.0.0', Date.now());
+    mockReadDirectory.mockResolvedValue(new Map(first.map((f) => [f.path, f.text])));
+
+    await act(async () => {
+      render(<Harness />);
+    });
+    await act(async () => {
+      store().createPlan('monday');
+    });
+    await settle();
+
+    const written = (mockWriteArchive.mock.calls[0][0] as { path: string }[]).map((f) => f.path);
+    expect(written).toContain('plans.json');
+    expect(written).toContain('manifest.json');
+    expect(written).not.toContain('profile.json');
   });
 
   it('writes once for a burst of edits, not once per keystroke', async () => {
@@ -106,14 +132,12 @@ describe('automatic export', () => {
     });
 
     await act(async () => {
-      const id = store().createPlan('Push day');
+      const id = store().createPlan('monday');
       store().addPlanItem(id, BENCH);
-      store().renamePlan(id, 'Push A');
-      store().renamePlan(id, 'Push AB');
-    });
+                });
     await settle();
 
-    expect(mockWriteBackupFile).toHaveBeenCalledTimes(1);
+    expect(mockWriteArchive).toHaveBeenCalledTimes(1);
   });
 
   it('records the export, so the reminder knows it happened', async () => {
@@ -122,22 +146,22 @@ describe('automatic export', () => {
       render(<Harness />);
     });
     await act(async () => {
-      store().createPlan('Push day');
+      store().createPlan('monday');
     });
     await settle();
 
     expect(store().backup.lastExportedAt).not.toBeNull();
   });
 
-  it('switches itself off when the file is gone', async () => {
+  it('switches itself off when the folder is gone', async () => {
     // Silently doing nothing while the switch says "on" is the worst available outcome.
-    mockWriteBackupFile.mockResolvedValue('no-file');
+    mockReadDirectory.mockResolvedValue(null);
     store().setAutoExport(true);
     await act(async () => {
       render(<Harness />);
     });
     await act(async () => {
-      store().createPlan('Push day');
+      store().createPlan('monday');
     });
     await settle();
 
@@ -145,13 +169,13 @@ describe('automatic export', () => {
   });
 
   it('switches itself off when permission has lapsed', async () => {
-    mockWriteBackupFile.mockResolvedValue('denied');
+    mockWriteArchive.mockResolvedValue({ ok: false, reason: 'denied' });
     store().setAutoExport(true);
     await act(async () => {
       render(<Harness />);
     });
     await act(async () => {
-      store().createPlan('Push day');
+      store().createPlan('monday');
     });
     await settle();
 
@@ -160,13 +184,13 @@ describe('automatic export', () => {
 
   it('stays armed through a transient write failure', async () => {
     // A disk hiccup should not disarm the safety net; only a definite loss of the target does.
-    mockWriteBackupFile.mockResolvedValue('error');
+    mockWriteArchive.mockResolvedValue({ ok: false, reason: 'error' });
     store().setAutoExport(true);
     await act(async () => {
       render(<Harness />);
     });
     await act(async () => {
-      store().createPlan('Push day');
+      store().createPlan('monday');
     });
     await settle();
 

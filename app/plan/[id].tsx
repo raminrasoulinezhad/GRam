@@ -4,8 +4,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { getExercise } from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
+import { WEEKDAYS, WEEKDAY_LABEL, WEEKDAY_SHORT } from '@/store/types';
 import { useStore } from '@/store/useStore';
-import { Button, Card, Dim, Empty, NameField, Screen } from '@/ui/components';
+import { Button, Card, Chip, Dim, Empty, Screen } from '@/ui/components';
 import { ExerciseCard } from '@/ui/ExerciseCard';
 import { useConfirm } from '@/ui/confirm';
 import { SetFields } from '@/ui/SetFields';
@@ -16,7 +17,7 @@ export default function PlanEditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const plan = useStore((s) => s.plans.find((p) => p.id === id));
   const unit = useStore((s) => s.settings.unit);
-  const renamePlan = useStore((s) => s.renamePlan);
+  const setPlanDay = useStore((s) => s.setPlanDay);
   const removePlanItem = useStore((s) => s.removePlanItem);
   const movePlanItem = useStore((s) => s.movePlanItem);
   const addPlanTemplate = useStore((s) => s.addPlanTemplate);
@@ -46,26 +47,25 @@ export default function PlanEditorScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: plan.name }} />
+      <Stack.Screen options={{ title: WEEKDAY_LABEL[plan.day] }} />
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         <Card>
-          <Text style={s.label}>PLAN NAME</Text>
+          <Text style={s.label}>TRAINING DAY</Text>
           {/*
-            * key={plan.id} so switching plans re-seeds the field. NameField holds its own text
-            * rather than reading plan.name back on every keystroke - that round-trip is what
-            * made the last character undeletable.
+            * Choosing the day, not typing a name. Picking one already used swaps the two plans,
+            * so rearranging a week is one tap rather than "free Wednesday first, then move".
             */}
-          <NameField
-            key={plan.id}
-            testID="plan-name"
-            initialValue={plan.name}
-            onChange={(t) => renamePlan(plan.id, t)}
-            onCommit={(t) => {
-              if (t.trim().length === 0) renamePlan(plan.id, 'Untitled plan');
-            }}
-            placeholder="Untitled plan"
-            style={s.nameInput}
-          />
+          <View style={s.dayChips}>
+            {WEEKDAYS.map((day) => (
+              <Chip
+                key={day}
+                label={WEEKDAY_SHORT[day]}
+                active={plan.day === day}
+                onPress={() => setPlanDay(plan.id, day)}
+                testID={`day-${day}`}
+              />
+            ))}
+          </View>
           <Dim>
             {plan.items.length} exercise{plan.items.length === 1 ? '' : 's'} · {totalSets} sets
           </Dim>
@@ -183,6 +183,13 @@ const s = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     marginBottom: theme.space(1.5),
+  },
+  dayChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.space(1.5),
+    marginTop: theme.space(2),
+    marginBottom: theme.space(2),
   },
   nameInput: {
     color: theme.color.text,

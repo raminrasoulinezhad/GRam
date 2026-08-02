@@ -4,8 +4,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { exerciseName } from '@/catalog';
 import { relativeTime } from '@/lib/format';
+import { WEEKDAYS, WEEKDAY_LABEL, WEEKDAY_SHORT, type Weekday } from '@/store/types';
 import { useStore } from '@/store/useStore';
-import { Body, Button, Card, Dim, Empty, Screen } from '@/ui/components';
+import { Body, Button, Card, Chip, Dim, Empty, Screen } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
 import { WeekReview } from '@/ui/WeekReview';
 import { theme } from '@/ui/theme';
@@ -21,13 +22,12 @@ export default function PlansScreen() {
   const startEmptySession = useStore((s) => s.startEmptySession);
   const confirm = useConfirm();
 
-  const [draftName, setDraftName] = useState('');
   const activeSession = sessions.find((x) => x.id === activeSessionId);
+  const used = new Set(plans.map((p) => p.day));
+  const free = WEEKDAYS.filter((d) => !used.has(d));
 
-  function handleCreate() {
-    const id = createPlan(draftName);
-    setDraftName('');
-    router.push(`/plan/${id}`);
+  function handleCreate(day: Weekday) {
+    router.push(`/plan/${createPlan(day)}`);
   }
 
   /*
@@ -80,7 +80,7 @@ export default function PlansScreen() {
             <Pressable onPress={() => router.push(`/plan/${plan.id}`)}>
               <View style={s.planHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.planName}>{plan.name}</Text>
+                  <Text style={s.planName}>{WEEKDAY_LABEL[plan.day]}</Text>
                   <Dim>
                     {plan.items.length} exercise{plan.items.length === 1 ? '' : 's'} ·{' '}
                     {plan.items.reduce((n, i) => n + i.templates.length, 0)} sets · updated{' '}
@@ -104,26 +104,46 @@ export default function PlansScreen() {
               />
               <Button label="Edit" variant="secondary" onPress={() => router.push(`/plan/${plan.id}`)} />
               <Button label="Copy" variant="secondary" onPress={() => duplicatePlan(plan.id)} />
-              <Button label="Delete" variant="danger" onPress={() => void handleDelete(plan.id, plan.name)} />
+              <Button
+                label="Delete"
+                variant="danger"
+                onPress={() => void handleDelete(plan.id, WEEKDAY_LABEL[plan.day])}
+              />
             </View>
           </Card>
         ))}
 
-        {/* Creating a plan is a once-in-a-while act, so it sits after the plans rather than
-            above them - the same shape as adding an exercise inside a plan. */}
-        <View style={s.addRow}>
-          <Ionicons name="add" size={18} color={theme.color.textFaint} />
-          <TextInput
-            testID="new-plan-name"
-            value={draftName}
-            onChangeText={setDraftName}
-            placeholder="Add a training day, e.g. Push"
-            placeholderTextColor={theme.color.textFaint}
-            style={s.addInput}
-            onSubmitEditing={handleCreate}
-            returnKeyType="done"
-          />
-          <Button label="Add" onPress={handleCreate} testID="create-plan" />
+        {/*
+          * Adding a day, not naming one. Every weekday is offered and the ones already in the
+          * week are shown as taken rather than hidden - a week with a gap on Thursday should
+          * make that gap visible, and a disabled chip does that where an absent one would not.
+          */}
+        <View style={s.addRow} testID="add-day">
+          <Text style={s.addLabel}>{free.length > 0 ? 'ADD A DAY' : 'YOUR WEEK'}</Text>
+          <View style={s.dayChips}>
+            {WEEKDAYS.map((day) => {
+              const existing = plans.find((p) => p.day === day);
+              return (
+                <Chip
+                  key={day}
+                  label={WEEKDAY_SHORT[day]}
+                  active={existing !== undefined}
+                  // A day already in the week opens it rather than doing nothing. Every day is
+                  // always shown, so a gap on Thursday is visible - which a missing chip would
+                  // not be, and the gap is the thing worth seeing.
+                  onPress={
+                    existing ? () => router.push(`/plan/${existing.id}`) : () => handleCreate(day)
+                  }
+                  testID={`add-${day}`}
+                />
+              );
+            })}
+          </View>
+          <Dim>
+            {free.length > 0
+              ? 'Tap a free day to plan it, or a planned one to open it.'
+              : 'Every day of the week has a plan.'}
+          </Dim>
         </View>
 
         <Button
@@ -148,17 +168,20 @@ const s = StyleSheet.create({
     marginBottom: theme.space(2),
   },
   addRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: theme.space(2),
-    paddingLeft: theme.space(3),
-    paddingRight: theme.space(1.5),
-    paddingVertical: theme.space(1.5),
+    padding: theme.space(3),
     backgroundColor: theme.color.surface,
     borderWidth: 1,
     borderColor: theme.color.border,
     borderRadius: theme.radius.md,
   },
+  addLabel: {
+    color: theme.color.textFaint,
+    fontSize: theme.font.tiny,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  dayChips: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space(1.5) },
   addInput: {
     flex: 1,
     // Without this an <input> keeps its ~200px intrinsic width on web and overflows the row.
