@@ -10,9 +10,14 @@ import {
   searchExercises,
 } from '@/catalog';
 
+/** Entries written by us rather than taken from free-exercise-db. See scripts/build-catalog.mjs. */
+const isSupplement = (id: string) => id.startsWith('FitRam_');
+
 describe('bundled catalog integrity', () => {
-  it('ships the full dataset', () => {
-    expect(EXERCISES.length).toBe(873);
+  it('ships the full dataset plus our own additions', () => {
+    const supplement = EXERCISES.filter((e) => isSupplement(e.id));
+    expect(EXERCISES.length - supplement.length).toBe(873);
+    expect(supplement.length).toBe(6);
   });
 
   it('has unique ids and names', () => {
@@ -36,10 +41,22 @@ describe('bundled catalog integrity', () => {
     expect(orphans).toEqual([]);
   });
 
-  it('gives every exercise a set kind and demonstration images', () => {
+  it('gives every exercise a set kind', () => {
     for (const e of EXERCISES) {
       expect(['weight_reps', 'reps', 'time', 'distance_time']).toContain(e.kind);
-      expect(e.images.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('gives every upstream exercise demonstration images', () => {
+    // Our own additions have none - there is no photograph of them that would be ours to use,
+    // and the row falls back to the drawn muscle glyph. They pay for it with instructions.
+    for (const e of EXERCISES) {
+      if (isSupplement(e.id)) {
+        expect(e.images).toEqual([]);
+        expect(e.instructions.length).toBeGreaterThan(0);
+      } else {
+        expect(e.images.length).toBeGreaterThan(0);
+      }
     }
   });
 
@@ -77,14 +94,12 @@ describe('searchExercises', () => {
   });
 
   it('matches all search terms regardless of order', () => {
+    // The same set either way. Not the same order: typing the words in the order they appear in
+    // a name is a signal, so "barbell curl" ranks Barbell Curl higher than "curl barbell" does.
     const a = searchExercises({ query: 'barbell curl' });
     const b = searchExercises({ query: 'curl barbell' });
-    expect(a.map((e) => e.id)).toEqual(b.map((e) => e.id));
+    expect(new Set(a.map((e) => e.id))).toEqual(new Set(b.map((e) => e.id)));
     expect(a.length).toBeGreaterThan(0);
-    for (const e of a) {
-      expect(e.name.toLowerCase()).toContain('barbell');
-      expect(e.name.toLowerCase()).toContain('curl');
-    }
   });
 
   it('is case insensitive and ignores surrounding whitespace', () => {

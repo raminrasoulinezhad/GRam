@@ -1,15 +1,12 @@
-import raw from '../../assets/data/exercises.json';
+import { EXERCISES } from './data';
+import { scoreQuery } from './search';
 import type { Exercise, Muscle } from './types';
 
 export * from './generated';
 export * from './types';
-
-export const EXERCISES = raw as Exercise[];
+export { EXERCISES };
 
 const BY_ID = new Map(EXERCISES.map((e) => [e.id, e]));
-
-/** Lowercased names, index-aligned with EXERCISES, so search never re-lowercases 873 strings. */
-const SEARCH_INDEX = EXERCISES.map((e) => e.name.toLowerCase());
 
 export function getExercise(id: string): Exercise | undefined {
   return BY_ID.get(id);
@@ -41,25 +38,17 @@ export type CatalogFilters = {
 /**
  * Filters the catalog. Matching a muscle counts both primary and secondary involvement so
  * that "show me everything that hits triceps" includes bench press, which is what a lifter means.
+ *
+ * The text query is scored rather than substring-matched (see search.ts); when one is present
+ * the results come back best-first instead of alphabetically.
  */
 export function searchExercises(filters: CatalogFilters): Exercise[] {
-  const q = filters.query?.trim().toLowerCase() ?? '';
-  const terms = q.length > 0 ? q.split(/\s+/) : [];
+  const scores = scoreQuery(filters.query ?? '');
   const out: Exercise[] = [];
 
   for (let i = 0; i < EXERCISES.length; i++) {
     const e = EXERCISES[i];
-    if (terms.length > 0) {
-      const haystack = SEARCH_INDEX[i];
-      let matched = true;
-      for (const t of terms) {
-        if (!haystack.includes(t)) {
-          matched = false;
-          break;
-        }
-      }
-      if (!matched) continue;
-    }
+    if (scores !== null && !scores.has(e.id)) continue;
     if (filters.muscle) {
       if (
         !e.primaryMuscles.includes(filters.muscle) &&
@@ -73,5 +62,8 @@ export function searchExercises(filters: CatalogFilters): Exercise[] {
     if (filters.level && e.level !== filters.level) continue;
     out.push(e);
   }
+
+  // EXERCISES is already name-sorted, so with no query the natural order is alphabetical.
+  if (scores !== null) out.sort((a, b) => scores.get(b.id)! - scores.get(a.id)!);
   return out;
 }

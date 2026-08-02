@@ -54,6 +54,133 @@ const FORCES = ['push', 'pull', 'static'];
 const MECHANICS = ['compound', 'isolation'];
 
 /**
+ * Everyday movements the upstream dataset does not have.
+ *
+ * free-exercise-db is thorough on barbell and machine work and thin on conditioning: fourteen
+ * cardio entries out of eight hundred and seventy-three, with no incline walking, no swimming
+ * and no loaded carry on foot. Those are things people do and want to log, so they are added
+ * here and merged into the same catalog.
+ *
+ * Rules for anything you add:
+ *   - `id` must not collide with an upstream id, and the name must be unique. The FitRam_
+ *     prefix keeps both true and makes our own entries obvious in a diff.
+ *   - `images` stays empty. There is no photograph of these that would be ours to use, and the
+ *     app falls back to the drawn muscle glyph, so an entry without one still reads correctly.
+ *   - muscle attributions should be conservative. They feed the heatmap and the fatigue model,
+ *     so an over-generous secondary list quietly makes the whole body look trained.
+ *   - instructions are written here, in the same imperative voice as the dataset.
+ */
+const SUPPLEMENT = [
+  {
+    id: 'FitRam_Incline_Walk_Treadmill',
+    name: 'Incline Walk, Treadmill',
+    category: 'cardio',
+    level: 'beginner',
+    force: null,
+    mechanic: 'compound',
+    equipment: 'machine',
+    // Raising the belt shifts the work rearward - the glutes become a driver rather than an
+    // assistant, which is the whole reason to walk uphill instead of on the flat.
+    primaryMuscles: ['glutes', 'quadriceps'],
+    secondaryMuscles: ['hamstrings', 'calves'],
+    instructions: [
+      'Set the treadmill to a walking pace you can hold a conversation at, then raise the incline. Anywhere from 5 to 15 percent is usual.',
+      'Stand tall and let go of the handrails. Holding on takes load off your legs and makes the effort easier than the numbers on the display suggest.',
+      'Walk with a full stride, rolling from heel to toe, and let your hips extend behind you at the end of each step.',
+      'Keep your torso upright rather than leaning into the belt.',
+      'Record the time and the distance covered.',
+    ],
+  },
+  {
+    id: 'FitRam_Hiking',
+    name: 'Hiking',
+    category: 'cardio',
+    level: 'beginner',
+    force: null,
+    mechanic: 'compound',
+    equipment: null,
+    primaryMuscles: ['glutes', 'quadriceps'],
+    secondaryMuscles: ['hamstrings', 'calves', 'lower back'],
+    instructions: [
+      'Walk over varied and rising ground at a pace you can sustain.',
+      'Shorten your stride on steep climbs and let your legs, not your back, do the lifting.',
+      'On descents keep the knees soft and control the drop rather than falling into each step.',
+      'Record the total time and the distance.',
+    ],
+  },
+  {
+    id: 'FitRam_Rucking',
+    name: 'Rucking (Weighted Walk)',
+    category: 'cardio',
+    level: 'beginner',
+    force: null,
+    mechanic: 'compound',
+    equipment: 'other',
+    primaryMuscles: ['glutes', 'quadriceps'],
+    secondaryMuscles: ['hamstrings', 'calves', 'traps', 'lower back'],
+    instructions: [
+      'Load a backpack with a weight you can carry for the whole distance and tighten the straps so it sits high on your back and does not swing.',
+      'Walk at a brisk, steady pace with your torso upright.',
+      'Keep your shoulders back rather than letting the load round them forward.',
+      'Record the time and distance. Increase the load or the distance, not both at once.',
+    ],
+  },
+  {
+    id: 'FitRam_Swimming',
+    name: 'Swimming',
+    category: 'cardio',
+    level: 'intermediate',
+    force: null,
+    mechanic: 'compound',
+    equipment: 'other',
+    primaryMuscles: ['lats', 'shoulders'],
+    secondaryMuscles: ['chest', 'triceps', 'abdominals', 'glutes'],
+    instructions: [
+      'Swim continuous lengths at a steady effort, or intervals with a fixed rest between them.',
+      'Keep your body flat and high in the water; letting the hips drop is what makes swimming feel harder than it is.',
+      'Breathe on a regular rhythm rather than whenever you need to.',
+      'Record the time in the water and the distance swum.',
+    ],
+  },
+  {
+    id: 'FitRam_Fan_Bike',
+    name: 'Fan Bike (Air Bike)',
+    category: 'cardio',
+    level: 'beginner',
+    force: null,
+    mechanic: 'compound',
+    equipment: 'machine',
+    primaryMuscles: ['quadriceps'],
+    secondaryMuscles: ['shoulders', 'lats', 'hamstrings', 'calves'],
+    instructions: [
+      'Set the seat so your knee stays slightly bent at the bottom of the pedal stroke.',
+      'Drive with the legs and push and pull the handles along with them, rather than letting the arms go for the ride.',
+      'The fan means resistance rises with effort, so pace yourself - the machine will let you go far harder than you can hold.',
+      'Record the time and the distance shown on the console.',
+    ],
+  },
+  {
+    id: 'FitRam_Battle_Ropes',
+    name: 'Battle Ropes',
+    category: 'cardio',
+    level: 'intermediate',
+    force: null,
+    mechanic: 'compound',
+    equipment: 'other',
+    // Timed, not measured in metres - overrides the cardio default of distance + time.
+    kind: 'time',
+    primaryMuscles: ['shoulders'],
+    secondaryMuscles: ['abdominals', 'forearms', 'lats'],
+    instructions: [
+      'Hold one end of the rope in each hand and step back until there is only a little slack.',
+      'Sit into a quarter squat with a flat back and brace your midsection.',
+      'Drive the ropes up and down in alternating waves, moving from the shoulders rather than the wrists.',
+      'Work in short intervals - twenty to thirty seconds is plenty - and record the total working time.',
+    ],
+  },
+];
+
+/**
  * Which numbers a set of this exercise records.
  * Derived so that planks and sprints aren't forced into a weight x reps shape.
  * Overridable per plan item in the app.
@@ -94,12 +221,17 @@ async function main() {
   if (!Array.isArray(raw) || raw.length === 0) throw new Error('Source dataset is empty');
 
   const seenIds = new Set();
+  const seenNames = new Set();
   const equipmentSet = new Set();
 
-  const exercises = raw.map((e) => {
+  const exercises = [...raw, ...SUPPLEMENT].map((e) => {
     if (!e.id || !e.name) throw new Error(`Exercise missing id/name: ${JSON.stringify(e).slice(0, 120)}`);
     if (seenIds.has(e.id)) throw new Error(`Duplicate exercise id "${e.id}"`);
+    // Names must be unique too: a supplement entry that duplicates an upstream name would give
+    // the user two indistinguishable rows to choose between.
+    if (seenNames.has(e.name)) throw new Error(`Duplicate exercise name "${e.name}"`);
     seenIds.add(e.id);
+    seenNames.add(e.name);
 
     for (const m of [...e.primaryMuscles, ...e.secondaryMuscles]) {
       if (!MUSCLES.includes(m)) throw new Error(`${e.id}: unknown muscle "${m}"`);
@@ -129,7 +261,9 @@ async function main() {
       instructions: e.instructions ?? [],
       images: e.images ?? [],
     };
-    normalised.kind = defaultSetKind(normalised);
+    // Supplement entries may state their own kind; the derivation is a guess from category and
+    // force, and a rope wave is timed rather than measured in metres.
+    normalised.kind = e.kind ?? defaultSetKind(normalised);
     return normalised;
   });
 
@@ -162,8 +296,9 @@ export type Equipment = (typeof EQUIPMENT)[number];
 
   const withoutInstructions = exercises.filter((e) => e.instructions.length === 0).length;
   process.stdout.write(
-    `Wrote ${exercises.length} exercises, ${equipment.length} equipment types, ` +
-      `${MUSCLES.length} muscles (${withoutInstructions} lack instructions).\n`,
+    `Wrote ${exercises.length} exercises (${raw.length} upstream + ${SUPPLEMENT.length} added ` +
+      `here), ${equipment.length} equipment types, ${MUSCLES.length} muscles ` +
+      `(${withoutInstructions} lack instructions).\n`,
   );
 }
 

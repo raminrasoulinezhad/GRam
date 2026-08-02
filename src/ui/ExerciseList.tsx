@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   CATEGORIES,
   EQUIPMENT,
+  EXERCISES,
   LEVELS,
   MUSCLES,
   searchExercises,
@@ -47,7 +48,7 @@ export function ExerciseList({ onSelect, accessory, header }: Props) {
           testID="exercise-search"
           value={query}
           onChangeText={setQuery}
-          placeholder="Search 873 exercises"
+          placeholder={`Search ${EXERCISES.length} exercises, or a muscle`}
           placeholderTextColor={theme.color.textFaint}
           style={s.searchInput}
           autoCorrect={false}
