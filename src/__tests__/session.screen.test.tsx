@@ -15,6 +15,7 @@ jest.mock('expo-router', () => ({
 const SessionScreen = require('../../app/session/[id]').default;
 
 const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
+const SQUAT = 'Barbell_Full_Squat';
 const PLANK = 'Plank';
 const store = () => useStore.getState();
 
@@ -303,5 +304,96 @@ describe('active workout screen', () => {
     expect(screen.getByTestId(`entry-${id0}-done`)).toBeTruthy();
     expect(screen.queryByText('3/3')).toBeNull();
     expect(store().sessions[0].entries[0].sets.every((x) => x.loggedAt !== null)).toBe(true);
+  });
+});
+
+describe('the order exercises appear in', () => {
+  /** A workout of three exercises, in plan order: bench, squat, plank. */
+  function startThree() {
+    const s = store();
+    const planId = s.createPlan('monday');
+    for (const id of [BENCH, SQUAT, PLANK]) s.addPlanItem(planId, id);
+    const sessionId = s.startSession(planId)!;
+    mockParams = { id: sessionId };
+    return sessionId;
+  }
+
+  const entries = () => store().sessions[0].entries;
+
+  /** The entry ids as they appear down the screen. The `-done` badge shares the prefix. */
+  const onScreen = () =>
+    screen
+      .getAllByTestId(/^entry-/)
+      .map((el) => String(el.props.testID))
+      .filter((id) => !id.endsWith('-done'));
+
+  /** Ticks off every set of one exercise. */
+  async function completeEntry(index: number) {
+    for (const set of entries()[index].sets) {
+      await fireEvent.press(screen.getByTestId(`log-${set.id}`));
+    }
+  }
+
+  it('keeps the plan order while nothing has been recorded', async () => {
+    startThree();
+    await renderScreen(<SessionScreen />);
+
+    expect(onScreen()).toEqual(entries().map((e) => `entry-${e.id}`));
+  });
+
+  it('lifts a finished exercise to the top', async () => {
+    startThree();
+    await renderScreen(<SessionScreen />);
+    const [bench, squat, plank] = entries().map((e) => `entry-${e.id}`);
+
+    // Open the squat and tick off all of it.
+    await fireEvent.press(screen.getByTestId(squat));
+    await completeEntry(1);
+
+    expect(onScreen()).toEqual([squat, bench, plank]);
+  });
+
+  it('puts the exercise under way between the finished and the untouched', async () => {
+    startThree();
+    await renderScreen(<SessionScreen />);
+    const [bench, squat, plank] = entries().map((e) => `entry-${e.id}`);
+
+    await fireEvent.press(screen.getByTestId(plank));
+    await completeEntry(2);
+    // One set of the squat: started, not finished.
+    await fireEvent.press(screen.getByTestId(squat));
+    await fireEvent.press(screen.getByTestId(`log-${entries()[1].sets[0].id}`));
+
+    expect(onScreen()).toEqual([plank, squat, bench]);
+  });
+
+  it('sends an exercise back to its plan position when every set is un-recorded', async () => {
+    startThree();
+    await renderScreen(<SessionScreen />);
+    const [bench, squat, plank] = entries().map((e) => `entry-${e.id}`);
+
+    await fireEvent.press(screen.getByTestId(squat));
+    await completeEntry(1);
+    expect(onScreen()).toEqual([squat, bench, plank]);
+
+    // Ticked off by mistake: un-recording all of it makes it untouched again, which puts it
+    // back among the exercises still to do, in the order the plan has them.
+    await completeEntry(1);
+
+    expect(onScreen()).toEqual([bench, squat, plank]);
+  });
+
+  it('holds the plan order within each group', async () => {
+    startThree();
+    await renderScreen(<SessionScreen />);
+    const [bench, squat, plank] = entries().map((e) => `entry-${e.id}`);
+
+    // Finish the plank first, then the bench: both done, but bench came first in the plan.
+    await fireEvent.press(screen.getByTestId(plank));
+    await completeEntry(2);
+    await fireEvent.press(screen.getByTestId(bench));
+    await completeEntry(0);
+
+    expect(onScreen()).toEqual([bench, plank, squat]);
   });
 });

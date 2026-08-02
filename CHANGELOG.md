@@ -6,6 +6,21 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.12] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **A live workout sorts itself as you go**: exercises you have finished collect at the top,
+  the one under way sits below them, and everything still to do stays together at the bottom
+  instead of being broken up by the ones already ticked off.
+  - Within each of the three groups the plan's own order survives, so nothing shuffles for no
+    reason.
+  - Un-record every set of an exercise and it goes back where the plan had it.
+  - This is display order only. Nothing about the workout is rewritten, and History still shows
+    a finished workout in the order it was done.
+
 ## [1.2.11] — 2026-08-02
 
 Storage schema **v7** — unchanged.

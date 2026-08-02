@@ -170,6 +170,20 @@ const EntryCard = memo(function EntryCard({
   );
 });
 
+/**
+ * Where an exercise sits in the workout: finished at the top, then what is under way, then
+ * what has not been started.
+ *
+ * The list reorders as you record, which is the point - the run of exercises still to do stays
+ * together at the bottom instead of being interrupted by the ones already ticked off. Sorting
+ * is stable, so within each of the three groups the plan's own order survives.
+ */
+function progressRank(entry: SessionEntry): number {
+  const logged = entry.sets.filter((x) => x.loggedAt !== null).length;
+  if (logged === 0) return 2;
+  return logged === entry.sets.length ? 0 : 1;
+}
+
 export default function SessionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const session = useStore((st) => st.sessions.find((x) => x.id === id));
@@ -242,6 +256,10 @@ export default function SessionScreen() {
   );
 
   const logged = useMemo(() => (session ? countLoggedSets(session) : 0), [session]);
+  const ordered = useMemo(
+    () => (session ? [...session.entries].sort((a, b) => progressRank(a) - progressRank(b)) : []),
+    [session],
+  );
   const worked = useMemo(
     () => (session ? rankMuscles(sessionVolume(session)).slice(0, 6) : []),
     [session],
@@ -321,7 +339,7 @@ export default function SessionScreen() {
           <Empty title="No exercises yet" hint="Add one to start recording sets." />
         ) : null}
 
-        {session.entries.map((entry) => (
+        {ordered.map((entry) => (
           <EntryCard
             key={entry.id}
             entry={entry}
