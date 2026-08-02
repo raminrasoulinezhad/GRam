@@ -73,12 +73,26 @@ describe('plan editor', () => {
     expect(store().plans.find((p) => p.id === planId)!.name).toBe('Chest day');
   });
 
-  it('keeps the old name rather than accepting a blank one', async () => {
+  it('lets the field be cleared, so a name can be retyped', async () => {
+    // The store used to reject an empty name and hand the old one back, which made the last
+    // character undeletable: backspace, and the letter reappeared.
+    makePlan(BENCH);
+    await renderScreen(<PlanEditorScreen />);
+
+    await fireEvent.changeText(screen.getByTestId('plan-name'), '');
+    expect(plan().name).toBe('');
+
+    await fireEvent.changeText(screen.getByTestId('plan-name'), 'Chest day');
+    expect(plan().name).toBe('Chest day');
+  });
+
+  it('names an abandoned blank plan once the field loses focus', async () => {
     makePlan(BENCH);
     await renderScreen(<PlanEditorScreen />);
 
     await fireEvent.changeText(screen.getByTestId('plan-name'), '   ');
-    expect(plan().name).toBe('Push day');
+    await fireEvent(screen.getByTestId('plan-name'), 'blur');
+    expect(plan().name).toBe('Untitled plan');
   });
 
   it('adds a template set', async () => {

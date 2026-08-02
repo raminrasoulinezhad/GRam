@@ -15,7 +15,7 @@ import type { Plan, Profile, Session, Settings } from './types';
  *   3. Add the old payload to the fixtures in __tests__/migrations.test.ts.
  * Never edit an existing step - someone out there is still on that version.
  */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export const DEFAULT_SETTINGS: Settings = {
   unit: 'kg',
@@ -51,6 +51,28 @@ export type PersistedState = {
    * biceps directly should not be told about it every time they open the app.
    */
   ignoredBalanceGroups: string[];
+  /** When a backup was last taken, and how much training has happened since. */
+  backup: BackupRecord;
+};
+
+/**
+ * What the app remembers about backups.
+ *
+ * `lastExportedSets` is the interesting one: comparing it to the current count is how the app
+ * knows how much training would be lost right now, which is the only honest basis for nagging
+ * someone about it.
+ */
+export type BackupRecord = {
+  lastExportedAt: number | null;
+  lastExportedSets: number;
+  /** Auto-export to a chosen file is armed. Web only, where the browser supports it. */
+  autoExport: boolean;
+};
+
+export const DEFAULT_BACKUP: BackupRecord = {
+  lastExportedAt: null,
+  lastExportedSets: 0,
+  autoExport: false,
 };
 
 /** A single forward step. Receives the previous version's shape, returns the next one. */
@@ -93,6 +115,12 @@ const MIGRATIONS: Record<number, Migration> = {
     ignoredBalanceGroups: Array.isArray(state.ignoredBalanceGroups)
       ? state.ignoredBalanceGroups
       : [],
+  }),
+  // v4 -> v5: backup bookkeeping. An upgrading user has never exported, which is exactly what
+  // the defaults say, so they are prompted to - which is the point of the release.
+  5: (state) => ({
+    ...state,
+    backup: { ...DEFAULT_BACKUP, ...(asRecord(state.backup) ?? {}) },
   }),
 };
 
@@ -146,5 +174,6 @@ export function coerce(state: Record<string, unknown>): PersistedState {
     ignoredBalanceGroups: asArray<string>(state.ignoredBalanceGroups).filter(
       (x) => typeof x === 'string',
     ),
+    backup: { ...DEFAULT_BACKUP, ...(asRecord(state.backup) ?? {}) },
   };
 }

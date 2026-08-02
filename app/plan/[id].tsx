@@ -61,6 +61,12 @@ export default function PlanEditorScreen() {
             testID="plan-name"
             value={plan.name}
             onChangeText={(t) => renamePlan(plan.id, t)}
+            // Named only once the user has stopped typing, so clearing the field to retype is
+            // possible. Naming it mid-keystroke is what made the last character stick.
+            onBlur={() => {
+              if (plan.name.trim().length === 0) renamePlan(plan.id, 'Untitled plan');
+            }}
+            placeholder="Untitled plan"
             style={s.nameInput}
             placeholderTextColor={theme.color.textFaint}
           />

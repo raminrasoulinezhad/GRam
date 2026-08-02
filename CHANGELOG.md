@@ -6,6 +6,38 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.0] — 2026-08-02
+
+Backups that take themselves, where the browser allows it. Storage schema **v5** — adds a
+backup record; plans and workouts are untouched.
+
+### Added
+
+- **Automatic export.** Choose a file once and GRam rewrites it a couple of seconds after
+  anything changes. Put it in a synced folder and the backup leaves the device too.
+  **Only where the browser permits it** — the File System Access API exists in Chrome and Edge
+  on desktop and nowhere else. Not Safari, on any platform, and not Chrome on Android. The card
+  says so plainly rather than offering a switch that quietly does nothing.
+- **Backup reminders**, which is what iPhone gets instead. Measured in sets logged since the
+  last backup, not in days: someone who has not trained in a fortnight has nothing at risk,
+  someone who logged forty sets this week has a week to lose. It escalates rather than nagging
+  from the start.
+- The app now asks for **persistent storage** after an export, so a browser is less likely to
+  reclaim space from a site it thinks is idle.
+
+### Fixed
+
+- **The last character of a plan name could not be deleted.** The store rejected an empty name
+  and handed the old one back, so backspace put the letter straight back. Names can now be
+  cleared and retyped; an abandoned blank one becomes "Untitled plan" when the field loses focus.
+- **A plan with no exercises refused to start**, which was inconsistent with the "Start an empty
+  workout" button directly below it, and wrong — building the session as you go is a normal way
+  to train. The session screen can add exercises live.
+- **Tapping the search box made the whole Exercises page scrollable.** The iOS keyboard shrinks
+  the visual viewport but leaves the layout viewport at full height, so the header, filter chips
+  and tab bar all became draggable. The layout is now pinned to the visual viewport and only the
+  results list scrolls.
+
 ## [1.1.0] — 2026-08-02
 
 Your data can leave the device now. Storage schema **v4**, unchanged.

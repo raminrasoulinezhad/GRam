@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
@@ -7,11 +7,21 @@ import {
   buildBackup,
   parseBackup,
   serialiseBackup,
+  staleness,
+  stalenessMessage,
   summarise,
   toLiveState,
   type BackupSummary,
   type ParsedBackup,
 } from '@/store/backup';
+import {
+  autoExportTarget,
+  chooseBackupFile,
+  forgetBackupFile,
+  isAutoExportSupported,
+  requestPersistentStorage,
+  writeBackupFile,
+} from '@/lib/autoExport';
 import { useStore } from '@/store/useStore';
 import { formatDate } from '@/lib/format';
 import { canPickFile, copyText, exportText, pickTextFile } from '@/lib/transfer';
@@ -33,6 +43,9 @@ import { theme } from './theme';
 export function BackupCard() {
   const exportState = useStore((s) => s.exportState);
   const replaceAll = useStore((s) => s.replaceAll);
+  const recordExport = useStore((s) => s.recordExport);
+  const setAutoExport = useStore((s) => s.setAutoExport);
+  const backupRecord = useStore((s) => s.backup);
   const confirm = useConfirm();
 
   const [exported, setExported] = useState<{ text: string; filename: string } | null>(null);
@@ -40,6 +53,21 @@ export function BackupCard() {
   const [pasting, setPasting] = useState(false);
   const [pasted, setPasted] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [target, setTarget] = useState<string | null>(null);
+
+  const autoSupported = isAutoExportSupported();
+
+  // The filename is only known asynchronously, and only matters where auto-export can run.
+  useEffect(() => {
+    if (!autoSupported) return;
+    let live = true;
+    void autoExportTarget().then((name) => {
+      if (live) setTarget(name);
+    });
+    return () => {
+      live = false;
+    };
+  }, [autoSupported, backupRecord.autoExport]);
 
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -58,12 +86,27 @@ export function BackupCard() {
    */
   const hasData = current.plans > 0 || current.loggedSets > 0;
 
+  const stale = useMemo(
+    () => staleness(current, backupRecord, Date.now()),
+    [current, backupRecord],
+  );
+  const reminder = stalenessMessage(stale);
+
   async function handleExport() {
     const now = Date.now();
     const filename = backupFilename(now);
+
+    // Recorded before the snapshot is taken, so the file's own backup record describes this
+    // export rather than the one before it.
+    recordExport(now, current.loggedSets);
+
     const text = serialiseBackup(buildBackup(exportState(), appVersion, now));
     setExported({ text, filename });
     setNote(null);
+    // Persistent storage does nothing about deliberate deletion, but it does stop a browser
+    // reclaiming space from a site it thinks is idle. Asked for here because a user who just
+    // exported has demonstrably decided this data matters.
+    void requestPersistentStorage();
 
     const outcome = await exportText(text, filename);
     setNote(
@@ -104,6 +147,39 @@ export function BackupCard() {
     );
   }
 
+  async function handleArmAutoExport() {
+    setError(null);
+    const chosen = await chooseBackupFile(backupFilename(Date.now()));
+    if (!chosen.ok) {
+      if (chosen.reason === 'error') setError('That file could not be opened for writing.');
+      return;
+    }
+    setTarget(chosen.name);
+    setAutoExport(true);
+    void requestPersistentStorage();
+
+    // Write immediately, so the file exists and is current from the moment it is chosen rather
+    // than after the next change.
+    const now = Date.now();
+    recordExport(now, current.loggedSets);
+    const written = await writeBackupFile(
+      serialiseBackup(buildBackup(exportState(), appVersion, now)),
+    );
+    if (written === 'written') {
+      setNote(`Auto-export on. ${chosen.name} now updates itself whenever you train.`);
+    } else {
+      setAutoExport(false);
+      setError('GRam could not write to that file, so auto-export is off.');
+    }
+  }
+
+  async function handleDisarmAutoExport() {
+    setAutoExport(false);
+    await forgetBackupFile();
+    setTarget(null);
+    setNote('Auto-export off. Your file is left as it was.');
+  }
+
   async function handlePickFile() {
     setError(null);
     try {
@@ -122,6 +198,22 @@ export function BackupCard() {
           Your training lives on this device only. A backup is one file holding every plan,
           workout and setting.
         </Dim>
+
+        {reminder !== null ? (
+          <View
+            style={[s.reminder, stale.urgent && s.reminderUrgent]}
+            testID={stale.urgent ? 'backup-reminder-urgent' : 'backup-reminder'}
+          >
+            <Ionicons
+              name={stale.urgent ? 'warning' : 'time-outline'}
+              size={16}
+              color={stale.urgent ? theme.color.danger : theme.color.warn}
+            />
+            <Dim style={{ flex: 1, color: stale.urgent ? theme.color.danger : theme.color.warn }}>
+              {reminder}
+            </Dim>
+          </View>
+        ) : null}
 
         <View style={s.stats} testID="backup-stats">
           <Stat label="Plans" value={String(current.plans)} />
@@ -173,6 +265,69 @@ export function BackupCard() {
             <Dim style={{ flex: 1, color: theme.color.danger }}>{error}</Dim>
           </View>
         ) : null}
+
+        {/*
+         * Automatic export, where the browser allows it.
+         *
+         * The File System Access API is the only sanctioned way for a web page to keep writing
+         * to a file the user picked - and it exists in Chrome and Edge on desktop, and nowhere
+         * else. Not Safari, on any platform, and not Chrome on Android. So on the iPhone this
+         * app is mostly used from, this section is absent and the reminder above is what stands
+         * in for it. Saying that plainly beats offering a switch that quietly does nothing.
+         */}
+        <View style={s.auto} testID="auto-export">
+          {!autoSupported ? (
+            <>
+              <Text style={s.moveTitle}>Automatic backups</Text>
+              <Dim testID="auto-export-unsupported">
+                This browser cannot let an app write to a file on its own — Safari and Chrome on
+                Android both refuse, for good reasons. GRam will remind you above when there is
+                enough new training to be worth exporting. On a desktop Chrome or Edge, this
+                becomes a real automatic backup to a file you choose.
+              </Dim>
+            </>
+          ) : backupRecord.autoExport ? (
+            <>
+              <View style={s.autoOn}>
+                <Ionicons name="sync-circle" size={18} color={theme.color.accent} />
+                <View style={{ flex: 1 }}>
+                  <Text style={s.autoTitle}>Auto-export is on</Text>
+                  <Dim>
+                    {target ?? 'your chosen file'} is rewritten a couple of seconds after anything
+                    changes.
+                  </Dim>
+                </View>
+              </View>
+              <View style={s.actions}>
+                <Button
+                  label="Change file"
+                  variant="secondary"
+                  testID="auto-export-change"
+                  onPress={() => void handleArmAutoExport()}
+                />
+                <Button
+                  label="Turn off"
+                  variant="secondary"
+                  testID="auto-export-off"
+                  onPress={() => void handleDisarmAutoExport()}
+                />
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={s.moveTitle}>Automatic backups</Text>
+              <Dim style={{ marginBottom: theme.space(2) }}>
+                Choose a file once and GRam keeps it up to date by itself, every time you train.
+                Put it in a synced folder and the backup leaves this device too.
+              </Dim>
+              <Button
+                label="Choose a file and turn on"
+                testID="auto-export-on"
+                onPress={() => void handleArmAutoExport()}
+              />
+            </>
+          )}
+        </View>
 
         {/*
          * The reason this feature exists, spelled out where someone about to delete their app
@@ -337,6 +492,26 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
   actions: { flexDirection: 'row', gap: theme.space(2), marginTop: theme.space(1) },
+  reminder: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.space(2),
+    marginTop: theme.space(3),
+    padding: theme.space(3),
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.color.surfaceAlt,
+    borderWidth: 1,
+    borderColor: theme.color.warn,
+  },
+  reminderUrgent: { borderColor: theme.color.danger },
+  auto: {
+    marginTop: theme.space(4),
+    paddingTop: theme.space(3),
+    borderTopWidth: 1,
+    borderTopColor: theme.color.border,
+  },
+  autoOn: { flexDirection: 'row', alignItems: 'center', gap: theme.space(2) },
+  autoTitle: { color: theme.color.text, fontSize: theme.font.small, fontWeight: '800' },
   note: {
     flexDirection: 'row',
     alignItems: 'flex-start',

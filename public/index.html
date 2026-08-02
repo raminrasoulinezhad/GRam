@@ -38,6 +38,21 @@
         background-color: #0b1220;
       }
       body {
+        /*
+         * Pinned to the *visual* viewport, not the layout viewport.
+         *
+         * When the iOS keyboard opens it shrinks the visual viewport but leaves the layout
+         * viewport at full height, so a 100%-tall app suddenly overflows and the whole page
+         * becomes scrollable - tap the search box and the header, the filter chips and the tab
+         * bar all start sliding around. Only the results list should ever scroll.
+         *
+         * --vvh is set from window.visualViewport by src/ui/useViewportHeight.ts, and falls
+         * back to dvh then vh where that has not run yet. It lives in the bundle rather than in
+         * an inline script here because the CSP has no script-src and so forbids inline JS.
+         */
+        height: 100vh;
+        height: 100dvh;
+        height: var(--vvh, 100dvh);
         overflow: hidden;
         /* Stop iOS bouncing the whole page and offering to select UI text as if it were content. */
         overscroll-behavior: none;
@@ -49,6 +64,8 @@
         display: flex;
         height: 100%;
         flex: 1;
+        /* Belt and braces: nothing above the app's own scrollers may scroll. */
+        overflow: hidden;
       }
       /* Text inputs must stay selectable, or editing a weight becomes miserable. */
       input,

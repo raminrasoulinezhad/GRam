@@ -5,9 +5,11 @@ import { uid } from '@/lib/id';
 import {
   DEFAULT_PROFILE,
   DEFAULT_SETTINGS,
+  DEFAULT_BACKUP,
   SCHEMA_VERSION,
   coerce,
   migratePersisted,
+  type BackupRecord,
   type PersistedState,
 } from './migrations';
 import { STORAGE_KEY, createBackingStorage } from './storage';
@@ -47,6 +49,7 @@ type State = {
   celebratedMilestones: string[];
   /** Training groups whose week-balance advice has been dismissed. */
   ignoredBalanceGroups: string[];
+  backup: BackupRecord;
 };
 
 type Actions = {
@@ -97,6 +100,9 @@ type Actions = {
   // --- backup ---
   /** Everything the app persists, as one object - what an export writes to a file. */
   exportState: () => PersistedState;
+  /** Records that a backup was taken, so the app can tell how stale the next one is. */
+  recordExport: (at: number, sets: number) => void;
+  setAutoExport: (on: boolean) => void;
   /** Replaces every persisted field from an imported backup. See src/store/backup.ts. */
   replaceAll: (state: PersistedState) => void;
   resetAll: () => void;
@@ -137,6 +143,7 @@ export const useStore = create<State & Actions>()(
       activeSessionId: null,
       celebratedMilestones: [],
       ignoredBalanceGroups: [],
+      backup: DEFAULT_BACKUP,
 
       // ---------------------------------------------------------------- plans
       createPlan: (name) => {
@@ -152,10 +159,17 @@ export const useStore = create<State & Actions>()(
         return plan.id;
       },
 
+      /*
+       * Stores the name exactly as typed, including empty.
+       *
+       * This used to fall back to the old name when handed an empty string, which made the
+       * last character of a plan name undeletable: you pressed backspace, the store rejected
+       * the empty value and handed the previous name straight back, and the letter reappeared.
+       * The editor supplies a default on blur instead - the right place for it, because that is
+       * when the user has finished rather than paused.
+       */
       renamePlan: (planId, name) =>
-        set((s) => ({
-          plans: withPlan(s.plans, planId, (p) => ({ ...p, name: name.trim() || p.name })),
-        })),
+        set((s) => ({ plans: withPlan(s.plans, planId, (p) => ({ ...p, name })) })),
 
       deletePlan: (planId) => set((s) => ({ plans: s.plans.filter((p) => p.id !== planId) })),
 
@@ -451,8 +465,14 @@ export const useStore = create<State & Actions>()(
           activeSessionId: s.activeSessionId,
           celebratedMilestones: s.celebratedMilestones,
           ignoredBalanceGroups: s.ignoredBalanceGroups,
+          backup: s.backup,
         };
       },
+
+      recordExport: (at, sets) =>
+        set((s) => ({ backup: { ...s.backup, lastExportedAt: at, lastExportedSets: sets } })),
+
+      setAutoExport: (on) => set((s) => ({ backup: { ...s.backup, autoExport: on } })),
 
       /*
        * Replaces the lot, field by field rather than with a spread of the argument, so a key
@@ -467,6 +487,9 @@ export const useStore = create<State & Actions>()(
           activeSessionId: next.activeSessionId,
           celebratedMilestones: next.celebratedMilestones,
           ignoredBalanceGroups: next.ignoredBalanceGroups,
+          // Not next.backup: a restored file describes when *that* device last exported. This
+          // device has a fresh copy in hand right now, which is what the import just proved.
+          backup: { ...get().backup, lastExportedAt: Date.now(), lastExportedSets: 0 },
         }),
 
       resetAll: () =>
@@ -478,6 +501,7 @@ export const useStore = create<State & Actions>()(
           activeSessionId: null,
           celebratedMilestones: [],
           ignoredBalanceGroups: [],
+          backup: DEFAULT_BACKUP,
         }),
     }),
     {
@@ -492,6 +516,7 @@ export const useStore = create<State & Actions>()(
         activeSessionId: s.activeSessionId,
         celebratedMilestones: s.celebratedMilestones,
         ignoredBalanceGroups: s.ignoredBalanceGroups,
+        backup: s.backup,
       }),
       version: SCHEMA_VERSION,
       // Synchronous by contract - see the note in migrations.ts. An async migrate silently

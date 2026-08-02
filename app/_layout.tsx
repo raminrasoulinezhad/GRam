@@ -6,9 +6,16 @@ import { ConfirmProvider } from '@/ui/confirm';
 import { ExerciseSheetProvider } from '@/ui/ExerciseSheet';
 import { MilestoneCelebration } from '@/ui/Milestones';
 import { Splash } from '@/ui/Splash';
+import { useAutoBackup } from '@/ui/useAutoBackup';
+import { useViewportHeight } from '@/ui/useViewportHeight';
 import { theme } from '@/ui/theme';
 
 export default function RootLayout() {
+  // At the root so the backup file tracks the data, not whichever screen happens to be open.
+  useAutoBackup();
+  // Keeps the layout inside the space the on-screen keyboard leaves.
+  useViewportHeight();
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.color.bg }}>
       <SafeAreaProvider>

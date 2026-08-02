@@ -195,3 +195,64 @@ export function toLiveState(state: PersistedState): PersistedState {
   const exists = safe.sessions.some((s) => s.id === safe.activeSessionId);
   return { ...safe, activeSessionId: exists ? safe.activeSessionId : null };
 }
+
+// ------------------------------------------------------------------ staleness
+
+/**
+ * How exposed the user is right now.
+ *
+ * Measured in sets logged since the last backup rather than in days, because days do not
+ * describe the loss. Someone who has not trained in a fortnight has nothing at risk; someone who
+ * logged forty sets this week has a week to lose. `urgent` is the threshold at which the app
+ * stops mentioning it and starts saying it.
+ */
+export type Staleness = {
+  /** No backup has ever been taken and there is something to lose. */
+  never: boolean;
+  setsSince: number;
+  daysSince: number | null;
+  /** Worth mentioning at all. */
+  due: boolean;
+  urgent: boolean;
+};
+
+/** A session's worth of work. Below this, nagging costs more attention than it saves. */
+const DUE_SETS = 12;
+const URGENT_SETS = 40;
+const URGENT_DAYS = 45;
+
+export function staleness(
+  current: BackupSummary,
+  record: { lastExportedAt: number | null; lastExportedSets: number },
+  now: number,
+): Staleness {
+  const setsSince = Math.max(0, current.loggedSets - record.lastExportedSets);
+  const daysSince =
+    record.lastExportedAt === null
+      ? null
+      : Math.floor((now - record.lastExportedAt) / 86_400_000);
+
+  const never = record.lastExportedAt === null && current.loggedSets > 0;
+  const urgent =
+    (never && current.loggedSets >= DUE_SETS) ||
+    setsSince >= URGENT_SETS ||
+    (setsSince > 0 && daysSince !== null && daysSince >= URGENT_DAYS);
+
+  // Urgent implies due. Otherwise a small amount of training left unsaved for two months would
+  // set the alarm colour and then render no message at all, because the UI shows the banner
+  // only when there is something to put in it.
+  const due = urgent || never || setsSince >= DUE_SETS;
+
+  return { never, setsSince, daysSince, due, urgent };
+}
+
+/** One line for the reminder, or null when there is nothing worth saying. */
+export function stalenessMessage(s: Staleness): string | null {
+  if (!s.due) return null;
+  if (s.never) return 'You have never backed this up. One tap and it is safe.';
+  const sets = `${s.setsSince} set${s.setsSince === 1 ? '' : 's'}`;
+  if (s.daysSince !== null && s.daysSince >= URGENT_DAYS) {
+    return `${sets} logged since your last backup, ${s.daysSince} days ago.`;
+  }
+  return `${sets} logged since your last backup.`;
+}

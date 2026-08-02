@@ -30,15 +30,14 @@ export default function PlansScreen() {
     router.push(`/plan/${id}`);
   }
 
-  async function handleStart(planId: string, itemCount: number) {
-    if (itemCount === 0) {
-      await confirm({
-        title: 'Empty plan',
-        message: 'Add at least one exercise before starting.',
-        cancelLabel: null,
-      });
-      return;
-    }
+  /*
+   * An empty plan starts like any other.
+   *
+   * This used to refuse, which was inconsistent - "Start an empty workout" sits right below and
+   * does exactly that - and wrong: turning up at the gym and building the session as you go is
+   * a normal way to train. The session screen can add exercises live.
+   */
+  function handleStart(planId: string) {
     const id = startSession(planId);
     if (id) router.push(`/session/${id}`);
   }
@@ -99,7 +98,7 @@ export default function PlansScreen() {
             <View style={s.planActions}>
               <Button
                 label="Start"
-                onPress={() => void handleStart(plan.id, plan.items.length)}
+                onPress={() => handleStart(plan.id)}
                 style={{ flex: 1 }}
                 testID={`start-${plan.id}`}
               />
