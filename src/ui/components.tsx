@@ -131,6 +131,8 @@ export function Chip({
 }) {
   const content = (
     <View
+      // A chip with no press handler renders no Pressable, so the id would have nowhere to go.
+      testID={onPress ? undefined : testID}
       style={[
         s.chip,
         active && s.chipActive,

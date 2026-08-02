@@ -11,6 +11,17 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
 }));
 
+/*
+ * The keyboard is faked rather than raised. Whether a real one is up is a judgement about two
+ * viewport heights, tested on its own in src/ui/__tests__/viewportHeight.test.ts; what matters
+ * here is what the screen does once the answer is yes.
+ */
+let mockKeyboardOpen = false;
+jest.mock('@/ui/useViewportHeight', () => ({
+  ...jest.requireActual('@/ui/useViewportHeight'),
+  useKeyboardOpen: () => mockKeyboardOpen,
+}));
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const SessionScreen = require('../../app/session/[id]').default;
 
@@ -37,6 +48,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   store().resetAll();
   mockParams = {};
+  mockKeyboardOpen = false;
 });
 
 describe('active workout screen', () => {
@@ -329,6 +341,44 @@ describe('active workout screen', () => {
     expect(screen.getByTestId(`entry-${id0}-done`)).toBeTruthy();
     expect(screen.queryByText('3/3')).toBeNull();
     expect(store().sessions[0].entries[0].sets.every((x) => x.loggedAt !== null)).toBe(true);
+  });
+});
+
+describe('while the keyboard is up', () => {
+  it('gives the screen over to the set being edited', async () => {
+    mockKeyboardOpen = true;
+    startWorkout();
+    await renderScreen(<SessionScreen />);
+
+    // A footer of buttons and two rows of muscle chips is most of what is left of the display
+    // once a keyboard has taken the rest, and the row being typed into was going under it.
+    expect(screen.queryByTestId('finish')).toBeNull();
+    expect(screen.queryByTestId('discard')).toBeNull();
+    expect(screen.queryByTestId('muscle-chest')).toBeNull();
+  });
+
+  it('keeps the set count, which is the one line worth the space', async () => {
+    mockKeyboardOpen = true;
+    startWorkout();
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.getByText(/^Started/)).toBeTruthy();
+  });
+
+  it('keeps the sets themselves reachable', async () => {
+    mockKeyboardOpen = true;
+    startWorkout();
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.getByTestId(`set-${setIds()[0]}-weight`)).toBeTruthy();
+  });
+
+  it('brings the footer and the chips back when it closes', async () => {
+    startWorkout();
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.getByTestId('finish')).toBeTruthy();
+    expect(screen.getByTestId('muscle-chest')).toBeTruthy();
   });
 });
 

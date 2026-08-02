@@ -19,6 +19,7 @@ import { ExerciseCard } from '@/ui/ExerciseCard';
 import { RestTimer } from '@/ui/RestTimer';
 import { SetFields } from '@/ui/SetFields';
 import { theme } from '@/ui/theme';
+import { useKeyboardOpen } from '@/ui/useViewportHeight';
 
 /**
  * One editable set. Memoised because a session can hold 40+ of these and every keystroke
@@ -201,6 +202,7 @@ export default function SessionScreen() {
   const endSession = useStore((st) => st.endSession);
   const discardSession = useStore((st) => st.discardSession);
   const confirm = useConfirm();
+  const typing = useKeyboardOpen();
 
   const [rest, setRest] = useState<{ startedAt: number; seconds: number } | null>(null);
 
@@ -335,6 +337,11 @@ export default function SessionScreen() {
     <Screen>
       <Stack.Screen options={{ title: session.planName }} />
 
+      {/*
+        * With the keyboard up there can be a third of the display left, so the header sheds its
+        * muscle chips and the footer goes entirely. Both are context; the row being edited is
+        * the thing that has to stay on screen, and it was the one going missing.
+        */}
       <View style={s.summary}>
         <View style={{ flex: 1 }}>
           <Text style={s.summaryBig}>
@@ -344,15 +351,17 @@ export default function SessionScreen() {
           <Dim>Started {relativeTime(session.startedAt)}</Dim>
         </View>
         <View style={s.workedChips}>
-          {worked.map(({ muscle, done, planned }) => (
-            <Chip
-              key={muscle}
-              label={`${MUSCLE_LABEL[muscle]} ${formatSets(done)}/${formatSets(planned)}`}
-              // Lit up once the muscle has had everything today's workout holds for it.
-              tone={done >= planned ? 'primary' : 'secondary'}
-              testID={`muscle-${muscle}`}
-            />
-          ))}
+          {typing
+            ? null
+            : worked.map(({ muscle, done, planned }) => (
+                <Chip
+                  key={muscle}
+                  label={`${MUSCLE_LABEL[muscle]} ${formatSets(done)}/${formatSets(planned)}`}
+                  // Lit up once the muscle has had everything today's workout holds for it.
+                  tone={done >= planned ? 'primary' : 'secondary'}
+                  testID={`muscle-${muscle}`}
+                />
+              ))}
         </View>
       </View>
 
@@ -390,7 +399,7 @@ export default function SessionScreen() {
         onDismiss={() => setRest(null)}
       />
 
-      {!finished ? (
+      {!finished && !typing ? (
         <View style={s.footer}>
           <Button label="Finish workout" onPress={() => void handleFinish()} style={{ flex: 1 }} testID="finish" />
           <Button label="Discard" variant="danger" onPress={() => void handleDiscard()} testID="discard" />

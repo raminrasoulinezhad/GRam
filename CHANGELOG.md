@@ -6,6 +6,23 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.15] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Fixed
+
+- **The box you are typing into stays on screen when the keyboard opens.** Tapping a weight or
+  reps field in a live workout used to push the row you were editing under the keyboard, or off
+  the screen entirely — the editing worked, you just could not see it.
+  - The field is now **scrolled to the middle of what is still visible**, both when it is
+    tapped and again once the keyboard has finished opening, which is the first moment the
+    room left is actually known. This applies to every field in the app, not only the set rows.
+  - **A live workout gives up its furniture while you type**: the Finish and Discard buttons
+    and the muscle chips step aside, and come straight back when the keyboard closes. With a
+    keyboard covering two thirds of a phone, a pinned footer was taking a share of the rest
+    that the row being edited needed more.
+
 ## [1.2.14] — 2026-08-02
 
 Storage schema **v7** — unchanged.
