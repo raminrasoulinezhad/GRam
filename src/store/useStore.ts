@@ -28,6 +28,9 @@ import type {
   Weekday,
 } from './types';
 
+/** Ten minutes. Longer than any strength protocol asks for, and it stops a typo becoming a hang. */
+export const MAX_REST_SEC = 600;
+
 /** Sensible starting numbers so a freshly added exercise is editable rather than blank. */
 function seedTemplate(kind: SetKind): SetTemplate {
   switch (kind) {
@@ -102,6 +105,8 @@ type Actions = {
   updateProfile: (patch: Partial<Profile>) => void;
   toggleEquipment: (equipment: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
+  /** Sets how long the rest timer runs, retiming existing plans and any live workout with it. */
+  setDefaultRest: (seconds: number) => void;
   /** Records milestone ids as seen, so their celebration is not shown again. */
   markMilestonesSeen: (ids: string[]) => void;
   // --- week balance ---
@@ -563,6 +568,29 @@ export const useStore = create<State & Actions>()(
         })),
 
       updateSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
+
+      /**
+       * Changes the rest timer, and retimes what is already planned.
+       *
+       * Rest is stored per exercise, but nothing has ever been able to set it per exercise -
+       * every stored value is a copy of whatever this default was when that exercise was added.
+       * So changing the setting alone would leave every existing plan resting for the old
+       * duration, which reads as a switch that does nothing. A live workout is retimed too,
+       * because that is where the change is usually wanted. Finished workouts are records of
+       * what happened and are never touched.
+       *
+       * The day rest becomes settable per exercise, this stops being a blanket rewrite.
+       */
+      setDefaultRest: (seconds) => {
+        const restSec = Math.max(0, Math.min(MAX_REST_SEC, Math.round(seconds)));
+        set((s) => ({
+          settings: { ...s.settings, defaultRestSec: restSec },
+          plans: s.plans.map((p) => ({ ...p, items: p.items.map((i) => ({ ...i, restSec })) })),
+          sessions: s.sessions.map((x) =>
+            x.endedAt !== null ? x : { ...x, entries: x.entries.map((e) => ({ ...e, restSec })) },
+          ),
+        }));
+      },
 
       markMilestonesSeen: (ids) =>
         set((s) => ({

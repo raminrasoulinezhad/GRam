@@ -3,7 +3,13 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Constants from 'expo-constants';
 import { EXERCISES } from '@/catalog';
 import { ageFrom, bmi, readDeviceProfile } from '@/lib/device';
-import { formatDate, fromDisplayWeight, titleCase, toDisplayWeight } from '@/lib/format';
+import {
+  formatDate,
+  formatDuration,
+  fromDisplayWeight,
+  titleCase,
+  toDisplayWeight,
+} from '@/lib/format';
 import { SCHEMA_VERSION } from '@/store/migrations';
 import { completedSessions, selectSessions, useStore } from '@/store/useStore';
 import { countLoggedSets } from '@/analytics/volume';
@@ -13,6 +19,10 @@ import { BackupCard } from '@/ui/BackupCard';
 import { MilestonesCard } from '@/ui/Milestones';
 import { theme } from '@/ui/theme';
 const SEXES = ['male', 'female', 'unspecified'] as const;
+
+/** The rest lengths worth one tap: short for isolation, ~2 min general, 3 min for heavy work. */
+const REST_PRESETS = [45, 60, 90, 120, 180] as const;
+
 export default function ProfileScreen() {
   const profile = useStore((s) => s.profile);
   const versionHistory = useStore((s) => s.versionHistory);
@@ -21,6 +31,7 @@ export default function ProfileScreen() {
   const allSessions = useStore(selectSessions);
   const updateProfile = useStore((s) => s.updateProfile);
   const updateSettings = useStore((s) => s.updateSettings);
+  const setDefaultRest = useStore((s) => s.setDefaultRest);
   const resetAll = useStore((s) => s.resetAll);
   const confirm = useConfirm();
   // Read once per mount - none of it changes while the app is open.
@@ -139,6 +150,39 @@ export default function ProfileScreen() {
           * does not exist. The fields remain in the stored profile, so the questions can come
           * back the day something actually uses them; see docs/ROADMAP.md.
           */}
+        {/*
+          * Rest applies to every exercise, so it belongs here rather than in each plan. The
+          * store retimes existing plans to match - see setDefaultRest.
+          */}
+        <Card>
+          <H2>Rest timer</H2>
+          <Dim style={s.hint}>
+            Starts counting by itself when you record a set. It applies to every exercise, in
+            plans you have already built as well as new ones. Set it to zero for no timer.
+          </Dim>
+          <View style={[s.row, s.wrap]}>
+            {REST_PRESETS.map((sec) => (
+              <Chip
+                key={sec}
+                label={formatDuration(sec)}
+                active={settings.defaultRestSec === sec}
+                onPress={() => setDefaultRest(sec)}
+                testID={`rest-${sec}`}
+              />
+            ))}
+          </View>
+          <View style={{ marginTop: theme.space(3) }}>
+            <Text style={s.label}>OR SET YOUR OWN</Text>
+            <NumberField
+              testID="rest-seconds"
+              value={settings.defaultRestSec}
+              suffix="sec"
+              width={132}
+              step={15}
+              onChange={(n) => setDefaultRest(n ?? 0)}
+            />
+          </View>
+        </Card>
         <Card>
           <H2>Units</H2>
           <View style={[s.row, s.spaced]}>

@@ -1,5 +1,5 @@
 import { volumeInWindow } from '@/analytics/volume';
-import { exerciseHistory, useStore } from '@/store/useStore';
+import { exerciseHistory, MAX_REST_SEC, useStore } from '@/store/useStore';
 
 const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
 const SQUAT = 'Barbell_Full_Squat';
@@ -475,6 +475,73 @@ describe('the weight unit', () => {
     store().updateSettings({ unit: 'kg' });
     store().resetAll();
     expect(store().settings.unit).toBe('lb');
+  });
+});
+
+describe('the rest timer duration', () => {
+  /** A plan with one exercise, plus a live workout started from it. */
+  function planAndWorkout() {
+    const planId = store().createPlan('monday');
+    store().addPlanItem(planId, BENCH);
+    const sessionId = store().startSession(planId)!;
+    return { planId, sessionId };
+  }
+
+  it('is stored on the settings', () => {
+    store().setDefaultRest(120);
+    expect(store().settings.defaultRestSec).toBe(120);
+  });
+
+  it('retimes plans built before the change', () => {
+    const { planId } = planAndWorkout();
+    expect(store().plans[0].items[0].restSec).toBe(90);
+
+    store().setDefaultRest(150);
+
+    expect(store().plans.find((p) => p.id === planId)!.items[0].restSec).toBe(150);
+  });
+
+  it('retimes a workout that is already running', () => {
+    const { sessionId } = planAndWorkout();
+
+    store().setDefaultRest(150);
+
+    expect(store().sessions.find((x) => x.id === sessionId)!.entries[0].restSec).toBe(150);
+  });
+
+  it('leaves a finished workout alone, because it is a record', () => {
+    const { sessionId } = planAndWorkout();
+    const setId = store().sessions[0].entries[0].sets[0].id;
+    store().toggleSetLogged(sessionId, store().sessions[0].entries[0].id, setId);
+    store().endSession(sessionId);
+
+    store().setDefaultRest(150);
+
+    expect(store().sessions.find((x) => x.id === sessionId)!.entries[0].restSec).toBe(90);
+  });
+
+  it('applies to exercises added afterwards', () => {
+    store().setDefaultRest(150);
+    const planId = store().createPlan('tuesday');
+    store().addPlanItem(planId, BENCH);
+    expect(store().plans.find((p) => p.id === planId)!.items[0].restSec).toBe(150);
+  });
+
+  it('accepts zero, which means no timer', () => {
+    store().setDefaultRest(0);
+    expect(store().settings.defaultRestSec).toBe(0);
+  });
+
+  it('refuses a negative duration and caps an absurd one', () => {
+    store().setDefaultRest(-30);
+    expect(store().settings.defaultRestSec).toBe(0);
+    store().setDefaultRest(99_999);
+    expect(store().settings.defaultRestSec).toBe(MAX_REST_SEC);
+  });
+
+  it('rounds a fractional duration, since the timer counts whole seconds', () => {
+    store().setDefaultRest(90.6);
+    expect(store().settings.defaultRestSec).toBe(91);
   });
 });
 

@@ -6,6 +6,21 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.9] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **The rest timer length is yours to set**, in **Profile → Rest timer**. One tap for 45s, 1:00,
+  1:30, 2:00 or 3:00, or type any value up to ten minutes. Zero turns the timer off.
+  - **Plans you have already built are retimed to match.** Rest is stored per exercise, but
+    nothing has ever been able to set it per exercise — every stored value is a copy of whatever
+    the default was when that exercise was added. Leaving them behind would have made the new
+    setting look like a switch that does nothing.
+  - A workout already in progress is retimed too, since that is usually where you notice you
+    want longer. A **finished** workout is a record of what happened and is never touched.
+
 ## [1.2.8] — 2026-08-02
 
 Storage schema **v7** — unchanged.
