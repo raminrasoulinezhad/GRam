@@ -43,6 +43,8 @@ type State = {
   /** At most one session is live at a time; the tab bar surfaces it. */
   activeSessionId: string | null;
   celebratedMilestones: string[];
+  /** Training groups whose week-balance advice has been dismissed. */
+  ignoredBalanceGroups: string[];
 };
 
 type Actions = {
@@ -85,6 +87,11 @@ type Actions = {
   seedUnitFromDevice: (unit: 'kg' | 'lb') => void;
   /** Records milestone ids as seen, so their celebration is not shown again. */
   markMilestonesSeen: (ids: string[]) => void;
+  // --- week balance ---
+  /** Stops the week review from advising about a group. */
+  ignoreBalanceGroup: (group: string) => void;
+  /** Brings every dismissed group back, so a fresh review says everything it has to say. */
+  clearIgnoredBalanceGroups: () => void;
   resetAll: () => void;
 };
 
@@ -122,6 +129,7 @@ export const useStore = create<State & Actions>()(
       profile: DEFAULT_PROFILE,
       activeSessionId: null,
       celebratedMilestones: [],
+      ignoredBalanceGroups: [],
 
       // ---------------------------------------------------------------- plans
       createPlan: (name) => {
@@ -421,6 +429,11 @@ export const useStore = create<State & Actions>()(
           celebratedMilestones: [...new Set([...s.celebratedMilestones, ...ids])],
         })),
 
+      ignoreBalanceGroup: (group) =>
+        set((s) => ({ ignoredBalanceGroups: [...new Set([...s.ignoredBalanceGroups, group])] })),
+
+      clearIgnoredBalanceGroups: () => set({ ignoredBalanceGroups: [] }),
+
       resetAll: () =>
         set({
           plans: [],
@@ -429,6 +442,7 @@ export const useStore = create<State & Actions>()(
           profile: DEFAULT_PROFILE,
           activeSessionId: null,
           celebratedMilestones: [],
+          ignoredBalanceGroups: [],
         }),
     }),
     {
@@ -442,6 +456,7 @@ export const useStore = create<State & Actions>()(
         profile: s.profile,
         activeSessionId: s.activeSessionId,
         celebratedMilestones: s.celebratedMilestones,
+        ignoredBalanceGroups: s.ignoredBalanceGroups,
       }),
       version: SCHEMA_VERSION,
       // Synchronous by contract - see the note in migrations.ts. An async migrate silently

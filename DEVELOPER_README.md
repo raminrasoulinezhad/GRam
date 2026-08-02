@@ -161,8 +161,12 @@ Source artwork lives in `assets/brand/`; everything else is generated.
 | File | Used for |
 |---|---|
 | `assets/brand/icon-source.png` | app icon — home screen, favicon, Android adaptive |
-| `assets/brand/logo-source.png` | splash screen (optional; falls back to the icon) |
-| `assets/brand/hero.png` | the banner at the top of the README |
+| `assets/brand/logo-source.png` | splash screen, landscape |
+| `assets/brand/logo-source-cellphone.png` | splash screen, portrait |
+
+`npm run build:icons` writes the generated `assets/logo.jpg` (landscape) and
+`assets/logo-portrait.jpg`. The landscape one doubles as the README banner, so the README
+picture updates whenever the splash artwork does and there is no third file to keep in step.
 
 ```bash
 npm run build:icons                  # regenerate everything
@@ -206,6 +210,7 @@ rather than by rendering.
 
 - [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) — the never-publish-to-a-store policy, and why
 - [docs/RELEASING.md](docs/RELEASING.md) — versioning and data migrations in full
-- [docs/STUDY.md](docs/STUDY.md) — the Fitbod research this design came from
+- [docs/STUDY.md](docs/STUDY.md) — the training science the design rests on, and the reasoning
+  behind the volume, recovery and recommendation models
 - [docs/ROADMAP.md](docs/ROADMAP.md) — what's next
 - [docs/QUICKSTART.md](docs/QUICKSTART.md) — plain-English install guide

@@ -15,7 +15,7 @@ import type { Plan, Profile, Session, Settings } from './types';
  *   3. Add the old payload to the fixtures in __tests__/migrations.test.ts.
  * Never edit an existing step - someone out there is still on that version.
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const DEFAULT_SETTINGS: Settings = {
   unit: 'kg',
@@ -45,6 +45,12 @@ export type PersistedState = {
   activeSessionId: string | null;
   /** Milestone ids already shown to the user, so a celebration never repeats. */
   celebratedMilestones: string[];
+  /**
+   * Training groups whose week-balance advice the user has dismissed. Stored rather than
+   * derived because it is a judgement about their own training - someone who does not train
+   * biceps directly should not be told about it every time they open the app.
+   */
+  ignoredBalanceGroups: string[];
 };
 
 /** A single forward step. Receives the previous version's shape, returns the next one. */
@@ -77,6 +83,15 @@ const MIGRATIONS: Record<number, Migration> = {
     settings: { ...DEFAULT_SETTINGS, ...(asRecord(state.settings) ?? {}) },
     celebratedMilestones: Array.isArray(state.celebratedMilestones)
       ? state.celebratedMilestones
+      : [],
+  }),
+  // v3 -> v4: the week-balance review on the Plans tab, and the list of groups whose advice the
+  // user has dismissed. An upgrading user has dismissed nothing, so they see the full review -
+  // which is right, because they have never been shown it before.
+  4: (state) => ({
+    ...state,
+    ignoredBalanceGroups: Array.isArray(state.ignoredBalanceGroups)
+      ? state.ignoredBalanceGroups
       : [],
   }),
 };
@@ -126,6 +141,9 @@ export function coerce(state: Record<string, unknown>): PersistedState {
     profile: { ...DEFAULT_PROFILE, ...(asRecord(state.profile) ?? {}) },
     activeSessionId: typeof activeSessionId === 'string' ? activeSessionId : null,
     celebratedMilestones: asArray<string>(state.celebratedMilestones).filter(
+      (x) => typeof x === 'string',
+    ),
+    ignoredBalanceGroups: asArray<string>(state.ignoredBalanceGroups).filter(
       (x) => typeof x === 'string',
     ),
   };

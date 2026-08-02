@@ -108,14 +108,27 @@ describe('searchExercises', () => {
     );
   });
 
-  it('matches a muscle as primary OR secondary', () => {
+  it('keeps only exercises whose PRIMARY muscle the chip names', () => {
+    // The chip is a shortcut to "show me triceps exercises". Bench press assists the triceps
+    // and is a chest exercise; answering the shortcut with it makes the shortcut useless.
+    // Typing "triceps" still finds it, ranked below the exercises that actually target them.
     const results = searchExercises({ muscle: 'triceps' });
-    const bench = results.find((e) => e.id === 'Barbell_Bench_Press_-_Medium_Grip');
-    // Bench press is a chest exercise that assists triceps - a lifter expects it here.
-    expect(bench).toBeDefined();
+    expect(results.find((e) => e.id === 'Barbell_Bench_Press_-_Medium_Grip')).toBeUndefined();
+    expect(searchExercises({ query: 'triceps' }).map((e) => e.id)).toContain(
+      'Barbell_Bench_Press_-_Medium_Grip',
+    );
     for (const e of results) {
-      expect([...e.primaryMuscles, ...e.secondaryMuscles]).toContain('triceps');
+      expect(e.primaryMuscles).toContain('triceps');
     }
+  });
+
+  it('makes an exception for a recommended pick filed under another muscle', () => {
+    // The Romanian deadlift is one of the two best glute exercises; the dataset calls glutes
+    // secondary to hamstrings. The recommendation wins.
+    const results = searchExercises({ muscle: 'glutes' });
+    const rdl = results.find((e) => e.id === 'Romanian_Deadlift');
+    expect(rdl).toBeDefined();
+    expect(rdl!.primaryMuscles).not.toContain('glutes');
   });
 
   it('intersects filters rather than unioning them', () => {

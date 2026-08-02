@@ -191,20 +191,33 @@ describe('the exercises the dataset was missing', () => {
 });
 
 describe('performance', () => {
-  // A phone has 16ms to draw a frame. Search runs on the same thread as the keystroke that
-  // triggered it, so these budgets are generous multiples of what was measured (~1.3ms and
-  // ~2.9ms per pass) and exist to catch a regression, not to certify a number.
+  /*
+   * A phone has 16ms to draw a frame, and search runs on the same thread as the keystroke that
+   * triggered it. Measured on this machine: ~1.3ms per pass clean, ~2.9ms through the typo
+   * path.
+   *
+   * The budgets below are an order of magnitude above that, deliberately. Jest runs suites in
+   * parallel workers, so wall-clock here says as much about what the other workers are doing as
+   * about this code - a tighter bound failed once in twenty runs and a perf test that cries
+   * wolf is one people delete. These catch an algorithmic regression, not a slow afternoon.
+   */
+  const warmUp = () => {
+    for (const q of ['bench', 'chest', 'zzz']) searchExercises({ query: q });
+  };
+
   it('stays fast enough for search-as-you-type', () => {
     const queries = ['b', 'be', 'ben', 'benc', 'bench', 'bench p', 'chest', 'press', 'legs'];
+    warmUp();
     const start = Date.now();
     for (let i = 0; i < 20; i++) for (const q of queries) searchExercises({ query: q });
-    expect(Date.now() - start).toBeLessThan(900); // 180 passes
+    expect(Date.now() - start).toBeLessThan(3000); // 180 passes; ~230ms observed
   });
 
   it('stays fast even when every term has to be typo-corrected', () => {
     // The expensive path: nothing matches literally, so the whole catalog gets fuzzy-matched.
+    warmUp();
     const start = Date.now();
     for (let i = 0; i < 20; i++) searchExercises({ query: 'dumbell squt' });
-    expect(Date.now() - start).toBeLessThan(400); // 20 passes
+    expect(Date.now() - start).toBeLessThan(1200); // 20 passes; ~60ms observed
   });
 });

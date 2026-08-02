@@ -22,7 +22,7 @@ the user typed, tomorrow they hold numbers the app proposed and the user can ove
 
 ## v0.3 — Workout generation
 
-Fitbod's Exercise Selector, minus the machine learning. Rank the catalog by
+Rank the catalog by
 `recovery × goal fit × equipment availability × recent-use penalty` and emit a session. The
 profile already captures goal, experience and equipment; recovery already exists as a pure
 function. This is mostly a scoring function and a screen.
@@ -43,7 +43,7 @@ function. This is mostly a scoring function and a screen.
 ## v0.6 — Health app import
 
 Height, weight, age and cardio load from **Apple HealthKit** and **Android Health Connect**,
-feeding the recovery model the way Fitbod folds in Strava and Fitbit.
+so that a run or a ride feeds the recovery model rather than being invisible to it.
 
 ⚠️ **This is the one item with a hard prerequisite.** Both need native modules, which cannot run
 inside Expo Go. Adopting it means moving to an EAS development build — from that point on,

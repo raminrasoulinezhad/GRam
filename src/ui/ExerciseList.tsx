@@ -2,10 +2,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
-  CATEGORIES,
-  EQUIPMENT,
   EXERCISES,
-  LEVELS,
   MUSCLES,
   focusMuscles,
   recommendedRanks,
@@ -30,17 +27,13 @@ type Props = {
 export function ExerciseList({ onSelect, accessory, header }: Props) {
   const [query, setQuery] = useState('');
   const [muscle, setMuscle] = useState<Muscle | null>(null);
-  const [equipment, setEquipment] = useState<string | null>(null);
-  const [category, setCategory] = useState<string | null>(null);
-  const [level, setLevel] = useState<string | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const sessions = useStore(selectSessions);
   const history = useMemo(() => setCountsByExercise(sessions), [sessions]);
 
   const results = useMemo(
-    () => searchExercises({ query, muscle, equipment, category, level, history }),
-    [query, muscle, equipment, category, level, history],
+    () => searchExercises({ query, muscle, history }),
+    [query, muscle, history],
   );
 
   // When the search is about a muscle, the first two rows are the evidence-based picks for it.
@@ -49,8 +42,6 @@ export function ExerciseList({ onSelect, accessory, header }: Props) {
     () => recommendedRanks(focusMuscles({ query, muscle })),
     [query, muscle],
   );
-
-  const activeFilters = [muscle, equipment, category, level].filter(Boolean).length;
 
   return (
     <View style={{ flex: 1 }}>
@@ -67,28 +58,27 @@ export function ExerciseList({ onSelect, accessory, header }: Props) {
           autoCorrect={false}
         />
         {query.length > 0 ? (
-          <Pressable accessibilityRole="button" onPress={() => setQuery('')} hitSlop={8}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+            testID="clear-search"
+            onPress={() => setQuery('')}
+            hitSlop={8}
+          >
             <Ionicons name="close-circle" size={16} color={theme.color.textFaint} />
           </Pressable>
         ) : null}
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setFiltersOpen((v) => !v)}
-          hitSlop={8}
-          testID="toggle-filters"
-        >
-          <View style={s.filterToggle}>
-            <Ionicons
-              name="options"
-              size={16}
-              color={activeFilters > 0 ? theme.color.accent : theme.color.textFaint}
-            />
-            {activeFilters > 0 ? <Text style={s.filterCount}>{activeFilters}</Text> : null}
-          </View>
-        </Pressable>
       </View>
 
-      {/* Muscle is always visible - browsing by muscle is the primary way lifters explore. */}
+      {/*
+       * The only filter. It keeps exercises whose PRIMARY muscle this is, so tapping Chest gets
+       * you chest exercises rather than the hundred movements that involve the chest somewhere.
+       *
+       * Equipment, category and difficulty used to have chip rows of their own behind a toggle.
+       * They are gone: nobody opened them, and the text search reads all three fields anyway -
+       * "dumbbell chest", "beginner squat" and "cardio" all work, and rank better than a filter
+       * would have, so removing the rows lost no capability and gave the list back its space.
+       */}
       <ChipRow
         options={MUSCLES.map((m) => MUSCLE_LABEL[m])}
         value={muscle ? MUSCLE_LABEL[muscle] : null}
@@ -96,15 +86,8 @@ export function ExerciseList({ onSelect, accessory, header }: Props) {
           setMuscle(label === null ? null : (MUSCLES.find((m) => MUSCLE_LABEL[m] === label) ?? null))
         }
         allLabel="All muscles"
+        testIDPrefix="muscle"
       />
-
-      {filtersOpen ? (
-        <View>
-          <ChipRow options={EQUIPMENT} value={equipment} onChange={setEquipment} allLabel="Any kit" />
-          <ChipRow options={CATEGORIES} value={category} onChange={setCategory} allLabel="Any type" />
-          <ChipRow options={LEVELS} value={level} onChange={setLevel} allLabel="Any level" />
-        </View>
-      ) : null}
 
       <Text style={s.count}>
         {results.length} exercise{results.length === 1 ? '' : 's'}
@@ -178,8 +161,6 @@ const s = StyleSheet.create({
     fontSize: theme.font.body,
     paddingVertical: theme.space(3),
   },
-  filterToggle: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  filterCount: { color: theme.color.accent, fontSize: theme.font.tiny, fontWeight: '800' },
   count: {
     color: theme.color.textFaint,
     fontSize: theme.font.tiny,

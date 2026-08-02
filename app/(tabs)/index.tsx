@@ -7,6 +7,7 @@ import { relativeTime } from '@/lib/format';
 import { useStore } from '@/store/useStore';
 import { Body, Button, Card, Dim, Empty, Screen } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
+import { WeekReview } from '@/ui/WeekReview';
 import { theme } from '@/ui/theme';
 
 export default function PlansScreen() {
@@ -68,33 +69,10 @@ export default function PlansScreen() {
           </Pressable>
         ) : null}
 
-        <Card>
-          <Text style={s.sectionLabel}>NEW PLAN</Text>
-          <View style={s.createRow}>
-            <TextInput
-              testID="new-plan-name"
-              value={draftName}
-              onChangeText={setDraftName}
-              placeholder="e.g. Push day"
-              placeholderTextColor={theme.color.textFaint}
-              style={s.input}
-              onSubmitEditing={handleCreate}
-              returnKeyType="done"
-            />
-            <Button label="Create" onPress={handleCreate} testID="create-plan" />
-          </View>
-          <Button
-            label="Start an empty workout"
-            variant="ghost"
-            style={{ marginTop: theme.space(1) }}
-            onPress={() => router.push(`/session/${startEmptySession()}`)}
-          />
-        </Card>
-
         {plans.length === 0 ? (
           <Empty
             title="No plans yet"
-            hint="A plan is a reusable list of exercises with your default sets. Create one above, then start it at the gym."
+            hint="A plan is a reusable list of exercises with your default sets. Add one below, then start it at the gym."
           />
         ) : null}
 
@@ -131,6 +109,31 @@ export default function PlansScreen() {
             </View>
           </Card>
         ))}
+
+        {/* Creating a plan is a once-in-a-while act, so it sits after the plans rather than
+            above them - the same shape as adding an exercise inside a plan. */}
+        <View style={s.addRow}>
+          <Ionicons name="add" size={18} color={theme.color.textFaint} />
+          <TextInput
+            testID="new-plan-name"
+            value={draftName}
+            onChangeText={setDraftName}
+            placeholder="Add a plan, e.g. Push day"
+            placeholderTextColor={theme.color.textFaint}
+            style={s.addInput}
+            onSubmitEditing={handleCreate}
+            returnKeyType="done"
+          />
+          <Button label="Add" onPress={handleCreate} testID="create-plan" />
+        </View>
+
+        <Button
+          label="Start an empty workout"
+          variant="ghost"
+          onPress={() => router.push(`/session/${startEmptySession()}`)}
+        />
+
+        <WeekReview />
       </ScrollView>
     </Screen>
   );
@@ -145,17 +148,25 @@ const s = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: theme.space(2),
   },
-  createRow: { flexDirection: 'row', gap: theme.space(2), alignItems: 'center' },
-  input: {
-    flex: 1,
-    backgroundColor: theme.color.surfaceAlt,
+  addRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space(2),
+    paddingLeft: theme.space(3),
+    paddingRight: theme.space(1.5),
+    paddingVertical: theme.space(1.5),
+    backgroundColor: theme.color.surface,
     borderWidth: 1,
     borderColor: theme.color.border,
     borderRadius: theme.radius.md,
-    paddingHorizontal: theme.space(3),
-    paddingVertical: theme.space(3),
+  },
+  addInput: {
+    flex: 1,
+    // Without this an <input> keeps its ~200px intrinsic width on web and overflows the row.
+    minWidth: 0,
     color: theme.color.text,
     fontSize: theme.font.body,
+    paddingVertical: theme.space(2),
   },
   resume: {
     flexDirection: 'row',

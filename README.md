@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/brand/hero.png" alt="FitRam — personal workouts & weightlifting" width="720">
+<img src="assets/logo.jpg" alt="FitRam — personal workouts & weightlifting" width="720">
 
 # FitRam
 
@@ -102,4 +102,4 @@ FitRam is [Apache 2.0](LICENSE) licensed. It is **never published to an app stor
 [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md). All exercise artwork is original; the exercise data
 is public domain. Full accounting in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
-Not affiliated with or endorsed by Fitbod.
+An independent, personal project. Not affiliated with any commercial fitness app.

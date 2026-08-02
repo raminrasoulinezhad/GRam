@@ -6,6 +6,34 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.3.0] — 2026-08-01
+
+Plans read as a week. Storage schema **v4** — adds one list; nothing existing changes.
+
+### Added
+
+- **Week review** on the Plans tab. Your plans are read together as a week and checked against
+  one rule: eight muscle groups — chest, shoulders, triceps, back, biceps, glutes, hamstrings,
+  quads — each trained at least twice a week, on different days, as the **primary** muscle of an
+  exercise. Assistance work does not count. Reasoning in
+  [docs/STUDY.md §4](docs/STUDY.md#4-defining-a-balanced-week).
+- **Fix** on every issue: one tap adds the recommended exercise for that group to a day you
+  choose. Only days that do not already train it are offered.
+- **Ignore** on every issue, so advice you disagree with goes away and stays away, and
+  **Review again** to bring all of it back.
+
+### Changed
+
+- The add-plan box is a single compact row and sits **after** the plan list rather than above
+  it — the same shape as adding an exercise inside a plan.
+- The exercise search keeps **one** filter: primary muscle. Tapping Chest now gives the 84
+  exercises that target the chest rather than the 151 that involve it. The equipment, category
+  and difficulty rows behind the filter toggle are gone; all three are searchable as text
+  ("dumbbell chest", "beginner squat", "cardio"), so nothing became unreachable.
+- The README banner uses the generated `assets/logo.jpg` instead of a separate hero image.
+- Documentation no longer describes the app by reference to any commercial product. `docs/STUDY.md`
+  is now an account of the training model itself, sourced from published exercise science.
+
 ## [0.2.0] — 2026-08-01
 
 Search that finds things. Storage schema **v3**, unchanged — nothing to migrate.

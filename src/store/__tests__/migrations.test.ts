@@ -133,6 +133,32 @@ describe('upgrading from v2', () => {
   });
 });
 
+/** A v3 payload: photo switch and milestone record present, no week-balance dismissals. */
+const V3_PAYLOAD = {
+  ...V2_PAYLOAD,
+  settings: { ...V2_PAYLOAD.settings, showExercisePhotos: false },
+  celebratedMilestones: ['workouts:10'],
+};
+
+describe('upgrading from v3', () => {
+  const migrated = migratePersisted(V3_PAYLOAD, 3);
+
+  it('keeps the training log, the profile and the milestones already celebrated', () => {
+    expect(migrated.sessions[0].entries[0].sets).toHaveLength(2);
+    expect(migrated.profile.displayName).toBe('Existing user');
+    expect(migrated.celebratedMilestones).toEqual(['workouts:10']);
+  });
+
+  it('does not turn the photo switch back on behind the user', () => {
+    expect(migrated.settings.showExercisePhotos).toBe(false);
+  });
+
+  it('starts with no week-balance advice dismissed', () => {
+    // An upgrading user has never been shown the review, so they should see all of it.
+    expect(migrated.ignoredBalanceGroups).toEqual([]);
+  });
+});
+
 describe('upgrading from an unversioned install', () => {
   it('runs every step in order from v0', () => {
     const migrated = migratePersisted(V1_PAYLOAD, 0);

@@ -123,8 +123,9 @@ binary and so carry no notice obligation, but they are MIT/Apache-2.0 as well.
 
 ---
 
-## 4. Fitbod
+## 4. Independence
 
-FitRam is an independent project that reimplements ideas described in Fitbod's public engineering
-blog and help centre. It contains no Fitbod code, assets, or trademarks, and is not affiliated with
-or endorsed by Fitbod. "Fitbod" is referenced in the documentation only to describe prior art.
+FitRam is an independent personal project. It contains no code, assets or trademarks belonging to
+any commercial fitness application, and is not affiliated with or endorsed by one. Its training
+model is built from published exercise-science literature and the public writing of coaches, all
+cited in [docs/STUDY.md](docs/STUDY.md).

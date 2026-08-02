@@ -31,6 +31,14 @@ export function imageUrl(path: string): string {
 
 export type CatalogFilters = {
   query?: string;
+  /**
+   * Keeps only exercises whose PRIMARY muscle this is.
+   *
+   * Deliberately stricter than the text search, which also matches assistance work and ranks it
+   * lower. The chip is a shortcut to "show me chest exercises", and answering it with the
+   * hundred movements that merely involve the chest makes it useless as a shortcut. If you want
+   * the wider set, type the muscle instead.
+   */
   muscle?: Muscle | null;
   equipment?: string | null;
   category?: string | null;
@@ -58,18 +66,19 @@ export type CatalogFilters = {
  */
 export function searchExercises(filters: CatalogFilters): Exercise[] {
   const scores = scoreQuery(filters.query ?? '');
+  const focus = focusMuscles(filters);
+  const ranks = focus.length > 0 ? recommendedRanks(focus) : null;
   const out: Exercise[] = [];
 
   for (let i = 0; i < EXERCISES.length; i++) {
     const e = EXERCISES[i];
     if (scores !== null && !scores.has(e.id)) continue;
-    if (filters.muscle) {
-      if (
-        !e.primaryMuscles.includes(filters.muscle) &&
-        !e.secondaryMuscles.includes(filters.muscle)
-      ) {
-        continue;
-      }
+    // The primary-muscle rule has one exception: a recommended pick always shows up in its own
+    // muscle's list. The Romanian deadlift is one of the two best glute exercises and the
+    // dataset files glutes as secondary to hamstrings; hiding it from the Glutes chip would be
+    // the classification winning an argument it should not be in.
+    if (filters.muscle && !e.primaryMuscles.includes(filters.muscle) && !ranks?.has(e.id)) {
+      continue;
     }
     if (filters.equipment && e.equipment !== filters.equipment) continue;
     if (filters.category && e.category !== filters.category) continue;
@@ -77,9 +86,7 @@ export function searchExercises(filters: CatalogFilters): Exercise[] {
     out.push(e);
   }
 
-  const focus = focusMuscles(filters);
-  if (focus.length > 0) {
-    const ranks = recommendedRanks(focus);
+  if (ranks !== null) {
     const history = filters.history;
     // Array.prototype.sort is stable, so exercises equal on all three keys keep the
     // alphabetical order EXERCISES already has.

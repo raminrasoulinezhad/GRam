@@ -7,7 +7,7 @@ import type { Session } from '@/store/types';
  * Tonnage cannot compare 100kg x 5 against a 60s plank, and it over-weights the exercises
  * that happen to move the most absolute load. Counting sets - full credit to the muscles an
  * exercise targets, half credit to the ones assisting - is how the hypertrophy literature
- * counts weekly volume, and it is the unit Fitbod's own "10-20 sets per muscle per week"
+ * counts weekly volume, and it is the unit the familiar "10-20 sets per muscle per week"
  * guidance is expressed in.
  */
 export const PRIMARY_WEIGHT = 1;
@@ -80,7 +80,7 @@ export function volumeInWindow(
 }
 
 /**
- * Per-muscle recovery, 0-100%, in the spirit of Fitbod's Body tab.
+ * Per-muscle recovery, 0-100%.
  *
  * Fatigue from each logged set decays exponentially, then recovery is the exponential
  * complement of accumulated fatigue. The resulting curve is roughly: a hard 12-set session

@@ -19,11 +19,17 @@ export function Screen({ children, style }: { children: ReactNode; style?: Style
 export function Card({
   children,
   style,
+  testID,
 }: {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }) {
-  return <View style={[s.card, style]}>{children}</View>;
+  return (
+    <View style={[s.card, style]} testID={testID}>
+      {children}
+    </View>
+  );
 }
 
 export function H1({ children }: { children: ReactNode }) {
@@ -51,13 +57,15 @@ export function Dim({
   children,
   style,
   numberOfLines,
+  testID,
 }: {
   children: ReactNode;
   style?: StyleProp<TextStyle>;
   numberOfLines?: number;
+  testID?: string;
 }) {
   return (
-    <Text style={[s.dim, style]} numberOfLines={numberOfLines}>
+    <Text style={[s.dim, style]} numberOfLines={numberOfLines} testID={testID}>
       {children}
     </Text>
   );
@@ -113,11 +121,13 @@ export function Chip({
   active,
   onPress,
   tone = 'default',
+  testID,
 }: {
   label: string;
   active?: boolean;
   onPress?: () => void;
   tone?: 'default' | 'primary' | 'secondary';
+  testID?: string;
 }) {
   const content = (
     <View
@@ -135,7 +145,7 @@ export function Chip({
   );
   if (!onPress) return content;
   return (
-    <Pressable accessibilityRole="button" onPress={onPress}>
+    <Pressable accessibilityRole="button" onPress={onPress} testID={testID}>
       {content}
     </Pressable>
   );
@@ -147,17 +157,31 @@ export function ChipRow({
   value,
   onChange,
   allLabel = 'All',
+  testIDPrefix = 'chip',
 }: {
   options: readonly string[];
   value: string | null;
   onChange: (next: string | null) => void;
   allLabel?: string;
+  /** Filter chips carry ids because their labels also appear on the rows they filter. */
+  testIDPrefix?: string;
 }) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
-      <Chip label={allLabel} active={value === null} onPress={() => onChange(null)} />
+      <Chip
+        label={allLabel}
+        active={value === null}
+        onPress={() => onChange(null)}
+        testID={`${testIDPrefix}-all`}
+      />
       {options.map((o) => (
-        <Chip key={o} label={o} active={value === o} onPress={() => onChange(value === o ? null : o)} />
+        <Chip
+          key={o}
+          label={o}
+          active={value === o}
+          onPress={() => onChange(value === o ? null : o)}
+          testID={`${testIDPrefix}-${o}`}
+        />
       ))}
     </ScrollView>
   );

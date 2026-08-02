@@ -48,3 +48,33 @@ describe('the exercise list', () => {
     expect(screen.getByTestId(`top-pick-${RECOMMENDED.quadriceps[0]}`)).toBeTruthy();
   });
 });
+
+describe('filters', () => {
+  it('offers muscles and nothing else', async () => {
+    await renderList();
+    expect(screen.getByTestId('muscle-all')).toBeTruthy();
+    expect(screen.getByTestId('muscle-Chest')).toBeTruthy();
+
+    // The equipment, category and difficulty rows and their toggle are gone.
+    expect(screen.queryByTestId('toggle-filters')).toBeNull();
+    expect(screen.queryByText('Any kit')).toBeNull();
+    expect(screen.queryByText('Any type')).toBeNull();
+    expect(screen.queryByText('Any level')).toBeNull();
+  });
+
+  it('still reaches those facets through the search box', async () => {
+    // Removing the rows lost no capability: equipment, category and level are searchable text.
+    await renderList();
+    for (const q of ['dumbbell', 'cardio', 'beginner']) {
+      await search(q);
+      expect([q, screen.queryByText('Nothing matches')]).toEqual([q, null]);
+    }
+  });
+
+  it('narrows to exercises that target the muscle when a chip is tapped', async () => {
+    await renderList();
+    await fireEvent.press(screen.getByTestId('muscle-Chest'));
+    // 151 exercises involve the chest; far fewer actually target it.
+    expect(screen.getByText(/^\d+ exercises$/).props.children.join('')).not.toBe('151 exercises');
+  });
+});

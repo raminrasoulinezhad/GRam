@@ -1,103 +1,56 @@
-# Study: what Fitbod does, and what FitRam reproduces
+# Study: the training model behind FitRam
 
-Research behind FitRam's design, drawn from Fitbod's own engineering blog and help centre.
-Sources at the bottom. FitRam contains no Fitbod code or assets and is not affiliated with them.
-
----
-
-## 1. The idea worth copying
-
-Fitbod is not interesting as a set logger — there are hundreds of those. It is interesting
-because it closes a loop:
-
-> log what you did → infer which muscles are fatigued → choose what you should do next
-
-Everything distinctive about the product falls out of that loop. The body heatmap is the loop
-made visible; the workout generator is the loop made actionable. A tracker that only records
-sets has built the first arrow and stopped.
+Why FitRam counts what it counts, and where the numbers come from. Sources at the bottom of
+each section. This is an independent personal project; nothing here is taken from any
+commercial fitness app.
 
 ---
 
-## 2. The algorithm
+## 1. The idea worth building
 
-### Muscle recovery
+A set logger is not interesting on its own — there are hundreds of those. What makes a training
+app worth opening is closing a loop:
 
-Every muscle group carries a **recovery score from 0 to 100%**, derived from recent training
-history. The stated physiological basis: trained muscle needs **48–72 hours** before it can be
-worked at full intensity again, and is treated as fully recovered after about **six days**.
-Users can correct the estimate by hand on the Body tab.
+> log what you did → infer which muscles are fatigued and which are neglected → say what you
+> should do next
 
-### Exercise Selector
-
-Scores and ranks the whole **800+** exercise library per user, on five criteria in priority
-order:
-
-1. **Recovery status** — highest weight; favours fresh muscles
-2. **Goal appropriateness** — trainer-rated per goal and experience level
-3. **User feedback history** — learns from exercises added, removed and favourited
-4. **Training split compatibility** — respects Push/Pull/Legs and similar structures
-5. **Equipment availability** — constrained by the user's gym profile
-
-### Capability Recommender
-
-Chooses weight, sets and reps from a **continuously re-estimated 1RM** (Epley), refined from
-every logged set. Goal presets:
-
-| Goal | Reps | Load | Rest |
-|---|---|---|---|
-| Strength | 1–6 | 85–100% 1RM | 3–5 min |
-| Hypertrophy | 6–12 | — | 10–20 working sets per muscle per week |
-| General fitness | higher | — | short |
-
-### Progressive overload
-
-- **Max Effort days** — every few workouts an exercise is flagged for an AMRAP final set, which
-  re-anchors the 1RM estimate against reality.
-- **Reps in Reserve** — the user logs how many reps were left in the tank. Cited guidance:
-  1–2 RiR for hypertrophy, 2–3 for strength.
-- **Deliberate heavy/light cycling** rather than repeating an identical scheme, to avoid
-  accommodation.
-
-### External load
-
-Apple Health, Health Connect, Fitbit and Strava feed cardio into the same recovery model, so
-recommendations stay calibrated on active-recovery days.
+Everything distinctive in FitRam falls out of that loop. The body heatmap is the loop made
+visible. The week review on the Plans tab is the loop made actionable before you get to the
+gym rather than after. A tracker that only records sets has built the first arrow and stopped.
 
 ---
 
-## 3. Feature surface
+## 2. Counting volume: effective sets, not tonnage
 
-- Exercise library with instructional video/GIF per movement
-- Browse by muscle, name, or equipment
-- Per-exercise history of every past set
-- **Body tab** — front/back recovery heatmap
-- **Workout tab** — the generated session; add, remove, swap, reorder; edit sets inline
-- **Log tab** — completed workouts, drillable
-- **Results** — 1RM trend per lift, strength score, volume and intensity trends
-- **Rest timer** — auto-starts on set completion, tone and vibration
-- **Supersets and circuits** — auto-grouped when enabled
-- **Gym profile** — equipment toggles constraining everything upstream
+**Each recorded set contributes 1.0 to every muscle the exercise targets and 0.5 to every
+muscle it assists.**
+
+Tonnage — weight × reps — is the obvious alternative and it does not work. It cannot compare
+100 kg × 5 against a 60-second plank. It flatters whichever lifts move the most absolute
+weight, so a deadlift dwarfs a lateral raise no matter what the training stimulus was. And it
+says nothing at all about a bodyweight or timed movement.
+
+Counting sets fixes all three. It is also the unit the hypertrophy literature already uses:
+the familiar guidance is 10–20 hard sets per muscle per week, and meta-analyses of training
+volume are expressed in sets, not kilograms. Half credit for assistance work is a judgement
+call rather than a measured constant — bench press does train the triceps, just not as much as
+a triceps extension does — but it puts every exercise in the catalog on one scale whether it
+is measured in reps, seconds or metres.
+
+Implemented in [`src/analytics/volume.ts`](../src/analytics/volume.ts).
+
+### One consequence worth knowing about
+
+Nine entries in the upstream dataset list the same muscle as both primary and secondary. Left
+alone, one set of those would credit the muscle 1.0 + 0.5 = 1.5 effective sets and quietly
+inflate the heatmap. Primary wins; the fix is in `scripts/build-catalog.mjs` so the data is
+clean before it reaches the app.
 
 ---
 
-## 4. What FitRam does differently
+## 3. Modelling recovery
 
-### Effective sets, not tonnage
-
-Fitbod's recovery model weighs sets, reps and load per muscle. FitRam uses a simpler unit that
-happens to solve a problem tonnage cannot: **each recorded set contributes 1.0 to every muscle
-the exercise targets and 0.5 to every muscle it assists.**
-
-Tonnage (weight × reps) cannot compare 100 kg × 5 against a 60-second plank, and it flatters
-whichever lifts move the most absolute weight — a deadlift will always dwarf a lateral raise
-regardless of the training stimulus. Counting sets is how the hypertrophy literature expresses
-weekly volume, and it is the unit Fitbod's own "10–20 sets per muscle per week" guidance is
-already stated in. It also puts every exercise in the catalog on one scale whether it is
-measured in reps, seconds or metres.
-
-### The recovery curve
-
-Fatigue from each recorded set decays exponentially with a 48-hour time constant; recovery is
+Fatigue from each recorded set decays exponentially with a 48-hour time constant. Recovery is
 the exponential complement of accumulated fatigue, saturating around 6 effective sets. For a
 hard 12-set session:
 
@@ -108,30 +61,56 @@ hard 12-set session:
 | 72 h | ~64% |
 | 6 days | ~90% |
 
-Which lines up with the 48–72 hour "trainable again" and six-day "fully recovered" heuristics
-without needing per-user machine learning. Implemented in
-[`src/analytics/volume.ts`](../src/analytics/volume.ts) as pure functions over the session log,
-so it is unit-testable without rendering anything.
+Those numbers were chosen to land on the two heuristics the literature keeps returning to:
+trained muscle needs roughly **48–72 hours** before it can be worked hard again, and is
+effectively fully recovered after about **six days**. A curve that reproduces both without any
+per-user model or training data is good enough for a personal app, and it has the large
+advantage of being a pure function of the session log — no state, no drift, unit-testable
+without rendering anything.
 
 ### Two views, not one
 
-Fitbod's Body tab shows freshness. FitRam defaults to **this week's volume** — "which muscles
-have I actually hit" — because that is the question a lifter planning a week asks, and offers
-recovery as a toggle. Both are derived from the same contributions.
+The Body tab defaults to **this week's volume** — "which muscles have I actually hit" — rather
+than to freshness. That is the question someone planning a week actually asks. Recovery is a
+toggle away, and both are derived from the same contributions.
 
 ---
 
-## 5. Deliberately not reproduced
+## 4. Defining a balanced week
+
+The volume and recovery models describe what has happened. The week review on the Plans tab
+describes what is *planned*, and it needs a definition of "balanced" concrete enough to act on.
+
+**Eight groups must be trained at least twice a week, on different days, as the primary muscle
+of an exercise:** chest, shoulders, triceps, back, biceps, glutes, hamstrings, quadriceps.
+
+Three deliberate narrowings, each of which makes the advice more useful by making it say less:
+
+- **Only those eight.** Forearms, calves, abs and the rest get plenty of assistance work, and
+  flagging them would bury the advice that matters under advice that does not.
+- **Only primary muscles.** Bench press assists the triceps. A week whose only triceps work is
+  bench press is not a week that trains triceps, and counting it would say otherwise.
+- **Different days.** Two chest exercises in one plan is one session's worth of stimulus. The
+  frequency is the point — twice-weekly frequency per muscle is one of the better-supported
+  findings in the hypertrophy literature — not the exercise count.
+
+Plans carry no day-of-week, so "different days" is read as "different plans". That is how
+people write them — Push, Pull, Legs is three days — and it needs no new state and no
+assumption about which weekday anything falls on.
+
+Implemented in [`src/analytics/balance.ts`](../src/analytics/balance.ts).
+
+---
+
+## 5. Deliberately not built
 
 | | Why |
 |---|---|
-| ML-ranked exercise selection | Needs the 400M+ logged workouts Fitbod trains on. A rules-based ranker gets most of the value. |
-| Cold-start weights from aggregate users | Same reason. The user enters a starting weight instead. |
-| Health app sync | Needs native modules that cannot run in Expo Go. |
+| ML-ranked exercise selection | Needs a corpus of logged workouts that a personal app does not have. A rules-based ranker gets most of the value. |
+| Cold-start weight suggestions from other users' data | Same reason, and it would mean collecting other users' data. The user enters a starting weight. |
+| Health app sync | Needs native modules that cannot run in Expo Go. See [ROADMAP.md](ROADMAP.md). |
 | Supersets and circuits | Scope. |
 | Social features, coaching content | Not the interesting part. |
-
-See [ROADMAP.md](ROADMAP.md) for what is planned.
 
 ---
 
@@ -182,27 +161,26 @@ version bump therefore fails the build until someone has revisited the picks. A 
 was rejected: a clock-driven test starts failing at a moment nobody chose, which teaches people
 to ignore it.
 
-### Sources for the recommendations
+Sources are consolidated at the bottom of this document.
 
-- [Optimizing Resistance Training Technique to Maximize Muscle Hypertrophy: A Narrative Review](https://www.mdpi.com/2411-5142/9/1/9) — Schoenfeld, Nippard et al.
+---
+
+## Sources
+
+Training science:
+
+- [Optimizing Resistance Training Technique to Maximize Muscle Hypertrophy: A Narrative Review](https://www.mdpi.com/2411-5142/9/1/9) — Schoenfeld, Nippard et al., 2024
+- [Triceps surae muscle hypertrophy is greater after standing versus seated calf-raise training](https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2023.1272106/epub)
 - [Best Exercises for Every Muscle According to Jeff Nippard](https://www.boxrox.com/best-exercises-for-every-muscle-jeff-nippard/)
 - [Jeff Nippard Uses Science to Rank the Best Glute Exercises](https://barbend.com/news/jeff-nippard-best-glute-exercises/)
 - [ACE Study Reveals Best Biceps Exercises](https://www.acefitness.org/continuing-education/prosource/august-2014/4933/ace-study-reveals-best-biceps-exercises/)
 - [ACE-sponsored Study: Best and Worst Abdominal Exercises](https://www.acefitness.org/about-ace/press-room/in-the-news/246/american-council-on-exercise-ace-sponsored-study-reveals-best-and-worst-abdominal-exercises/)
 - [ACE Study Identifies Best Triceps Exercises](https://www.acefitness.org/certifiednewsarticle/3008/ace-study-identifies-best-triceps-exercises/)
 - [ACE Lists Best Butt Exercises](https://www.acefitness.org/about-ace/press-room/press-releases/383/ace-lists-best-butt-exercises-exclusive-ace-research-announces-most-effective-gluteus-maximus-training/)
-- [Triceps surae hypertrophy is greater after standing versus seated calf-raise training](https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2023.1272106/epub)
 - [Forearm Training Guide: Volume, Exercises & Hypertrophy Tips — RP Strength](https://rpstrength.com/blogs/articles/forearm-hypertrophy-training-tips)
 - [The Best Trap Exercises & Workouts for a Bigger Back — Barbell Medicine](https://www.barbellmedicine.com/blog/best-trap-exercises-for-a-bigger-stronger-back/)
 - [The 12 Best EMG Backed Exercises For Every Muscle Group](https://www.setforset.com/blogs/news/best-emg-backed-exercises-for-every-muscle-group)
 
----
+Data:
 
-## Sources
-
-- [How Fitbod Generates Your Personalized Workouts: Meet The Fitbod Algorithm](https://fitbod.me/blog/fitbod-algorithm/)
-- [Fitbod's Muscle Recovery: How It Impacts Your Next Workout](https://fitbod.me/blog/muscle-recovery/)
-- [Tracking Volume, Intensity, And Recovery With Fitbod](https://fitbod.me/blog/tracking-volume-intensity-and-recovery-with-fitbod/)
-- [How Fitbod Creates Your Workout — Help Center](https://help.fitbod.me/hc/en-us/articles/360004429814-How-Fitbod-Creates-Your-Workout)
-- [Rest Timer — Help Center](https://fitbod.zendesk.com/hc/en-us/articles/360006340194-Rest-Timer)
-- [Fitbod — Wikipedia](https://en.wikipedia.org/wiki/Fitbod)
+- [yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db) — the exercise catalog, Unlicense / public domain
