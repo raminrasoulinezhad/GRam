@@ -105,37 +105,53 @@ export function ExerciseList({ onSelect, accessory, header }: Props) {
           <Empty title="Nothing matches" hint="Try a different search or clear the filters." />
         }
         renderItem={({ item }) => (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => onSelect(item)}
-            style={({ pressed }) => [s.row, pressed && { backgroundColor: theme.color.surfaceAlt }]}
-            testID={`exercise-${item.id}`}
-          >
+          /*
+           * Two press targets side by side, never one inside the other: the picture opens the
+           * description, the rest of the row selects the exercise. Nesting them renders a
+           * <button> inside a <button> on web - invalid HTML, and a screen reader announces two
+           * overlapping controls with no boundary between them.
+           */
+          <View style={s.row}>
             <ExerciseThumb exerciseId={item.id} />
-            <View style={{ flex: 1 }}>
-              <View style={s.nameRow}>
-                {topPicks.has(item.id) ? (
-                  <View style={s.pick} testID={`top-pick-${item.id}`}>
-                    <Ionicons name="star" size={10} color={theme.color.bg} />
-                    <Text style={s.pickText}>TOP PICK</Text>
-                  </View>
-                ) : null}
-                <Text style={s.name}>{item.name}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => onSelect(item)}
+              style={({ pressed }) => [
+                s.rowMain,
+                pressed && { backgroundColor: theme.color.surfaceAlt },
+              ]}
+              testID={`exercise-${item.id}`}
+            >
+              <View style={{ flex: 1 }}>
+                <View style={s.nameRow}>
+                  {topPicks.has(item.id) ? (
+                    <View style={s.pick} testID={`top-pick-${item.id}`}>
+                      <Ionicons name="star" size={10} color={theme.color.bg} />
+                      <Text style={s.pickText}>TOP PICK</Text>
+                    </View>
+                  ) : null}
+                  <Text style={s.name}>{item.name}</Text>
+                </View>
+                <View style={s.meta}>
+                  {item.primaryMuscles.map((m) => (
+                    <Chip key={m} label={MUSCLE_LABEL[m]} tone="primary" />
+                  ))}
+                  {item.equipment ? (
+                    <Chip label={titleCase(item.equipment)} tone="secondary" />
+                  ) : null}
+                  {item.mechanic ? (
+                    <Chip label={titleCase(item.mechanic)} tone="secondary" />
+                  ) : null}
+                </View>
               </View>
-              <View style={s.meta}>
-                {item.primaryMuscles.map((m) => (
-                  <Chip key={m} label={MUSCLE_LABEL[m]} tone="primary" />
-                ))}
-                {item.equipment ? <Chip label={titleCase(item.equipment)} tone="secondary" /> : null}
-                {item.mechanic ? <Chip label={titleCase(item.mechanic)} tone="secondary" /> : null}
-              </View>
-            </View>
-            {accessory ? (
-              accessory(item)
-            ) : (
-              <Ionicons name="chevron-forward" size={18} color={theme.color.textFaint} />
-            )}
-          </Pressable>
+              {/* Accessories are badges and icons, never controls, so they stay inside. */}
+              {accessory ? (
+                accessory(item)
+              ) : (
+                <Ionicons name="chevron-forward" size={18} color={theme.color.textFaint} />
+              )}
+            </Pressable>
+          </View>
         )}
       />
     </View>
@@ -173,10 +189,19 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.space(3),
-    paddingHorizontal: theme.space(4),
-    paddingVertical: theme.space(3),
+    paddingLeft: theme.space(4),
     borderBottomWidth: 1,
     borderBottomColor: theme.color.border,
+  },
+  // Carries the row's vertical padding so the tap target still spans the full row height,
+  // and the right-hand padding so the chevron sits where it always did.
+  rowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space(3),
+    paddingRight: theme.space(4),
+    paddingVertical: theme.space(3),
   },
   nameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: theme.space(1.5) },
   name: { color: theme.color.text, fontSize: theme.font.body, fontWeight: '600' },

@@ -22,20 +22,8 @@ export function ExerciseThumb({ exerciseId, size = 44 }: { exerciseId: string; s
   const photo = exercise?.images[0];
   const muscle = exercise?.primaryMuscles[0];
 
-  return (
-    <Pressable
-      // Tapping the picture opens the description; the row's own press is left to the row.
-      accessibilityRole={openSheet ? 'button' : 'image'}
-      accessibilityLabel={
-        exercise
-          ? `${exercise.name}, works ${muscle}${openSheet ? '. Open description' : ''}`
-          : 'Unknown exercise'
-      }
-      testID={`thumb-${exerciseId}`}
-      disabled={!openSheet || !exercise}
-      onPress={() => exercise && openSheet?.(exerciseId)}
-      style={({ pressed }) => [s.tile, { width: size, height: size }, pressed && { opacity: 0.7 }]}
-    >
+  const art = (
+    <>
       <MuscleGlyph muscle={muscle} size={size - 6} />
       {showPhotos && photo && !failed ? (
         <Image
@@ -46,6 +34,41 @@ export function ExerciseThumb({ exerciseId, size = 44 }: { exerciseId: string; s
           onError={() => setFailed(true)}
         />
       ) : null}
+    </>
+  );
+
+  /*
+   * With no sheet to open there is nothing to press, so this renders as a picture rather than a
+   * disabled button. A disabled Pressable is still a <button> in the DOM: it holds a place in
+   * the tab order and is announced as a control, for a control that does nothing.
+   *
+   * Callers must place this BESIDE their own press target, never inside it - see ExerciseList
+   * and ExerciseCard. Nested Pressables render as nested <button> elements on web, which is
+   * invalid HTML and gives a screen reader two overlapping controls with no boundary.
+   */
+  if (!openSheet || !exercise) {
+    return (
+      <View
+        accessibilityRole="image"
+        accessibilityLabel={exercise ? `${exercise.name}, works ${muscle}` : 'Unknown exercise'}
+        testID={`thumb-${exerciseId}`}
+        style={[s.tile, { width: size, height: size }]}
+      >
+        {art}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      // Tapping the picture opens the description; selecting the row is the row's own job.
+      accessibilityRole="button"
+      accessibilityLabel={`${exercise.name}, works ${muscle}. Open description`}
+      testID={`thumb-${exerciseId}`}
+      onPress={() => openSheet(exerciseId)}
+      style={({ pressed }) => [s.tile, { width: size, height: size }, pressed && { opacity: 0.7 }]}
+    >
+      {art}
     </Pressable>
   );
 }

@@ -22,6 +22,15 @@ Plans read as a week. Storage schema **v4** — adds one list; nothing existing 
 - **Ignore** on every issue, so advice you disagree with goes away and stays away, and
   **Review again** to bring all of it back.
 
+### Fixed
+
+- **Nested controls in exercise rows.** The picture and the row were one press target inside
+  another, which react-native-web renders as a `<button>` inside a `<button>` — invalid HTML, a
+  hydration error on every row, and two overlapping controls with no boundary for anyone using
+  a screen reader. They are siblings now, in the exercise list and in the plan/session cards.
+  Outside a description sheet the picture renders as a picture rather than a disabled button,
+  so it no longer takes a dead place in the tab order.
+
 ### Changed
 
 - The add-plan box is a single compact row and sits **after** the plan list rather than above

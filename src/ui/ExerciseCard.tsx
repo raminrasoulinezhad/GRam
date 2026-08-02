@@ -41,42 +41,49 @@ export function ExerciseCard({
 
   return (
     <Card style={[s.card, done && s.cardDone]}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${name}, ${subtitle}${expanded ? ', open' : ', closed'}`}
-        onPress={onToggle}
-        testID={testID}
-        style={s.header}
-      >
+      {/*
+       * The thumbnail is its own control - it opens the description - so it sits beside the
+       * expand target rather than inside it. Nested Pressables become nested <button> elements
+       * on web, which is invalid HTML and reads as two overlapping controls to a screen reader.
+       */}
+      <View style={s.header}>
         <ExerciseThumb exerciseId={exerciseId} />
 
-        <View style={s.headerText}>
-          <Text style={s.name} numberOfLines={2}>
-            {name}
-          </Text>
-          <Text style={s.subtitle} numberOfLines={1}>
-            {subtitle}
-          </Text>
-        </View>
-
-        {done ? (
-          <View
-            style={s.doneBadge}
-            accessibilityLabel="Complete"
-            testID={testID ? `${testID}-done` : undefined}
-          >
-            <Ionicons name="checkmark" size={15} color="#04120A" />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${name}, ${subtitle}${expanded ? ', open' : ', closed'}`}
+          onPress={onToggle}
+          testID={testID}
+          style={s.headerMain}
+        >
+          <View style={s.headerText}>
+            <Text style={s.name} numberOfLines={2}>
+              {name}
+            </Text>
+            <Text style={s.subtitle} numberOfLines={1}>
+              {subtitle}
+            </Text>
           </View>
-        ) : status ? (
-          <Text style={s.status}>{status}</Text>
-        ) : null}
 
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={20}
-          color={theme.color.textFaint}
-        />
-      </Pressable>
+          {done ? (
+            <View
+              style={s.doneBadge}
+              accessibilityLabel="Complete"
+              testID={testID ? `${testID}-done` : undefined}
+            >
+              <Ionicons name="checkmark" size={15} color="#04120A" />
+            </View>
+          ) : status ? (
+            <Text style={s.status}>{status}</Text>
+          ) : null}
+
+          <Ionicons
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            color={theme.color.textFaint}
+          />
+        </Pressable>
+      </View>
 
       {expanded ? (
         <View style={s.body}>
@@ -102,6 +109,8 @@ const s = StyleSheet.create({
   card: { padding: theme.space(2.5) },
   cardDone: { borderColor: theme.color.accentDim },
   header: { flexDirection: 'row', alignItems: 'center', gap: theme.space(3) },
+  // Fills the rest of the row so the whole card except the picture still toggles it.
+  headerMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: theme.space(3) },
   headerText: { flex: 1, gap: 2 },
   name: { color: theme.color.text, fontSize: theme.font.body, fontWeight: '700' },
   subtitle: { color: theme.color.textDim, fontSize: theme.font.tiny },
