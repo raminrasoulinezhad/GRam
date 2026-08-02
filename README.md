@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="assets/logo.jpg" alt="FitRam — personal workouts & weightlifting" width="720">
+<img src="assets/logo.jpg" alt="GRam — personal workouts & weightlifting" width="720">
 
-# FitRam
+# GRam
 
 **Plan your sets. See which muscles you've actually trained.**
 
-### [▶ Open FitRam](https://sweet-lebkuchen-740b6f.netlify.app)
+### [▶ Open GRam](https://sweet-lebkuchen-740b6f.netlify.app)
 
 Free · No account · Works offline · Your data never leaves your phone
 
@@ -98,7 +98,7 @@ Only removing the app from your home screen, clearing your browser storage, or t
 
 Setup, architecture, testing and deployment: **[DEVELOPER_README.md](DEVELOPER_README.md)**
 
-FitRam is [Apache 2.0](LICENSE) licensed. It is **never published to an app store** — see
+GRam is [Apache 2.0](LICENSE) licensed. It is **never published to an app store** — see
 [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md). All exercise artwork is original; the exercise data
 is public domain. Full accounting in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 

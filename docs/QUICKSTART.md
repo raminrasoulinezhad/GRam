@@ -1,4 +1,4 @@
-# Getting FitRam onto your phone
+# Getting GRam onto your phone
 
 No jargon. Start at the top.
 
@@ -12,9 +12,9 @@ free and permanent. Android → [Option B](#option-b--a-real-installed-app-on-an
 **An "app file" (a build).** The thing you install — the same idea as a `.exe` on Windows.
 Android calls it an **APK**. iPhone calls it an **IPA**. Making one is called *building*.
 
-**Expo Go.** A free app from the store that can *run* FitRam without you building anything. Think
+**Expo Go.** A free app from the store that can *run* GRam without you building anything. Think
 of it like a PDF reader: you don't build a PDF reader for every document — you open the document
-inside it. Expo Go opens FitRam.
+inside it. Expo Go opens GRam.
 
 That's it. Everything below is one of those two.
 
@@ -37,7 +37,7 @@ A QR code appears in the terminal.
 - **iPhone:** open the Camera app, point it at the QR code, tap the banner.
 - **Android:** open Expo Go, tap "Scan QR code".
 
-FitRam opens. Make a plan, log a workout — it all works.
+GRam opens. Make a plan, log a workout — it all works.
 
 **Two things to know:**
 - Your phone and computer must be on the same Wi-Fi.
@@ -48,7 +48,7 @@ FitRam opens. Make a plan, log a workout — it all works.
 
 ## Option B — a real installed app on Android (30 minutes, free, then no computer needed)
 
-This gives you FitRam as a proper app: its own icon, works offline, no computer involved.
+This gives you GRam as a proper app: its own icon, works offline, no computer involved.
 
 **Why you couldn't just do this already:** building an APK normally needs a large Android
 toolchain installed (Java, the Android SDK). This computer doesn't have it. **But you don't need
@@ -80,7 +80,7 @@ Done. It's now a normal app on your phone.
 ## Option C — iPhone, free, permanent ⭐ **this is the one**
 
 Apple won't let you install a normal app file on your own iPhone without paying $99/year. So we
-go around it: **FitRam installs to your iPhone home screen as a web app.**
+go around it: **GRam installs to your iPhone home screen as a web app.**
 
 Before you dismiss that — this is not "just a bookmark". Once installed it:
 
@@ -133,7 +133,7 @@ applying `_redirects`, and refreshing inside the app would break.
 3. Scroll down, tap **Add to Home Screen**
 4. Tap **Add**
 
-Done. FitRam is now on your home screen.
+Done. GRam is now on your home screen.
 
 ### Does it really work offline?
 
@@ -152,7 +152,7 @@ Your data still lives only on your phone. Nothing is uploaded.
 ### What you give up
 
 Only the things needing native phone features: Apple Health import, and background
-notifications. FitRam doesn't use either today.
+notifications. GRam doesn't use either today.
 
 ### If you ever change your mind about paying
 
@@ -171,7 +171,7 @@ rule. But for this app, the home-screen version does essentially everything, for
 ## How you'll get new versions later
 
 **On iPhone (home-screen app):** nothing to do, ever. I rebuild and re-upload `dist/`; next time
-you open FitRam it fetches the new version and swaps itself over. No reinstalling, no removing
+you open GRam it fetches the new version and swaps itself over. No reinstalling, no removing
 and re-adding the icon.
 
 **On Android (installed APK):** most updates also need nothing from you. I run:
@@ -185,14 +185,14 @@ Only a deep change — like adding Apple Health support — needs a new APK inst
 one.
 
 **Will any of this delete my workouts?** No, on either phone. Updating is never a fresh install:
-Android keeps the app's data, and the home-screen web app keeps its storage. FitRam also updates
+Android keeps the app's data, and the home-screen web app keeps its storage. GRam also updates
 the *shape* of that stored data automatically on first launch, so an old save still works with
 new code. That upgrade path is tested against real data from an older version, and I ran it
 through the actual app to confirm.
 
 **The only things that erase your data:**
 - Uninstalling the app
-- Android Settings → Apps → FitRam → Storage → Clear storage
+- Android Settings → Apps → GRam → Storage → Clear storage
 - Tapping "Erase all data" in the app's Profile tab
 
 ---

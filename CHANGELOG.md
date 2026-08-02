@@ -1,10 +1,37 @@
 # Changelog
 
-All notable changes to FitRam. Format follows [Keep a Changelog](https://keepachangelog.com);
+All notable changes to GRam. Format follows [Keep a Changelog](https://keepachangelog.com);
 versions follow [Semantic Versioning](https://semver.org).
 
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
+
+## [1.0.0] — 2026-08-01
+
+**The app is now called GRam.** Storage schema **v4**, unchanged from 0.3.0 — the rebrand moves
+no data.
+
+### Changed
+
+- **Renamed from FitRam to GRam**, with new artwork: app icon, and the landscape and portrait
+  splash screens. Both splash images had the same bottom-right sparkle as the old ones and are
+  cropped past it.
+- **Four identifiers deliberately still say `fitram`** — the storage key, the bundle id, the
+  `FitRam_` exercise-id prefix and the EAS slug. Every one of them is load-bearing: renaming
+  them orphans user data, forks the app install, or breaks saved plans. They are invisible to
+  users and documented in
+  [docs/RELEASING.md](docs/RELEASING.md#names-that-kept-fitram-through-the-rebrand) so a later
+  tidy-up does not "finish the job" and lose everyone's training history.
+- **The week review demands a second training day first.** "Twice, on different days" cannot be
+  met by a one-day week whatever exercises are in it, so with fewer than two plans the review
+  now shows a single blocking item — add another day — instead of eight unfixable muscle gaps.
+  It has no Ignore button, because it is a precondition rather than an opinion.
+- **Fix lets you choose the exercise.** It opens the full exercise list filtered to the muscle
+  in question, recommended picks starred at the top, searchable for anything else — then asks
+  which day. It warns if the exercise you picked will not actually close the gap.
+- **The plan editor no longer asks what a set records, or for a rest time.** The catalog already
+  knows a plank is timed and a bench press is weight × reps, and rest comes from Settings. Two
+  chip rows per exercise asking the user to restate facts the app has.
 
 ## [0.3.0] — 2026-08-01
 

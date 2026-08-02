@@ -91,8 +91,19 @@ export type GroupCoverage = {
   ignored: boolean;
 };
 
+/**
+ * The week cannot be balanced yet, whatever exercises are in it.
+ *
+ * Two different days is part of the definition, so a week with fewer than two plans fails every
+ * group by construction - no exercise choice can fix it. Reported separately because it is a
+ * different kind of problem with a different answer: write another day.
+ */
+export type StructuralIssue = { have: number; need: number };
+
 export type WeekReview = {
   coverage: GroupCoverage[];
+  /** Non-null while there are too few plans for any muscle to reach two days. */
+  tooFewDays: StructuralIssue | null;
   /** Groups short of the target that the user has not dismissed. */
   issues: GroupCoverage[];
   /** Groups short of the target that the user has dismissed. */
@@ -131,13 +142,19 @@ export function reviewWeek(plans: Plan[], ignored: readonly string[] = []): Week
 
   const short = coverage.filter((c) => !c.covered);
   const issues = short.filter((c) => !c.ignored);
+  const tooFewDays =
+    plans.length < DAYS_PER_WEEK_TARGET
+      ? { have: plans.length, need: DAYS_PER_WEEK_TARGET }
+      : null;
 
   return {
     coverage,
+    tooFewDays,
     issues,
     dismissed: short.filter((c) => c.ignored),
     covered: coverage.filter((c) => c.covered),
-    balanced: issues.length === 0,
+    // A structural gap cannot be dismissed, so it keeps the week unbalanced on its own.
+    balanced: tooFewDays === null && issues.length === 0,
   };
 }
 

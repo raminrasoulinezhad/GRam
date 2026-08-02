@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "FitRam",
+    "name": "GRam",
     "slug": "fitram",
-    "version": "0.3.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "fitram",
+    "scheme": "gram",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
@@ -15,7 +15,7 @@
     "android": {
       "package": "app.fitram.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#0B1220",
+        "backgroundColor": "#164A5C",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

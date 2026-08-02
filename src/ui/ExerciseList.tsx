@@ -19,13 +19,19 @@ import { theme } from './theme';
 
 type Props = {
   onSelect: (exercise: Exercise) => void;
+  /**
+   * Opens with the search box already filled in - used when the caller knows what the user is
+   * looking for, e.g. the week review asking for a chest exercise. Still fully editable, so it
+   * narrows the starting point without taking the choice away.
+   */
+  initialQuery?: string;
   /** Rendered at the right edge of each row - e.g. a plus icon in the picker. */
   accessory?: (exercise: Exercise) => React.ReactNode;
   header?: React.ReactNode;
 };
 
-export function ExerciseList({ onSelect, accessory, header }: Props) {
-  const [query, setQuery] = useState('');
+export function ExerciseList({ onSelect, accessory, header, initialQuery = '' }: Props) {
+  const [query, setQuery] = useState(initialQuery);
   const [muscle, setMuscle] = useState<Muscle | null>(null);
 
   const sessions = useStore(selectSessions);

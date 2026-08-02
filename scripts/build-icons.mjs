@@ -27,8 +27,24 @@ const ICONS = resolve(ROOT, 'public/icons');
 /** Brand background. Icons must be opaque - iOS renders transparency as black. */
 const BG = '#0B1220';
 
-/** Shield bounds within assets/brand/icon-source.png (719x719). */
-const ICON_CROP = '664x664+28+22';
+/**
+ * The icon tile within assets/brand/icon-source.png (1435x1435).
+ *
+ * The artwork is a rounded square with a white outline sitting on a flat grey card. Measured by
+ * scanning for where the grey stops: the outline runs x 9-1421 and y 9-1426, so this keeps the
+ * outline and drops the card.
+ */
+const ICON_CROP = '1412x1416+10+10';
+
+/**
+ * Fill for the icon's rounded corners once the grey card is cropped away.
+ *
+ * Cropping to a rounded square leaves grey in the four corners. The OS masks most of it off,
+ * but not all, and grey slivers on a teal icon read as a rendering fault. Flood-filling from
+ * each corner replaces them; this is the tile's own teal, sampled midway down its gradient so
+ * neither the lighter top nor the darker bottom shows a seam.
+ */
+const ICON_CORNER = '#164A5C';
 
 /*
  * The two splash images are full-bleed gym scenes with the logo composited on. Both carry a
@@ -37,8 +53,8 @@ const ICON_CROP = '664x664+28+22';
  * retouching it - the texture there has a hard equipment edge running through it, so cloning
  * or blurring leaves a worse mark than the sparkle did.
  */
-const LOGO_CROP_WIDE = '2470x1536+0+0';
-const LOGO_CROP_PORTRAIT = '1536x2430+0+0';
+const LOGO_CROP_WIDE = '2530x1536+0+0';
+const LOGO_CROP_PORTRAIT = '1536x2410+0+0';
 
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
@@ -62,6 +78,27 @@ function convert(cmd) {
   execFileSync('convert', cmd, { stdio: ['ignore', 'ignore', 'inherit'] });
 }
 
+/**
+ * Crop arguments for the icon, plus the corner clean-up.
+ *
+ * Flood-fills transparency inward from each corner of the cropped tile, so the grey left
+ * outside the rounded outline goes and whatever the caller flattens onto shows through
+ * instead. The fuzz has to be generous because the card carries a soft drop shadow.
+ */
+function iconCropArgs() {
+  if (!crop) return [];
+  const [w, h] = crop.split('+')[0].split('x').map(Number);
+  const [r, b] = [w - 1, h - 1];
+  return [
+    '-crop', crop, '+repage',
+    '-alpha', 'set', '-fill', 'none', '-fuzz', '30%',
+    '-draw', 'matte 0,0 floodfill',
+    '-draw', `matte ${r},0 floodfill`,
+    '-draw', `matte 0,${b} floodfill`,
+    '-draw', `matte ${r},${b} floodfill`,
+  ];
+}
+
 function requireTool() {
   try {
     execFileSync('convert', ['-version'], { stdio: 'ignore' });
@@ -78,14 +115,16 @@ function requireTool() {
 function normalise(source, out, size, { useCrop = true } = {}) {
   const inner = Math.round(size * (1 - (inset / 100) * 2));
   const cmd = [source];
-  if (useCrop && crop) cmd.push('-crop', crop, '+repage');
+  if (useCrop && crop) cmd.push(...iconCropArgs());
   else if (!noTrim) cmd.push('-fuzz', '12%', '-trim', '+repage');
   cmd.push(
+    '-background', ICON_CORNER,
+    '-alpha', 'remove',
     '-background', 'none',
     '-resize', `${inner}x${inner}`,
     '-gravity', 'center',
     '-extent', `${size}x${size}`,
-    '-background', BG,
+    '-background', ICON_CORNER,
     '-alpha', 'remove',
     '-alpha', 'off',
     out,
@@ -121,13 +160,15 @@ function main() {
   const maskableInset = Math.max(inset, 20);
   const inner = Math.round(512 * (1 - (maskableInset / 100) * 2));
   const cmd = [iconSource];
-  if (crop) cmd.push('-crop', crop, '+repage');
+  cmd.push(...iconCropArgs());
   cmd.push(
+    '-background', ICON_CORNER,
+    '-alpha', 'remove',
     '-background', 'none',
     '-resize', `${inner}x${inner}`,
     '-gravity', 'center',
     '-extent', '512x512',
-    '-background', BG,
+    '-background', ICON_CORNER,
     '-alpha', 'remove',
     '-alpha', 'off',
     resolve(ICONS, 'icon-maskable-512.png'),
@@ -136,7 +177,7 @@ function main() {
 
   // Android adaptive icons are composited by the OS, so the foreground keeps its transparency.
   const fgCmd = [iconSource];
-  if (crop) fgCmd.push('-crop', crop, '+repage');
+  fgCmd.push(...iconCropArgs());
   fgCmd.push(
     '-background', 'none',
     '-resize', '300x300',
@@ -145,7 +186,10 @@ function main() {
     resolve(ROOT, 'assets/android-icon-foreground.png'),
   );
   convert(fgCmd);
-  convert(['-size', '512x512', `xc:${BG}`, resolve(ROOT, 'assets/android-icon-background.png')]);
+  convert([
+    '-size', '512x512', `xc:${ICON_CORNER}`,
+    resolve(ROOT, 'assets/android-icon-background.png'),
+  ]);
 
   // The splash keeps its transparency - it sits on the app's own background.
   // Two splash images: a wide one for a landscape window, a tall one that fills a phone.

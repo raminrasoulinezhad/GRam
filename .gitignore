@@ -44,3 +44,6 @@ yarn-error.*
 
 # packaged web builds
 *.zip
+
+# Artwork drop-off. The canonical copies live in assets/brand/ - see DEVELOPER_README.md.
+newlogos/

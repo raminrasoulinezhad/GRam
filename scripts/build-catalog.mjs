@@ -63,7 +63,10 @@ const MECHANICS = ['compound', 'isolation'];
  *
  * Rules for anything you add:
  *   - `id` must not collide with an upstream id, and the name must be unique. The FitRam_
- *     prefix keeps both true and makes our own entries obvious in a diff.
+ *     prefix keeps both true and makes our own entries obvious in a diff. It kept the old
+ *     brand name through the GRam rebrand on purpose: these ids are written into user plans
+ *     and session logs, so renaming them turns every incline walk anyone has ever planned
+ *     into "Unknown exercise". Keep the prefix; new entries use it too.
  *   - `images` stays empty. There is no photograph of these that would be ours to use, and the
  *     app falls back to the drawn muscle glyph, so an entry without one still reads correctly.
  *   - muscle attributions should be conservative. They feed the heatmap and the fatigue model,

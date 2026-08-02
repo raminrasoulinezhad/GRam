@@ -90,7 +90,7 @@ export function Splash({ children }: { children: ReactNode }) {
             }
             style={s.image}
             resizeMode="cover"
-            accessibilityLabel="FitRam"
+            accessibilityLabel="GRam"
           />
         </Animated.View>
       ) : null}

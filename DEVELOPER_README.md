@@ -1,6 +1,6 @@
 # Developer guide
 
-Everything needed to work on FitRam. For what the app *is* and how to install it, see the
+Everything needed to work on GRam. For what the app *is* and how to install it, see the
 [README](README.md).
 
 ```bash
@@ -125,7 +125,7 @@ All four must be `200`. **`/body` is the one that matters** — a 404 there mean
 isn't being applied and refreshing inside the app would break.
 
 > ⚠️ **Changing the URL is a fresh install.** Browser storage is per-origin, so moving from
-> `x.netlify.app` to `fitram.example.com` means re-adding the home-screen icon and losing
+> `x.netlify.app` to `gram.example.com` means re-adding the home-screen icon and losing
 > anything logged at the old address. Settle the address before logging real training.
 
 ### Custom subdomain with DNS on Cloudflare
@@ -133,7 +133,7 @@ isn't being applied and refreshing inside the app would break.
 Netlify → **Domain management → Add a domain**, then in Cloudflare DNS:
 
 ```
-fitram   CNAME   your-site.netlify.app
+gram   CNAME   your-site.netlify.app
 ```
 
 Set it to **DNS only (grey cloud)**, not proxied — Cloudflare proxying in front of Netlify

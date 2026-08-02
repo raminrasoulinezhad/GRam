@@ -1,6 +1,6 @@
 {
   "$comment": [
-    "FitRam is never published to an app store - see docs/DISTRIBUTION.md.",
+    "GRam is never published to an app store - see docs/DISTRIBUTION.md.",
     "Every profile here is distribution: internal, meaning builds install directly onto",
     "registered devices and never pass through App Store Connect or Play Console.",
     "There is deliberately no `submit` section and no app-bundle profile: Play requires an",

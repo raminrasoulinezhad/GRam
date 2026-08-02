@@ -1,6 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { StateStorage } from 'zustand/middleware';
 
+/*
+ * DO NOT RENAME. This survived the FitRam -> GRam rebrand deliberately.
+ *
+ * The key is where every existing install's plans and logged workouts live. Renaming it does
+ * not move the data; it points the app at an empty slot and every user opens a blank app with
+ * their training history still on disk and unreachable. The name is invisible to users and
+ * changing it buys nothing. Same goes for the backup prefix below.
+ */
 export const STORAGE_KEY = 'fitram-v1';
 
 /** Where the pre-migration copy of an upgraded blob is kept. */

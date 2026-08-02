@@ -1,7 +1,7 @@
 /*
  * Service worker for the installed (home-screen) app.
  *
- * Goal: FitRam opens and works in a gym basement with no signal. The app shell - HTML, the JS
+ * Goal: GRam opens and works in a gym basement with no signal. The app shell - HTML, the JS
  * bundle, icons - is cached on install and served from cache first. Exercise photographs come
  * from an external CDN and are cached opportunistically as you view them.
  *
@@ -10,7 +10,7 @@
  */
 
 // Bumped by scripts/build-web.mjs on every build so a new deploy replaces the old cache.
-const CACHE = 'fitram-__BUILD_ID__';
+const CACHE = 'gram-__BUILD_ID__';
 
 /*
  * Precache list, injected at build time by scripts/build-web.mjs.

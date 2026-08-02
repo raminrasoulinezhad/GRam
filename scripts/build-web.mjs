@@ -21,7 +21,7 @@ const buildId = `${version}-${Date.now().toString(36)}`;
 
 if (existsSync(OUT)) rmSync(OUT, { recursive: true, force: true });
 
-process.stdout.write(`Building FitRam ${version} for the web...\n`);
+process.stdout.write(`Building GRam ${version} for the web...\n`);
 execFileSync('npx', ['expo', 'export', '--platform', 'web', '--output-dir', 'dist'], {
   cwd: ROOT,
   stdio: 'inherit',

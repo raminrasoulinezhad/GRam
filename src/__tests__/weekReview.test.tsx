@@ -52,6 +52,48 @@ describe('the Plans screen layout', () => {
   });
 });
 
+describe('too few days to be balanced', () => {
+  it('is the only advice shown when there are no plans', async () => {
+    await renderScreen(<PlansScreen />);
+    expect(screen.getByTestId('week-issue-days')).toBeTruthy();
+    // Eight identical unfixable gaps underneath would bury the one thing to do.
+    expect(screen.queryByTestId('week-issue-chest')).toBeNull();
+  });
+
+  it('is still shown for a single plan, however complete', async () => {
+    makePlan('Full body', ...TRAINING_GROUPS.map(suggestionFor));
+    await renderScreen(<PlansScreen />);
+    expect(screen.getByTestId('week-issue-days')).toBeTruthy();
+    expect(screen.queryByTestId('week-review-balanced')).toBeNull();
+  });
+
+  it('cannot be ignored', async () => {
+    // It is a precondition, not an opinion.
+    makePlan('Push day', BENCH);
+    await renderScreen(<PlansScreen />);
+    expect(screen.getByTestId('week-issue-days')).toBeTruthy();
+    expect(screen.queryByTestId('ignore-days')).toBeNull();
+  });
+
+  it('creates a plan and opens it', async () => {
+    makePlan('Push day', BENCH);
+    await renderScreen(<PlansScreen />);
+
+    await fireEvent.press(screen.getByTestId('add-plan-day'));
+    expect(store().plans).toHaveLength(2);
+    expect(mockRouter.push).toHaveBeenCalledWith(`/plan/${store().plans[0].id}`);
+  });
+
+  it('gives way to the muscle advice once there are two days', async () => {
+    makePlan('Push day', BENCH);
+    makePlan('Leg day', SQUAT);
+    await renderScreen(<PlansScreen />);
+
+    expect(screen.queryByTestId('week-issue-days')).toBeNull();
+    expect(screen.getByTestId('week-issue-chest')).toBeTruthy();
+  });
+});
+
 describe('the week review', () => {
   it('explains itself before there are any plans', async () => {
     await renderScreen(<PlansScreen />);
@@ -61,9 +103,10 @@ describe('the week review', () => {
 
   it('raises an issue for every group the week misses', async () => {
     makePlan('Push day', BENCH);
+    makePlan('Leg day', SQUAT);
     await renderScreen(<PlansScreen />);
 
-    // One chest day is not two, and nothing else is trained at all.
+    // One chest day is not two, and most groups are not trained at all.
     expect(screen.getByTestId('week-issue-chest')).toBeTruthy();
     expect(screen.getByTestId('week-issue-biceps')).toBeTruthy();
     expect(screen.getByTestId('week-issue-glutes')).toBeTruthy();
@@ -81,6 +124,7 @@ describe('the week review', () => {
 
   it('drops advice the user ignores, and remembers the choice', async () => {
     makePlan('Push day', BENCH);
+    makePlan('Leg day', SQUAT);
     await renderScreen(<PlansScreen />);
 
     await fireEvent.press(screen.getByTestId('ignore-biceps'));
@@ -93,6 +137,7 @@ describe('the week review', () => {
 
   it('lists what has been dismissed rather than hiding it', async () => {
     makePlan('Push day', BENCH);
+    makePlan('Leg day', SQUAT);
     await renderScreen(<PlansScreen />);
     await fireEvent.press(screen.getByTestId('ignore-biceps'));
 
@@ -101,6 +146,7 @@ describe('the week review', () => {
 
   it('brings dismissed advice back on a re-review', async () => {
     makePlan('Push day', BENCH);
+    makePlan('Leg day', SQUAT);
     await renderScreen(<PlansScreen />);
 
     await fireEvent.press(screen.getByTestId('ignore-biceps'));
@@ -113,47 +159,106 @@ describe('the week review', () => {
 });
 
 describe('fixing an issue from the review', () => {
-  it('offers the days that do not already train the group', async () => {
+  /** Two days, so the structural blocker is out of the way and muscle advice is showing. */
+  const twoDays = async () => {
     makePlan('Push day', BENCH);
     makePlan('Leg day', SQUAT);
     await renderScreen(<PlansScreen />);
+  };
 
+  it('opens the exercise list rather than deciding for the user', async () => {
+    await twoDays();
     await fireEvent.press(screen.getByTestId('fix-chest'));
+
+    // The whole catalog, opened on the muscle in question - not a single forced pick.
+    expect(screen.getByTestId('exercise-search')).toBeTruthy();
+    expect(screen.getByTestId(`top-pick-${suggestionFor('chest')}`)).toBeTruthy();
+  });
+
+  it('asks for the day only after an exercise is chosen', async () => {
+    await twoDays();
+    await fireEvent.press(screen.getByTestId('fix-chest'));
+    expect(screen.queryByTestId(`fix-into-${planNamed('Leg day').id}`)).toBeNull();
+
+    await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
+    expect(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`)).toBeTruthy();
+  });
+
+  it('offers the days that do not already train the group', async () => {
+    await twoDays();
+    await fireEvent.press(screen.getByTestId('fix-chest'));
+    await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
 
     // Leg day is offered; Push day already has a chest exercise.
     expect(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`)).toBeTruthy();
     expect(screen.queryByTestId(`fix-into-${planNamed('Push day').id}`)).toBeNull();
   });
 
-  it('adds the recommended exercise to the day the user picks', async () => {
-    makePlan('Push day', BENCH);
-    makePlan('Leg day', SQUAT);
-    await renderScreen(<PlansScreen />);
-
+  it('adds the exercise the user chose to the day the user chose', async () => {
+    await twoDays();
     await fireEvent.press(screen.getByTestId('fix-chest'));
+    await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
     await fireEvent.press(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`));
 
-    const legDay = planNamed('Leg day');
-    expect(legDay.items.map((i) => i.exerciseId)).toContain(suggestionFor('chest'));
+    expect(planNamed('Leg day').items.map((i) => i.exerciseId)).toContain(suggestionFor('chest'));
+  });
+
+  it('lets the user pick something other than the recommendation', async () => {
+    await twoDays();
+    await fireEvent.press(screen.getByTestId('fix-chest'));
+
+    // Search the whole catalog from inside the fix flow and take a different chest exercise.
+    await fireEvent.changeText(screen.getByTestId('exercise-search'), 'dumbbell flyes');
+    await fireEvent.press(screen.getByTestId('exercise-Dumbbell_Flyes'));
+    await fireEvent.press(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`));
+
+    const ids = planNamed('Leg day').items.map((i) => i.exerciseId);
+    expect(ids).toContain('Dumbbell_Flyes');
+    expect(ids).not.toContain(suggestionFor('chest'));
+  });
+
+  it('warns when the chosen exercise will not close the gap', async () => {
+    await twoDays();
+    await fireEvent.press(screen.getByTestId('fix-chest'));
+
+    // Barbell Curl is a biceps exercise; adding it to a day does nothing for chest.
+    await fireEvent.changeText(screen.getByTestId('exercise-search'), 'barbell curl');
+    await fireEvent.press(screen.getByTestId('exercise-Barbell_Curl'));
+    expect(screen.getByTestId('fix-warning')).toBeTruthy();
+  });
+
+  it('does not warn about a recommended pick', async () => {
+    await twoDays();
+    await fireEvent.press(screen.getByTestId('fix-chest'));
+    await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
+    expect(screen.queryByTestId('fix-warning')).toBeNull();
+  });
+
+  it('can go back from the day list to the exercise list', async () => {
+    await twoDays();
+    await fireEvent.press(screen.getByTestId('fix-chest'));
+    await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
+
+    // By accessible name: Pressable surfaces its testID on both its wrapper and inner view,
+    // so the id matches twice while the label is what a user actually has to find.
+    await fireEvent.press(screen.getByLabelText('Back to the exercise list'));
+    expect(screen.getByTestId('exercise-search')).toBeTruthy();
+    expect(screen.queryByTestId(`fix-into-${planNamed('Leg day').id}`)).toBeNull();
   });
 
   it('closes the issue it was raised for', async () => {
-    makePlan('Push day', BENCH);
-    makePlan('Leg day', SQUAT);
-    await renderScreen(<PlansScreen />);
-
+    await twoDays();
     expect(screen.getByTestId('week-issue-chest')).toBeTruthy();
+
     await fireEvent.press(screen.getByTestId('fix-chest'));
+    await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
     await fireEvent.press(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`));
 
     expect(screen.queryByTestId('week-issue-chest')).toBeNull();
   });
 
   it('closes the picker without adding anything when cancelled', async () => {
-    makePlan('Push day', BENCH);
-    makePlan('Leg day', SQUAT);
-    await renderScreen(<PlansScreen />);
-
+    await twoDays();
     await fireEvent.press(screen.getByTestId('fix-chest'));
     await fireEvent.press(screen.getByTestId('fix-close'));
 
@@ -163,14 +268,13 @@ describe('fixing an issue from the review', () => {
 
   it('does not leave the picker mounted after use', async () => {
     // react-native-web keeps a hidden Modal's children in the DOM, so the element itself has to
-    // go - otherwise a screen reader still finds the day list.
-    makePlan('Push day', BENCH);
-    makePlan('Leg day', SQUAT);
-    await renderScreen(<PlansScreen />);
-
+    // go - otherwise a screen reader still finds the list.
+    await twoDays();
     await fireEvent.press(screen.getByTestId('fix-chest'));
+    await fireEvent.press(screen.getByTestId(`exercise-${suggestionFor('chest')}`));
     await fireEvent.press(screen.getByTestId(`fix-into-${planNamed('Leg day').id}`));
 
     expect(screen.queryByTestId('fix-close')).toBeNull();
+    expect(screen.queryByTestId('exercise-search')).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 # Roadmap
 
-Where FitRam goes after the v0.1.0 proof of concept. Ordered by value per unit of work.
+Where GRam goes after the v0.1.0 proof of concept. Ordered by value per unit of work.
 
 The PoC deliberately built the *first* arrow of the loop described in [STUDY.md](STUDY.md) —
 log what you did, and see which muscles it hit. Everything below is the second arrow: using

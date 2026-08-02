@@ -80,8 +80,32 @@ describe('what counts as covered', () => {
   });
 });
 
+describe('too few days', () => {
+  it('is reported when there are no plans at all', () => {
+    const review = reviewWeek([]);
+    expect(review.tooFewDays).toEqual({ have: 0, need: 2 });
+    expect(review.balanced).toBe(false);
+  });
+
+  it('is reported for a single plan, however good that plan is', () => {
+    // "Twice, on different days" cannot be met by one day, whatever is in it.
+    const everything = plan('Full body', TRAINING_GROUPS.map(suggestionFor));
+    const review = reviewWeek([everything]);
+    expect(review.tooFewDays).toEqual({ have: 1, need: 2 });
+    expect(review.balanced).toBe(false);
+    expect(review.covered).toEqual([]);
+  });
+
+  it('clears as soon as there is a second plan', () => {
+    const picks = TRAINING_GROUPS.map(suggestionFor);
+    const review = reviewWeek([plan('Day 1', picks), plan('Day 2', picks)]);
+    expect(review.tooFewDays).toBeNull();
+    expect(review.balanced).toBe(true);
+  });
+});
+
 describe('reviewing a whole week', () => {
-  it('flags everything when there are no plans', () => {
+  it('flags every group when there are no plans', () => {
     const review = reviewWeek([]);
     expect(review.issues).toHaveLength(TRAINING_GROUPS.length);
     expect(review.balanced).toBe(false);
@@ -120,9 +144,19 @@ describe('dismissing advice', () => {
   });
 
   it('can read as balanced once every outstanding group is dismissed', () => {
-    const review = reviewWeek(plans, [...TRAINING_GROUPS]);
+    // Two plans, so the structural rule is satisfied and only the muscle advice is left.
+    const twoDays = [plan('Push', [BENCH]), plan('Pull', ['Pullups'])];
+    const review = reviewWeek(twoDays, [...TRAINING_GROUPS]);
     expect(review.balanced).toBe(true);
     expect(review.dismissed.length).toBeGreaterThan(0);
+  });
+
+  it('cannot be dismissed away while there are too few days', () => {
+    // The structural gap is a precondition, not an opinion, so silencing every group does not
+    // make a one-day week balanced.
+    const review = reviewWeek([plan('Push', [BENCH])], [...TRAINING_GROUPS]);
+    expect(review.tooFewDays).toEqual({ have: 1, need: 2 });
+    expect(review.balanced).toBe(false);
   });
 
   it('does not mark a covered group as dismissed', () => {

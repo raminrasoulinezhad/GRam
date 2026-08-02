@@ -1,6 +1,6 @@
-# Study: the training model behind FitRam
+# Study: the training model behind GRam
 
-Why FitRam counts what it counts, and where the numbers come from. Sources at the bottom of
+Why GRam counts what it counts, and where the numbers come from. Sources at the bottom of
 each section. This is an independent personal project; nothing here is taken from any
 commercial fitness app.
 
@@ -14,7 +14,7 @@ app worth opening is closing a loop:
 > log what you did → infer which muscles are fatigued and which are neglected → say what you
 > should do next
 
-Everything distinctive in FitRam falls out of that loop. The body heatmap is the loop made
+Everything distinctive in GRam falls out of that loop. The body heatmap is the loop made
 visible. The week review on the Plans tab is the loop made actionable before you get to the
 gym rather than after. A tracker that only records sets has built the first arrow and stopped.
 

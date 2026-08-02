@@ -6,7 +6,7 @@ Everything below exists to make that true.
 
 ---
 
-> FitRam is never published to an app store — see [DISTRIBUTION.md](DISTRIBUTION.md). Everything
+> GRam is never published to an app store — see [DISTRIBUTION.md](DISTRIBUTION.md). Everything
 > below describes direct distribution to your own devices.
 
 ## How an upgrade actually reaches a user
@@ -38,6 +38,22 @@ Two conditions must hold, both handled by EAS:
 
 Also never change the **bundle id** (`app.fitram.mobile`). A different id is a different app —
 a second icon and an empty database.
+
+### Names that kept `fitram` through the rebrand
+
+The app was called FitRam until v0.4.0. Four identifiers still say `fitram`, and every one of
+them is load-bearing. Renaming any of them silently destroys or orphans user data, so they were
+left alone on purpose — a later tidy-up that "finishes the rename" is a data-loss bug.
+
+| Identifier | Where | What renaming it does |
+|---|---|---|
+| `fitram-v1` | `src/store/storage.ts` | Points the app at an empty storage slot. Every user opens a blank app with their history still on disk and unreachable. |
+| `app.fitram.mobile` | `app.json` | A different bundle id is a different app: second icon, empty database, no upgrade path. |
+| `FitRam_*` exercise ids | `scripts/build-catalog.mjs` | These ids are written into saved plans and session logs. Renaming turns every planned incline walk into "Unknown exercise". |
+| `slug: "fitram"` | `app.json` | The EAS project identity. Changing it orphans the project and its signing keys — and losing the Android keystore means no future build can upgrade an existing install. |
+
+None of them is visible to a user. The name they see comes from `app.json`'s `name`, the web
+manifest, and `public/index.html`.
 
 So the storage survives on its own. What does *not* survive automatically is the **shape** of
 that storage when our code starts expecting something new. That is the next section.
@@ -85,8 +101,9 @@ original is still on the device and recoverable rather than overwritten.
 
 ## Version numbers
 
-[Semantic versioning](https://semver.org). Currently **0.1.0** — the leading `0.` says the
-schema and feature set are not yet stable, so breaking changes are allowed without a major bump.
+[Semantic versioning](https://semver.org). Currently **1.0.0**. Up to 0.3.0 the leading `0.`
+said the schema and feature set were not yet stable; 1.0.0 says they are. Breaking changes now
+need a major bump, and the storage schema only ever moves forward through a migration.
 
 | Change | Bump | Example |
 |---|---|---|

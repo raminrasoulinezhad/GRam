@@ -1,6 +1,6 @@
 # Distribution policy and how to actually use the app
 
-## Policy: FitRam is never published to an app store
+## Policy: GRam is never published to an app store
 
 **This app must not be uploaded to the Apple App Store, Google Play, or any other public app
 store or marketplace. Not now, not later.**
@@ -47,7 +47,7 @@ computer must be on the same Wi-Fi.
 has to be running the dev server. This is for development and demos, not for taking to the gym
 on a Tuesday.
 
-> One caveat: Expo Go only runs libraries bundled in the Expo SDK. FitRam stays inside that
+> One caveat: Expo Go only runs libraries bundled in the Expo SDK. GRam stays inside that
 > boundary today, which is exactly why health-app import is deferred — see
 > [ROADMAP.md](ROADMAP.md).
 
@@ -68,7 +68,7 @@ Requires a free Expo account. Nothing from Apple or Google is involved.
 
 ### 3. iPhone — installed to the home screen, free and permanent ⭐
 
-Apple allows no free, permanent way to install a *native* app on your own iPhone. So FitRam
+Apple allows no free, permanent way to install a *native* app on your own iPhone. So GRam
 installs as a **home-screen web app** instead.
 
 ```bash
@@ -92,7 +92,7 @@ Two details that make it real rather than a compromise:
   matters and why a Safari tab is not equivalent.
 
 What it gives up: native-only capabilities. Apple Health import and background notifications.
-FitRam uses neither today, and Health import was already deferred for the same reason
+GRam uses neither today, and Health import was already deferred for the same reason
 ([ROADMAP.md](ROADMAP.md)).
 
 #### The paid alternative, for the record
@@ -130,7 +130,7 @@ requirements of the host, and only two:
 
 **The app must be served from the root of a hostname**, not a subfolder. Every path in the build
 is absolute (`/manifest.json`, `/icons/…`, `/_expo/…`) and the manifest declares
-`start_url: "/"`. So `fitram.example.com` works; `example.com/fitram` does not, and its
+`start_url: "/"`. So `gram.example.com` works; `example.com/gram` does not, and its
 `_redirects` rule would swallow the parent site's routes.
 
 ### Netlify (current deployment)
@@ -162,14 +162,14 @@ the rewrite works.
 Netlify → **Domain management → Add a domain**, then add a CNAME in Cloudflare DNS:
 
 ```
-fitram   CNAME   your-site.netlify.app
+gram   CNAME   your-site.netlify.app
 ```
 
 ⚠️ Set that record to **DNS only (grey cloud)**, not proxied (orange cloud). Cloudflare proxying
 in front of Netlify prevents Netlify from issuing its certificate and can produce redirect loops.
 
 ⚠️ **Moving the app to a different address is a fresh install.** Browser storage is scoped per
-origin, so `something.netlify.app` and `fitram.example.com` are separate worlds — the home-screen
+origin, so `something.netlify.app` and `gram.example.com` are separate worlds — the home-screen
 icon must be re-added and the workouts logged under the old address do not follow. Settle on the
 address *before* you start logging real training.
 
@@ -228,7 +228,7 @@ On top of that, the app migrates its own stored data forward on first launch —
 Only these:
 
 - Uninstalling the app
-- Android Settings → Apps → FitRam → Storage → Clear storage
+- Android Settings → Apps → GRam → Storage → Clear storage
 - Offloading the app on iOS
 - Tapping **Erase all data** in the app's own Profile tab
 

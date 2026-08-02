@@ -1,6 +1,6 @@
 # Third-party notices
 
-FitRam itself is licensed under Apache License 2.0 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).
+GRam itself is licensed under Apache License 2.0 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).
 This file records the third-party material it uses and the obligations attached to each.
 
 ## Scope of the licence
@@ -28,13 +28,13 @@ The Unlicense imposes **no attribution requirement and no conditions**. Nothing 
 comply. The credit above is given voluntarily because it is the decent thing to do.
 
 The build script derives two extra fields (`kind`, and a de-duplicated `secondaryMuscles`); those
-derivations are FitRam's own and fall under Apache 2.0 with the rest of the project.
+derivations are GRam's own and fall under Apache 2.0 with the rest of the project.
 
 ---
 
 ## 2. Exercise photographs — removed, deliberately
 
-The upstream dataset references two demonstration photographs per exercise. **FitRam does not
+The upstream dataset references two demonstration photographs per exercise. **GRam does not
 use them.** They are not bundled, not linked, and not fetched at runtime.
 
 Their copyright status was never established. The repository's Unlicense declaration covers what
@@ -125,7 +125,7 @@ binary and so carry no notice obligation, but they are MIT/Apache-2.0 as well.
 
 ## 4. Independence
 
-FitRam is an independent personal project. It contains no code, assets or trademarks belonging to
+GRam is an independent personal project. It contains no code, assets or trademarks belonging to
 any commercial fitness application, and is not affiliated with or endorsed by one. Its training
 model is built from published exercise-science literature and the public writing of coaches, all
 cited in [docs/STUDY.md](docs/STUDY.md).

@@ -2,18 +2,15 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { getExercise, SET_KIND_LABEL, type SetKind } from '@/catalog';
+import { getExercise } from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
-import { formatDuration } from '@/lib/format';
 import { useStore } from '@/store/useStore';
-import { Button, Card, Chip, Dim, Empty, Screen } from '@/ui/components';
+import { Button, Card, Dim, Empty, Screen } from '@/ui/components';
 import { ExerciseCard } from '@/ui/ExerciseCard';
 import { useConfirm } from '@/ui/confirm';
 import { SetFields } from '@/ui/SetFields';
 import { theme } from '@/ui/theme';
 
-const KINDS: SetKind[] = ['weight_reps', 'reps', 'time', 'distance_time'];
-const REST_OPTIONS = [0, 45, 60, 90, 120, 180, 300];
 
 export default function PlanEditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,8 +19,6 @@ export default function PlanEditorScreen() {
   const renamePlan = useStore((s) => s.renamePlan);
   const removePlanItem = useStore((s) => s.removePlanItem);
   const movePlanItem = useStore((s) => s.movePlanItem);
-  const setPlanItemKind = useStore((s) => s.setPlanItemKind);
-  const setPlanItemRest = useStore((s) => s.setPlanItemRest);
   const addPlanTemplate = useStore((s) => s.addPlanTemplate);
   const removePlanTemplate = useStore((s) => s.removePlanTemplate);
   const updatePlanTemplate = useStore((s) => s.updatePlanTemplate);
@@ -125,34 +120,18 @@ export default function PlanEditorScreen() {
                 testID={`add-template-${item.id}`}
               />
 
+              {/*
+                * No "what this set records" picker and no rest picker.
+                *
+                * Both were asking the user to restate something already known. A plank is timed,
+                * a sprint is distance and time, a bench press is weight and reps - the catalog
+                * says so per exercise, and the set fields above are already laid out from it.
+                * Rest comes from the default in Settings. Two rows of chips per exercise, on
+                * every exercise, to re-enter facts the app has: they made the editor longer and
+                * gave nobody anything. The store still exposes setPlanItemKind and
+                * setPlanItemRest for a future per-exercise override worth surfacing.
+                */}
               <View style={s.options}>
-                <Text style={s.label}>REST BETWEEN SETS</Text>
-                <View style={s.optionRow}>
-                  {REST_OPTIONS.map((sec) => (
-                    <Chip
-                      key={sec}
-                      label={sec === 0 ? 'None' : formatDuration(sec)}
-                      active={item.restSec === sec}
-                      onPress={() => setPlanItemRest(plan.id, item.id, sec)}
-                    />
-                  ))}
-                </View>
-
-                <Text style={[s.label, { marginTop: theme.space(3) }]}>WHAT THIS SET RECORDS</Text>
-                <View style={s.optionRow}>
-                  {KINDS.map((k) => (
-                    <Chip
-                      key={k}
-                      label={SET_KIND_LABEL[k]}
-                      active={item.kind === k}
-                      onPress={() => setPlanItemKind(plan.id, item.id, k)}
-                    />
-                  ))}
-                </View>
-                <Dim style={{ marginTop: theme.space(2) }}>
-                  Changing this resets the sets above, since the old numbers no longer apply.
-                </Dim>
-
                 <View style={s.itemActions}>
                   <Button
                     label="Move up"
@@ -239,7 +218,6 @@ const s = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.color.border,
   },
-  optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space(1.5) },
   footer: {
     padding: theme.space(4),
     borderTopWidth: 1,

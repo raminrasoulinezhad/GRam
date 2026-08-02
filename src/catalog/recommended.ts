@@ -33,7 +33,7 @@ import { MUSCLES, type Muscle } from './generated';
  * point: the evidence moves, and a list frozen in 2026 would quietly become folklore. Redo the
  * research, update the picks and the two constants together.
  */
-export const RECOMMENDED_REVIEWED_FOR = '0.3.0';
+export const RECOMMENDED_REVIEWED_FOR = '1.0.0';
 
 /** Calendar date of the last review, so staleness is visible even between version bumps. */
 export const RECOMMENDED_REVIEWED_ON = '2026-08-01';
