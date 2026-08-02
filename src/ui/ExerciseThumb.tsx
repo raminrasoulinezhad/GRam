@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { getExercise, imageUrl } from '@/catalog';
 import { useStore } from '@/store/useStore';
+import { useExerciseSheet } from './ExerciseSheet';
 import { MuscleGlyph } from './MuscleGlyph';
 import { theme } from './theme';
 
@@ -15,15 +16,25 @@ import { theme } from './theme';
  */
 export function ExerciseThumb({ exerciseId, size = 44 }: { exerciseId: string; size?: number }) {
   const [failed, setFailed] = useState(false);
+  const openSheet = useExerciseSheet();
   const showPhotos = useStore((s) => s.settings.showExercisePhotos);
   const exercise = getExercise(exerciseId);
   const photo = exercise?.images[0];
   const muscle = exercise?.primaryMuscles[0];
 
   return (
-    <View
-      style={[s.tile, { width: size, height: size }]}
-      accessibilityLabel={exercise ? `${exercise.name}, works ${muscle}` : 'Unknown exercise'}
+    <Pressable
+      // Tapping the picture opens the description; the row's own press is left to the row.
+      accessibilityRole={openSheet ? 'button' : 'image'}
+      accessibilityLabel={
+        exercise
+          ? `${exercise.name}, works ${muscle}${openSheet ? '. Open description' : ''}`
+          : 'Unknown exercise'
+      }
+      testID={`thumb-${exerciseId}`}
+      disabled={!openSheet || !exercise}
+      onPress={() => exercise && openSheet?.(exerciseId)}
+      style={({ pressed }) => [s.tile, { width: size, height: size }, pressed && { opacity: 0.7 }]}
     >
       <MuscleGlyph muscle={muscle} size={size - 6} />
       {showPhotos && photo && !failed ? (
@@ -35,7 +46,7 @@ export function ExerciseThumb({ exerciseId, size = 44 }: { exerciseId: string; s
           onError={() => setFailed(true)}
         />
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 

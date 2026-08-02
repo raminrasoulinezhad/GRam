@@ -3,6 +3,19 @@
 FitRam itself is licensed under Apache License 2.0 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).
 This file records the third-party material it uses and the obligations attached to each.
 
+## Scope of the licence
+
+> The Apache 2.0 licence covers **the source code and the original artwork of this project**.
+>
+> It does not — and cannot — grant rights in third-party material the app references at
+> runtime. You can only license what you own, and the exercise photographs are not ours. They
+> are not copied into this repository and not redistributed by it; the app requests them from a
+> third-party server, and the repository holds only their addresses.
+>
+> Anyone reusing this code is responsible for satisfying themselves about that material. The app
+> ships a setting that turns the photographs off and falls back to artwork original to this
+> project — see §2.
+
 ---
 
 ## 1. Exercise data — free-exercise-db (Unlicense / public domain)

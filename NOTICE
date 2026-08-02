@@ -15,6 +15,28 @@ CONDITIONS OF ANY KIND, either express or implied. See the License for the
 specific language governing permissions and limitations under the License.
 
 --------------------------------------------------------------------------------
+SCOPE OF THIS LICENCE
+--------------------------------------------------------------------------------
+
+The Apache License 2.0 above covers the SOURCE CODE of this project and the
+original artwork created for it.
+
+It does NOT, and cannot, grant any rights in third-party material that this
+application references at runtime. Rights can only be granted by whoever holds
+them, and the authors of this project do not hold them.
+
+Specifically: the exercise demonstration photographs shown in the app are NOT
+part of this project. They are not copied into this repository and are not
+redistributed by it. The application requests them from a third-party server at
+runtime, and this repository contains only the addresses at which they are
+found. Their copyright status has never been established by their publisher -
+see THIRD-PARTY-NOTICES.md.
+
+Anyone using this source code is responsible for satisfying themselves about
+that material, or for disabling it. The application has a setting that turns the
+photographs off entirely, and falls back to artwork original to this project.
+
+--------------------------------------------------------------------------------
 THIRD-PARTY MATERIAL
 --------------------------------------------------------------------------------
 
