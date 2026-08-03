@@ -6,6 +6,22 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.5] — 2026-08-02
+
+Storage schema **v7** — unchanged. Documentation only.
+
+### Changed
+
+- **Wrote down where the coach-video list tops out**, in
+  [`src/catalog/coaching.ts`](src/catalog/coaching.ts), so the next person does not spend an
+  afternoon rediscovering it. The finding: nobody credible makes an Instagram reel about the leg
+  press, the leg extension, the seated leg curl, calf raises, the adductor machine, wrist curls
+  or neck work — those videos do not exist rather than being hard to find, and widening the coach
+  shortlist yielded exactly one extra link. The realistic ceiling is fifteen to twenty exercises;
+  getting past it means YouTube, where the same coaches post per-exercise videos and the
+  transcripts are public. Also recorded: what each coach is actually good for, and the search and
+  retry patterns that work.
+
 ## [1.3.4] — 2026-08-02
 
 Storage schema **v7** — unchanged.

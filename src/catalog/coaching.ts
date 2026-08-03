@@ -16,12 +16,38 @@
  *      six figures of people liked and four hundred commented on is unlikely to be teaching the
  *      movement wrongly without someone saying so.
  *
- * WHY THE LIST IS SHORT
- * Coverage runs out fast. The head of the catalog - squat, bench, deadlift, pull-up - is served
- * well by several coaches. The tail is not served at all: a search for "dumbbell lying
- * pronation" returns SEO landing pages, and one for "spell caster", which is a real exercise
- * here, returns literal witchcraft. Those exercises get nothing, which is correct. An exercise
- * with no link shows no card.
+ * WHY THE LIST IS SHORT, AND WHERE IT TOPS OUT
+ * Coverage runs out fast, and it is worth writing down how fast so nobody spends another
+ * afternoon rediscovering it.
+ *
+ * The head of the catalog - squat, bench, deadlift, row, pull-up - is served well. The tail is
+ * not served at all: a search for "dumbbell lying pronation" returns SEO landing pages, and one
+ * for "spell caster", which is a real exercise here, returns literal witchcraft.
+ *
+ * The middle is the surprise. **Nobody credible makes an Instagram reel about the leg press,
+ * the leg extension, the seated leg curl, calf raises, the adductor machine, wrist curls or
+ * neck work.** Those videos do not exist, rather than being hard to find, and widening the
+ * coach shortlist does not change that - a round of searching the four approved coaches who had
+ * not been tried yielded exactly one usable link. What comes back instead is small unknown
+ * coaches and CrossFit affiliates, which fail the first test.
+ *
+ * What each coach is actually good for, measured rather than assumed:
+ *   - **Jeremy Ethier** - a "the perfect X" series covering the compound lifts one at a time.
+ *     By far the richest source; most of this file is his.
+ *   - **Jeff Nippard** - mistake breakdowns for the big lifts, and the occasional isolation cue.
+ *   - **Squat University** - rehab and fault-fixing rather than tutorials, so his posts are
+ *     often about one patient and fall under the engagement bar.
+ *
+ * The realistic ceiling on Instagram is somewhere around fifteen to twenty exercises. Getting
+ * past that means YouTube, where the same coaches post per-exercise videos and the transcripts
+ * are public - which would also allow checking what the coach actually says, the one thing this
+ * file cannot currently do.
+ *
+ * A practical note for whoever searches next: the query shape that works is the caption, not
+ * the exercise. `jeremyethier instagram reel "the perfect ..."` finds posts;
+ * `<coach> <exercise> form` mostly finds aggregators. And a fetch that returns a login wall is
+ * worth retrying later - roughly one in five fail, and the same URL usually works on a second
+ * attempt once the fifteen-minute cache has expired.
  *
  * ADDING TO IT
  * Find the post, open it, and record what you actually saw in `caption`, `likes` and
