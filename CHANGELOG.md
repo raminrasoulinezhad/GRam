@@ -6,6 +6,22 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.4] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **The dumbbell bench press gets a video, and the barbell bench press a second one**, both from
+  Jeremy Ethier. Eleven exercises now carry a link, twelve videos in all, and three of them —
+  bench press, deadlift and barbell row — have the pair originally asked for.
+
+### Fixed
+
+- The approved-coach list had **Alan Thrall under the wrong handle**. He posts as
+  `untamedstrength`; `alan_thrall` is somebody else. Nothing linked to it yet, so this was caught
+  before it became a wrong link rather than after.
+
 ## [1.3.3] — 2026-08-02
 
 Storage schema **v7** — unchanged.

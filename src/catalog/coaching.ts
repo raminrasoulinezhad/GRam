@@ -100,6 +100,29 @@ export const COACHING_VIDEOS: Record<string, readonly CoachingVideo[]> = {
       comments: 389,
       checkedOn: '2026-08-02',
     },
+    {
+      coach: 'Jeremy Ethier',
+      handle: 'jeremyethier',
+      url: 'https://www.instagram.com/jeremyethier/reel/CxYlXsDvJBn/',
+      caption:
+        "If you feel more of your shoulders working rather than your chest during the bench press, then you're probably making this mistake",
+      likes: 45_500,
+      comments: 133,
+      checkedOn: '2026-08-02',
+    },
+  ],
+
+  Dumbbell_Bench_Press: [
+    {
+      coach: 'Jeremy Ethier',
+      handle: 'jeremyethier',
+      url: 'https://www.instagram.com/jeremyethier/reel/Chm5l_JJkK6/',
+      caption:
+        'The dumbbell bench press is arguably the best exercise for building your chest! But to better target the chest and avoid shoulder injury, you want to avoid making this mistake',
+      likes: 45_000,
+      comments: 216,
+      checkedOn: '2026-08-02',
+    },
   ],
 
   Barbell_Deadlift: [
@@ -195,7 +218,9 @@ export const APPROVED_COACHES: ReadonlyMap<string, string> = new Map([
   ['squat_university', 'Squat University'],
   ['rpstrength', 'Renaissance Periodization'],
   ['athleanx', 'Athlean-X'],
-  ['alan_thrall', 'Alan Thrall'],
+  // Alan Thrall posts as untamedstrength, not under his own name. Worth writing down: the
+  // obvious guess, alan_thrall, is somebody else.
+  ['untamedstrength', 'Alan Thrall'],
   ['barbell_medicine', 'Barbell Medicine'],
 ]);
 
