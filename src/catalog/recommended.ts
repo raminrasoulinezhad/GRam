@@ -37,10 +37,10 @@ import { MUSCLES, type Muscle } from './generated';
  * To redo it: repeat the research (sources and criteria in docs/STUDY.md §6), change the picks
  * where the evidence has moved, update the comment saying why, and set both constants below.
  */
-export const RECOMMENDED_REVIEWED_FOR = '1.2';
+export const RECOMMENDED_REVIEWED_FOR = '1.3';
 
 /** Calendar date of the last review, so staleness is visible even between version bumps. */
-export const RECOMMENDED_REVIEWED_ON = '2026-08-01';
+export const RECOMMENDED_REVIEWED_ON = '2026-08-02';
 
 /** Exactly two exercise ids per muscle, best first. */
 export const RECOMMENDED: Record<Muscle, readonly [string, string]> = {
@@ -75,9 +75,15 @@ export const RECOMMENDED: Record<Muscle, readonly [string, string]> = {
   // Close-grip pulldown is Nippard's runner-up for back and the most controllable lat movement.
   lats: ['Close-Grip_Front_Lat_Pulldown', 'Pullups'],
 
-  // Nippard's number one for back is a chest-supported row - torso braced, no momentum. The
-  // seated cable row is the version most gyms have; the barbell row tops the EMG comparisons.
-  'middle back': ['Seated_Cable_Rows', 'Bent_Over_Barbell_Row'],
+  /*
+   * Changed at the 1.3 review. Nippard's back ranking crowns the chest-supported row as the
+   * best all-around back exercise and puts a chest-supported T-bar row in his top five
+   * movements overall, so the catalog's lying T-bar row takes first place from the seated cable
+   * row, which stays second as the version every gym has. The bent-over barbell row drops: it
+   * tops the EMG comparisons but the torso is held up by the lower back, and the whole reason
+   * the braced version wins is that nothing else has to hold you there.
+   */
+  'middle back': ['Lying_T-Bar_Row', 'Seated_Cable_Rows'],
 
   // Back extension is the direct one; the deadlift is the loaded one.
   'lower back': ['Hyperextensions_Back_Extensions', 'Barbell_Deadlift'],

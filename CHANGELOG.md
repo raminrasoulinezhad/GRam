@@ -6,6 +6,48 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.0] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **"Not there yet?" — an easier way into a movement you cannot do today.** Start a workout with
+  pull-ups in it and, before you have recorded anything, the card offers a band-assisted pull-up
+  with a line saying what it gives you, and a **Swap** button that puts it in the slot keeping
+  the sets the plan asked for. The exercise description carries the whole ladder, each rung
+  linking to the published progression it came from.
+  - **The suggestion disappears the moment you record a set.** You are doing it; the question has
+    been answered.
+  - **A swap is refused once anything is recorded.** Those sets say you did *that* exercise, and
+    relabelling them would put work in your history you never did.
+  - The ladder walks all the way down. A barbell bench press goes to dumbbells, then the floor
+    press, then push-ups, then incline push-ups; a clean and jerk comes apart into a power clean,
+    a hang clean, a clean pull and a clean deadlift.
+  - Swapping to something you have done before opens on **your own last weights**, not the stock
+    twenty kilos.
+
+**Why the list is written by hand.** The obvious version — same muscle, same direction, one step
+down the catalog's difficulty label — was built and measured first, and it fails on the data. It
+produced 291 pairs, every chain one step long, landing on just 60 distinct exercises with
+*Bodyweight Squat* offered as the answer for 35 unrelated movements. Worse, the dataset labels
+**pull-ups, chin-ups, dips and the barbell bench press "beginner"**, so it said nothing at all
+about the four movements people most need a way into. And it produced confident nonsense:
+*"instead of a deadlift, try back extensions"*. The numbers are in
+[docs/STUDY.md §7](docs/STUDY.md). Every edge in the hand-written list cites a published
+progression — Reddit r/bodyweightfitness, NSCA, Catalyst Athletics and others — and an exercise
+with nothing listed shows nothing, because saying nothing costs less than saying something wrong.
+
+### Changed
+
+- **Exercise recommendations re-reviewed for 1.3**, as a minor release requires. One pick moved:
+  **middle back is now the lying T-bar row**, ahead of the seated cable row. Nippard's back
+  ranking crowns the chest-supported row as the best all-around back exercise and puts a
+  chest-supported T-bar row in his top five movements overall. The bent-over barbell row drops —
+  it tops the EMG comparisons, but the torso is held up by the lower back, and not having to hold
+  yourself there is the entire reason the braced version wins. Everything else was corroborated
+  and stands.
+
 ## [1.2.17] — 2026-08-02
 
 Storage schema **v7** — unchanged. Nothing a user can see changes; this is dead weight going out.

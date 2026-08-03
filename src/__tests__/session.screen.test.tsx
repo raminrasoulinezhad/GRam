@@ -30,6 +30,7 @@ const SQUAT = 'Barbell_Full_Squat';
 const PLANK = 'Plank';
 const DB_BENCH = 'Dumbbell_Bench_Press';
 const ONE_ARM_ROW = 'One-Arm_Dumbbell_Row';
+const PULLUPS = 'Pullups';
 const store = () => useStore.getState();
 
 /** Seeds a plan with one exercise, starts it, and points the route params at the session. */
@@ -343,6 +344,55 @@ describe('active workout screen', () => {
     expect(screen.getByTestId(`entry-${id0}-done`)).toBeTruthy();
     expect(screen.queryByText('3/3')).toBeNull();
     expect(store().sessions[0].entries[0].sets.every((x) => x.loggedAt !== null)).toBe(true);
+  });
+});
+
+describe('offering an easier exercise', () => {
+  it('suggests the simpler movement, and says what it gives you', async () => {
+    startWorkout(PULLUPS);
+    await renderScreen(<SessionScreen />);
+
+    expect(screen.getByTestId(`easier-${entryId()}`)).toBeTruthy();
+    expect(screen.getByText(/Band Assisted Pull-Up/)).toBeTruthy();
+    expect(screen.getByText(/carries part of your weight/)).toBeTruthy();
+  });
+
+  it('swaps the exercise, keeping the number of sets the plan asked for', async () => {
+    startWorkout(PULLUPS);
+    await renderScreen(<SessionScreen />);
+
+    await fireEvent.press(screen.getByTestId(`swap-${entryId()}`));
+
+    expect(store().sessions[0].entries[0].exerciseId).toBe('Band_Assisted_Pull-Up');
+    expect(store().sessions[0].entries[0].sets).toHaveLength(3);
+    expect(screen.getByText('Band Assisted Pull-Up')).toBeTruthy();
+  });
+
+  it('offers the next rung down once you have swapped', async () => {
+    startWorkout(PULLUPS);
+    await renderScreen(<SessionScreen />);
+    await fireEvent.press(screen.getByTestId(`swap-${entryId()}`));
+
+    // Band-assisted is itself on the ladder, so the way down carries on.
+    expect(screen.getByText(/Scapular Pull-Up/)).toBeTruthy();
+  });
+
+  it('stops offering once a set has been recorded', async () => {
+    startWorkout(PULLUPS);
+    await renderScreen(<SessionScreen />);
+
+    await fireEvent.press(screen.getByTestId(`log-${setIds()[0]}`));
+
+    // You are doing it. The question the suggestion asks has been answered.
+    expect(screen.queryByTestId(`easier-${entryId()}`)).toBeNull();
+  });
+
+  it('says nothing for an exercise with no listed regression', async () => {
+    // A barbell curl is not a movement anyone needs a way into, and the list says nothing about
+    // it rather than inventing something - which is the failure mode of the derived version.
+    startWorkout('Barbell_Curl');
+    await renderScreen(<SessionScreen />);
+    expect(screen.queryByTestId(`easier-${entryId()}`)).toBeNull();
   });
 });
 

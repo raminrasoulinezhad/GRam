@@ -7,6 +7,7 @@ import {
   getExercise,
   implementWord,
   isPerSideLoad,
+  regressionFor,
   type SetKind,
 } from '@/catalog';
 import {
@@ -101,6 +102,7 @@ const EntryCard = memo(function EntryCard({
   onRemoveSet,
   onAddSet,
   onRemoveEntry,
+  onSwap,
 }: {
   entry: SessionEntry;
   unit: 'kg' | 'lb';
@@ -111,10 +113,12 @@ const EntryCard = memo(function EntryCard({
   onRemoveSet: (entryId: string, setId: string) => void;
   onAddSet: (entryId: string) => void;
   onRemoveEntry: (entryId: string, name: string) => void;
+  onSwap: (entryId: string, exerciseId: string) => void;
 }) {
   const exercise = getExercise(entry.exerciseId);
   const name = exerciseName(entry.exerciseId);
   const perSide = exercise !== undefined && isPerSideLoad(exercise);
+  const easier = regressionFor(entry.exerciseId);
   const done = entry.sets.filter((x) => x.loggedAt !== null).length;
   const complete = entry.sets.length > 0 && done === entry.sets.length;
 
@@ -146,6 +150,27 @@ const EntryCard = memo(function EntryCard({
       onHowTo={() => router.push(`/exercise/${entry.exerciseId}`)}
       testID={`entry-${entry.id}`}
     >
+      {/*
+        * Offered only while nothing here has been recorded. Once a set is down you are doing
+        * this exercise, and the question "can you do it?" has been answered.
+        */}
+      {easier && done === 0 ? (
+        <View style={s.swap} testID={`easier-${entry.id}`}>
+          <View style={{ flex: 1 }}>
+            <Dim style={{ lineHeight: 18 }}>
+              Not there yet? <Text style={s.swapName}>{exerciseName(easier.easier)}</Text> —{' '}
+              {easier.why}
+            </Dim>
+          </View>
+          <Button
+            label="Swap"
+            variant="secondary"
+            onPress={() => onSwap(entry.id, easier.easier)}
+            testID={`swap-${entry.id}`}
+          />
+        </View>
+      ) : null}
+
       {perSide ? (
         <Dim style={s.perSide} testID={`per-side-${entry.id}`}>
           Weight is per {implementWord(exercise!)} — one in each hand. Your total lifted counts
@@ -214,6 +239,7 @@ export default function SessionScreen() {
   const removeSet = useStore((st) => st.removeSet);
   const addSet = useStore((st) => st.addSet);
   const removeSessionEntry = useStore((st) => st.removeSessionEntry);
+  const swapSessionExercise = useStore((st) => st.swapSessionExercise);
   const endSession = useStore((st) => st.endSession);
   const discardSession = useStore((st) => st.discardSession);
   const confirm = useConfirm();
@@ -263,6 +289,11 @@ export default function SessionScreen() {
   );
 
   const handleAddSet = useCallback((entryId: string) => addSet(id, entryId), [id, addSet]);
+
+  const handleSwap = useCallback(
+    (entryId: string, exerciseId: string) => swapSessionExercise(id, entryId, exerciseId),
+    [id, swapSessionExercise],
+  );
 
   const handleRemoveEntry = useCallback(
     async (entryId: string, name: string) => {
@@ -397,6 +428,7 @@ export default function SessionScreen() {
             onRemoveSet={handleRemoveSet}
             onAddSet={handleAddSet}
             onRemoveEntry={handleRemoveEntry}
+            onSwap={handleSwap}
           />
         ))}
 
@@ -446,6 +478,16 @@ const s = StyleSheet.create({
   content: { padding: theme.space(4), gap: theme.space(3), paddingBottom: theme.space(6) },
   entryActions: { flexDirection: 'row', gap: theme.space(2), marginTop: theme.space(2) },
   perSide: { paddingBottom: theme.space(2), lineHeight: 18 },
+  swap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space(3),
+    paddingVertical: theme.space(2),
+    marginBottom: theme.space(1),
+    borderTopWidth: 1,
+    borderTopColor: theme.color.border,
+  },
+  swapName: { color: theme.color.text, fontWeight: '700' },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',

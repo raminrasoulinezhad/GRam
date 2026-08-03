@@ -6,6 +6,7 @@ import type { Exercise, Muscle } from './types';
 export * from './generated';
 export * from './perSide';
 export * from './recommended';
+export * from './regressions';
 export * from './types';
 export { EXERCISES, muscleTermsIn };
 

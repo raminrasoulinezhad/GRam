@@ -86,6 +86,8 @@ type Actions = {
   startEmptySession: () => string;
   addSessionExercise: (sessionId: string, exerciseId: string) => void;
   removeSessionEntry: (sessionId: string, entryId: string) => void;
+  /** Swaps an exercise for another, keeping the set count. Refused once anything is recorded. */
+  swapSessionExercise: (sessionId: string, entryId: string, exerciseId: string) => void;
   addSet: (sessionId: string, entryId: string) => void;
   removeSet: (sessionId: string, entryId: string, setId: string) => void;
   updateSet: (sessionId: string, entryId: string, setId: string, values: SetValues) => void;
@@ -430,6 +432,42 @@ export const useStore = create<State & Actions>()(
             entries: session.entries.filter((e) => e.id !== entryId),
           })),
         })),
+
+      /**
+       * Puts a different exercise in this slot - what "try the easier one instead" does.
+       *
+       * Keeps the number of sets, because the plan said how much work this slot is worth and
+       * changing the movement does not change that. The numbers are reseeded from whatever you
+       * last lifted on the new exercise, so swapping to something you have done before opens on
+       * your own weights rather than the stock twenty kilos.
+       *
+       * Refused outright once a set has been recorded. Those sets say you did *this* exercise;
+       * relabelling them would put work in your history you never did, and that is the one
+       * thing this app must never do.
+       */
+      swapSessionExercise: (sessionId, entryId, exerciseId) => {
+        const exercise = getExercise(exerciseId);
+        if (!exercise) return;
+        const sessions = get().sessions;
+        const previous = lastPerformance(sessions, exerciseId);
+        set((s) => ({
+          sessions: withSession(s.sessions, sessionId, (session) =>
+            withEntry(session, entryId, (entry) => {
+              if (entry.sets.some((x) => x.loggedAt !== null)) return entry;
+              return {
+                ...entry,
+                exerciseId,
+                kind: exercise.kind,
+                sets: entry.sets.map((set, i) => ({
+                  id: set.id,
+                  ...seedFromLast(seedTemplate(exercise.kind), previous, i),
+                  loggedAt: null,
+                })),
+              };
+            }),
+          ),
+        }));
+      },
 
       addSet: (sessionId, entryId) =>
         set((s) => ({

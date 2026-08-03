@@ -1,6 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { getExercise, imageUrl, isPerSideLoad, SET_KIND_LABEL } from '@/catalog';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  exerciseName,
+  getExercise,
+  imageUrl,
+  isPerSideLoad,
+  regressionLadder,
+  SET_KIND_LABEL,
+} from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDate, formatSet, relativeTime, titleCase } from '@/lib/format';
 import { exerciseHistory, selectSessions, useStore } from '@/store/useStore';
@@ -25,6 +32,7 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
   const history = useMemo(() => exerciseHistory(sessions, exerciseId), [sessions, exerciseId]);
   /** Which photo is open full screen, if any. */
   const [viewing, setViewing] = useState<number | null>(null);
+  const ladder = useMemo(() => regressionLadder(exerciseId), [exerciseId]);
   const photos = useMemo(
     () =>
       (exercise?.images ?? []).map((path, i) => ({
@@ -118,6 +126,37 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
           ) : null}
         </Card>
 
+        {/*
+          * The way in, for a movement you cannot do yet. Every rung carries the published
+          * progression it came from, because a suggestion with no source behind it is a guess -
+          * and a plausible guess is exactly what the automatic version produced.
+          */}
+        {ladder.length > 0 ? (
+          <Card testID="ladder">
+            <H2>Not there yet?</H2>
+            <Dim style={{ marginTop: theme.space(1) }}>
+              Work down this list until you find one you can do for three sets, then climb back
+              up. Nothing here trains the movement as well as the movement — it gets you to it.
+            </Dim>
+            {ladder.map((step, i) => (
+              <View key={step.easier} style={s.rung}>
+                <Text style={s.rungNum}>{i + 1}</Text>
+                <View style={{ flex: 1 }}>
+                  <Body style={{ fontWeight: '600' }}>{exerciseName(step.easier)}</Body>
+                  <Dim style={{ lineHeight: 18 }}>{step.why}</Dim>
+                  <Text
+                    style={s.rungSource}
+                    accessibilityRole="link"
+                    onPress={() => void Linking.openURL(step.source)}
+                  >
+                    Source
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </Card>
+        ) : null}
+
         <Card>
           <H2>How to</H2>
           {exercise.instructions.length === 0 ? (
@@ -197,4 +236,19 @@ const s = StyleSheet.create({
     borderBottomColor: theme.color.border,
   },
   histAgo: { color: theme.color.textFaint, fontSize: theme.font.tiny },
+  rung: { flexDirection: 'row', gap: theme.space(3), marginTop: theme.space(3) },
+  rungNum: {
+    color: theme.color.accent,
+    fontWeight: '800',
+    fontSize: theme.font.small,
+    width: 16,
+    lineHeight: 21,
+  },
+  rungSource: {
+    color: theme.color.textFaint,
+    fontSize: theme.font.tiny,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+    marginTop: 2,
+  },
 });

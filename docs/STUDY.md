@@ -165,7 +165,77 @@ Sources are consolidated at the bottom of this document.
 
 ---
 
+## 7. What to do when the exercise is too hard
+
+A plan is only useful if you can perform it. Someone whose Monday says "pull-ups" and who cannot
+do one has no move: the app holds 879 exercises and no opinion about which of them is a way in.
+This section is why the answer is a hand-written list rather than a derived one.
+
+### The derived version was built and measured first
+
+The rule tried: for each exercise, find the ones sharing its primary muscle and its push/pull
+direction that sit lower on the catalog's `level` field, and keep the best. Over all 879:
+
+| Rule | Covered | Edges | Median candidates |
+|---|---|---|---|
+| same primary + force + mechanic + easier equipment | 262 / 352 (74%) | 3,635 | 7 |
+| same primary + force + mechanic | 273 / 352 (78%) | 4,290 | 8 |
+| same primary + force | 291 / 352 (83%) | 6,720 | 14 |
+| same primary muscle only | 308 / 352 (88%) | 8,854 | 16 |
+
+83% coverage reads like success. Three measurements say otherwise.
+
+**There is no graph.** Keeping the best pick per exercise gives 291 edges and **every chain is
+one step long**, because `level` has three values and the best pick always jumps straight to
+beginner. No ladders to draw, no depth to walk.
+
+**It collapses onto a handful of targets.** Those 291 edges land on **60 distinct exercises**,
+and the top two absorb 66 of them: *Bodyweight Squat* is the answer for 35 different movements,
+*Leverage Shoulder Press* for 31.
+
+**`level` does not mean difficulty.** This is what settles it. The dataset labels **pull-ups,
+chin-ups, dips and the barbell bench press "beginner"** — the four movements people most need a
+way into — so a rule keyed on it says nothing whatever about them, while offering help with a
+front squat, which it calls "expert". The field tracks how much equipment jargon is involved:
+machines have zero expert entries, barbells have 29 expert and 88 intermediate.
+
+And the pairings it does make are often wrong in a way that reads as right. *"Instead of a
+deadlift, try back extensions"* and *"instead of a power clean, try a Smith machine stiff-legged
+deadlift"* both satisfy every rule.
+
+### So the list is written by hand, and every edge carries a source
+
+[`src/catalog/regressions.ts`](../src/catalog/regressions.ts) holds one edge per exercise, each
+read from a published progression and each citing it. Following `easier` repeatedly walks down a
+ladder — a barbell bench press goes to dumbbells, then the floor press, then push-ups, then
+incline push-ups; a clean and jerk comes apart into a power clean, a hang clean, a clean pull
+and a clean deadlift. The rule for adding to it is that there is no edge without a source
+someone has actually read, because a plausible guess is precisely what the derived version
+produced.
+
+It covers the head of the catalog rather than all of it, and that is the right shape: an
+exercise with nothing listed shows nothing. Saying nothing costs a user far less than saying
+something wrong.
+
+---
+
 ## Sources
+
+Exercise progressions (§7):
+
+- [Reddit r/bodyweightfitness Recommended Routine](https://redditbwf.github.io/wiki/recommended_routine.html) — the pull-up, row, push-up, dip, squat, hinge and core ladders
+- [Pull Up Progression: From Beginner To Advanced](https://fitbod.me/blog/pull-up-progression/)
+- [The Squat: Progressions and/or Regressions](https://www.wg-fit.com/post/the-squat-progressions-and-or-regressions)
+- [Squat Teaching Progression/Regression — NHSSCA](https://nhssca.us/wp-content/uploads/2017/10/Squat-Teaching-Progression-Regression.pdf)
+- [Squat Progressions for College Athletes — EliteFTS](https://elitefts.com/blogs/training/squat-progressions-for-college-athletes)
+- [Progressing from the Stick Romanian Deadlift to the Deadlift — Athletic Institute](https://athleticinstitute.com.au/progressing-from-basic-to-advance-stick-romanian-deadlift-to-the-deadlift/)
+- [Romanian Deadlift (RDL) — NSCA](https://www.nsca.com/education/articles/kinetic-select/romanian-deadlift-rdl/)
+- [8 Deadlift Progressions From Beginner To Advanced](https://powerliftingtechnique.com/deadlift-progressions/)
+- [10 Bench Press Progressions From Beginner To Advanced](https://powerliftingtechnique.com/bench-press-progressions/)
+- [Exercise progressions to work up to your first bench press — CLIENTEL3](https://www.clientel3.com/blog/2021/09/03/exercise-progressions-to-work-up-to-your-first-bench-press/)
+- [Dumbbell Floor Press: Benefits, Form, and Muscle-Building Tips — Living.Fit](https://www.living.fit/blogs/news/dumbbell-floor-press-or-movement-breakdown)
+- [9 Best Overhead Press Alternatives](https://powerliftingtechnique.com/overhead-press-alternatives/)
+- [Snatch & Clean Hang Positions — Catalyst Athletics](https://www.catalystathletics.com/video/1573/Snatch-Clean-Hang-Positions/)
 
 Training science:
 
