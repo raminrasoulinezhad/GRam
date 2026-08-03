@@ -44,8 +44,41 @@ export type CoachingVideo = {
   caption: string;
   /** Likes at the time it was checked, or null when the page would not show them. */
   likes: number | null;
+  /**
+   * Comments at the time it was checked, or null when the page would not show them.
+   *
+   * Recorded because a comment thread is the closest thing to a review this has. A coach
+   * demonstrating something badly in front of a hundred thousand people gets told so, and a
+   * post with hundreds of comments and a good reputation has survived that.
+   */
+  comments: number | null;
   /** ISO date the link and its caption were last confirmed to load. */
   checkedOn: string;
+};
+
+/*
+ * A few posts cover a movement the catalog splits into several ids - one squat video serves
+ * both squat entries, one pulldown video serves the close and wide grips. Declared once and
+ * shared, so a dead link is fixed in one place rather than found in two.
+ */
+const SQUAT_ETHIER: CoachingVideo = {
+  coach: 'Jeremy Ethier',
+  handle: 'jeremyethier',
+  url: 'https://www.instagram.com/jeremyethier/reel/CxdXhspLeAl/',
+  caption: "Here's 5 of the most common squat mistakes and how to fix them",
+  likes: 199_500,
+  comments: 421,
+  checkedOn: '2026-08-02',
+};
+
+const PULLDOWN_ETHIER: CoachingVideo = {
+  coach: 'Jeremy Ethier',
+  handle: 'jeremyethier',
+  url: 'https://www.instagram.com/jeremyethier/reel/C-QVWiVPsus/',
+  caption: 'These are the 3 most common mistakes I see with the lat pulldown',
+  likes: 44_400,
+  comments: 149,
+  checkedOn: '2026-08-02',
 };
 
 /**
@@ -53,26 +86,10 @@ export type CoachingVideo = {
  * with a link nobody has opened.
  */
 export const COACHING_VIDEOS: Record<string, readonly CoachingVideo[]> = {
-  Barbell_Full_Squat: [
-    {
-      coach: 'Jeremy Ethier',
-      handle: 'jeremyethier',
-      url: 'https://www.instagram.com/jeremyethier/reel/CxdXhspLeAl/',
-      caption: "Here's 5 of the most common squat mistakes and how to fix them",
-      likes: 199_500,
-      checkedOn: '2026-08-02',
-    },
-  ],
-  Barbell_Squat: [
-    {
-      coach: 'Jeremy Ethier',
-      handle: 'jeremyethier',
-      url: 'https://www.instagram.com/jeremyethier/reel/CxdXhspLeAl/',
-      caption: "Here's 5 of the most common squat mistakes and how to fix them",
-      likes: 199_500,
-      checkedOn: '2026-08-02',
-    },
-  ],
+  // -------------------------------------------------------------- the barbell lifts
+  Barbell_Full_Squat: [SQUAT_ETHIER],
+  Barbell_Squat: [SQUAT_ETHIER],
+
   'Barbell_Bench_Press_-_Medium_Grip': [
     {
       coach: 'Jeff Nippard',
@@ -80,17 +97,70 @@ export const COACHING_VIDEOS: Record<string, readonly CoachingVideo[]> = {
       url: 'https://www.instagram.com/jeffnippard/reel/C-sdW8EP7hv/',
       caption: '3 most common bench press mistakes',
       likes: 89_900,
+      comments: 389,
       checkedOn: '2026-08-02',
     },
   ],
+
   Barbell_Deadlift: [
+    {
+      coach: 'Jeremy Ethier',
+      handle: 'jeremyethier',
+      url: 'https://www.instagram.com/jeremyethier/reel/DBeWH-FvYtD/',
+      caption: 'How to do the perfect deadlift, in 5 easy steps',
+      likes: 199_700,
+      comments: 426,
+      checkedOn: '2026-08-02',
+    },
     {
       coach: 'Jeff Nippard',
       handle: 'jeffnippard',
       url: 'https://www.instagram.com/jeffnippard/reel/C5Bu0Sjp0Mi/',
       caption: 'Deadlift checklist! If you tick all 5, you have a perfect deadlift',
-      // The page served the caption and the verified handle but withheld the like count.
+      // The page served the verified handle and the caption but withheld both counts.
       likes: null,
+      comments: null,
+      checkedOn: '2026-08-02',
+    },
+  ],
+
+  Barbell_Hip_Thrust: [
+    {
+      coach: 'Jeremy Ethier',
+      handle: 'jeremyethier',
+      url: 'https://www.instagram.com/jeremyethier/reel/C4MBXjRyl8K/',
+      caption:
+        "Here's how to do the perfect hip thrust, and how to fix some of the most common mistakes people make",
+      likes: 27_800,
+      comments: 117,
+      checkedOn: '2026-08-02',
+    },
+  ],
+
+  // ------------------------------------------------------------------- pulling
+  Pullups: [
+    {
+      coach: 'Jeremy Ethier',
+      handle: 'jeremyethier',
+      url: 'https://www.instagram.com/jeremyethier/reel/CvNWZ77ONml/',
+      caption: "Here's how to do the perfect pull-up",
+      likes: 54_600,
+      comments: 191,
+      checkedOn: '2026-08-02',
+    },
+  ],
+  'Close-Grip_Front_Lat_Pulldown': [PULLDOWN_ETHIER],
+  'Wide-Grip_Lat_Pulldown': [PULLDOWN_ETHIER],
+
+  // ----------------------------------------------------------------- shoulders
+  Side_Lateral_Raise: [
+    {
+      coach: 'Jeff Nippard',
+      handle: 'jeffnippard',
+      url: 'https://www.instagram.com/jeffnippard/reel/C61SfWrungF/',
+      caption: 'A better way to do lateral raises',
+      likes: 157_800,
+      comments: 587,
       checkedOn: '2026-08-02',
     },
   ],

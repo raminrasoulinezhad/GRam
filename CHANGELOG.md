@@ -6,6 +6,21 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.2] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **Six more exercises have a coach demonstrating them**: pull-ups, the hip thrust, lateral
+  raises and the lat pulldown (both grips), plus a second deadlift video. Nine exercises now
+  carry a link, from Jeremy Ethier and Jeff Nippard.
+- **Comment counts are recorded alongside likes.** A comment thread is the closest thing to a
+  review these links have — a coach demonstrating something badly in front of a hundred thousand
+  people gets told so — so it is now part of the evidence stored with every link, and a test
+  requires likes and comments to be present or absent together, since both come off the same
+  page load.
+
 ## [1.3.1] — 2026-08-02
 
 Storage schema **v7** — unchanged.

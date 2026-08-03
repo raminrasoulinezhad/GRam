@@ -33,6 +33,13 @@ describe('every linked video is accounted for', () => {
     // nobody shouted. A null means the page withheld the count, which is honest; a 12 would
     // mean the bar had been quietly lowered.
     if (v.likes !== null) expect(v.likes).toBeGreaterThan(10_000);
+    if (v.comments !== null) expect(v.comments).toBeGreaterThan(50);
+  });
+
+  it.each(rows)('%s records likes and comments together or not at all', (_id, v) => {
+    // Both come off the same page load. One present and the other missing would mean a number
+    // had been filled in from somewhere other than the post.
+    expect(v.likes === null).toBe(v.comments === null);
   });
 
   it('never lists the same video twice for one exercise', () => {
