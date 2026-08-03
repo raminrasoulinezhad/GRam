@@ -152,6 +152,28 @@ export const COACHING_VIDEOS: Record<string, readonly CoachingVideo[]> = {
   'Close-Grip_Front_Lat_Pulldown': [PULLDOWN_ETHIER],
   'Wide-Grip_Lat_Pulldown': [PULLDOWN_ETHIER],
 
+  Bent_Over_Barbell_Row: [
+    {
+      coach: 'Jeremy Ethier',
+      handle: 'jeremyethier',
+      url: 'https://www.instagram.com/jeremyethier/reel/CuhgOK3sQCV/',
+      caption: "Here's how to do barbell rows in 5 simple steps",
+      likes: 84_800,
+      comments: 188,
+      checkedOn: '2026-08-02',
+    },
+    {
+      coach: 'Squat University',
+      handle: 'squat_university',
+      url: 'https://www.instagram.com/squat_university/reel/C6r83eiA-38/',
+      caption:
+        'Master the RDL first - then do the bent over row. Reason: the bent over row STARTS from the static or held position of the bottom RDL',
+      likes: 76_500,
+      comments: 374,
+      checkedOn: '2026-08-02',
+    },
+  ],
+
   // ----------------------------------------------------------------- shoulders
   Side_Lateral_Raise: [
     {

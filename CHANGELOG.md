@@ -6,6 +6,21 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.3] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **The barbell row gets two coach videos** — Jeremy Ethier on the five steps, and Squat
+  University on why the row starts from the bottom of an RDL. Ten exercises now carry a link.
+
+### Notes
+
+- A Squat University reverse-lunge video was **rejected by the file's own bar**: 7.8K likes and
+  49 comments, under the ten-thousand and fifty-comment thresholds. Working as intended — the
+  point of the thresholds is that they exclude things.
+
 ## [1.3.2] — 2026-08-02
 
 Storage schema **v7** — unchanged.
