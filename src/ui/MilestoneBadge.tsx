@@ -21,9 +21,9 @@ const BANDS: Band[] = [
   { name: 'Ember', base: '#E8752A', light: '#FFA968', dark: '#A84A12' },
 ];
 
-export const LEVELS_PER_BAND = 3;
+const LEVELS_PER_BAND = 3;
 
-export function bandFor(level: number): Band {
+function bandFor(level: number): Band {
   if (level <= 0) return BANDS[0];
   const index = Math.min(BANDS.length - 1, Math.floor((level - 1) / LEVELS_PER_BAND));
   return BANDS[index];

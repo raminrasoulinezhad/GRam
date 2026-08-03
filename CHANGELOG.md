@@ -6,6 +6,26 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.17] — 2026-08-02
+
+Storage schema **v7** — unchanged. Nothing a user can see changes; this is dead weight going out.
+
+### Removed
+
+- **`src/lib/autoExport.ts`** — 167 lines of File System Access machinery for writing backups to
+  a single user-picked file, with the handle kept in IndexedDB. It was superseded by the folder
+  archive in `directory.ts` and had sat unused for several releases. The one live function,
+  `requestPersistentStorage`, moves to **`src/lib/persistence.ts`**.
+- `H1`, `ChipRow` and `Divider` from the UI kit, and `involvementColor` from the body map — all
+  four had no callers anywhere, tests included, along with the styles behind them.
+- The `export` keyword from six symbols only ever used inside their own module (`bandFor`,
+  `LEVELS_PER_BAND`, `sessionYear`, `ARCHIVE_FORMAT`, `canShareFile`, `lastPerformance`), so
+  each module's surface is what it actually offers.
+
+### Fixed
+
+- DEVELOPER_README claimed **224 tests**. There are 646.
+
 ## [1.2.16] — 2026-08-02
 
 Storage schema **v7** — unchanged. Nothing stored changes; the figure is recomputed from the

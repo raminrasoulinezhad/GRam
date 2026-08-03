@@ -72,11 +72,6 @@ export function exerciseMuscleValues(
   return values;
 }
 
-/** Colour for a legend swatch or chip at a given involvement level. */
-export function involvementColor(value: number): string {
-  return theme.color.ramp[rampIntensity(value, 1) - 1] ?? theme.color.ramp[0];
-}
-
 export { MUSCLES };
 
 const s = StyleSheet.create({

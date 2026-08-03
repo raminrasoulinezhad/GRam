@@ -762,7 +762,7 @@ function definedValues(set: SetValues): SetValues {
  * the numbers that matter are the ones from the day you actually trained. Pass `before` to ask
  * the same question as of a moment in the past.
  */
-export function lastPerformance(
+function lastPerformance(
   sessions: Session[],
   exerciseId: string,
   before = Infinity,

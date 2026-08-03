@@ -33,7 +33,7 @@ import type { Session } from './types';
  * write is detectable rather than silently believed.
  */
 
-export const ARCHIVE_FORMAT = 1;
+const ARCHIVE_FORMAT = 1;
 
 /** The folder everything lives in, created inside whatever directory the user picks. */
 export const ARCHIVE_DIR = 'GRam';
@@ -43,7 +43,7 @@ export const PROFILE_PATH = 'profile.json';
 export const PLANS_PATH = 'plans.json';
 
 /** Year a session belongs to. Uses local time: a workout belongs to the day you did it. */
-export function sessionYear(session: Session): number {
+function sessionYear(session: Session): number {
   return new Date(session.startedAt).getFullYear();
 }
 

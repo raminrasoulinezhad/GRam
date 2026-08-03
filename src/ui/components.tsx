@@ -1,7 +1,6 @@
 import { ReactNode, useState } from 'react';
 import {
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -32,9 +31,6 @@ export function Card({
   );
 }
 
-export function H1({ children }: { children: ReactNode }) {
-  return <Text style={s.h1}>{children}</Text>;
-}
 export function H2({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
   return <Text style={[s.h2, style]}>{children}</Text>;
 }
@@ -150,42 +146,6 @@ export function Chip({
     <Pressable accessibilityRole="button" onPress={onPress} testID={testID}>
       {content}
     </Pressable>
-  );
-}
-
-/** Horizontal scroller of filter chips with an "All" reset at the head. */
-export function ChipRow({
-  options,
-  value,
-  onChange,
-  allLabel = 'All',
-  testIDPrefix = 'chip',
-}: {
-  options: readonly string[];
-  value: string | null;
-  onChange: (next: string | null) => void;
-  allLabel?: string;
-  /** Filter chips carry ids because their labels also appear on the rows they filter. */
-  testIDPrefix?: string;
-}) {
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
-      <Chip
-        label={allLabel}
-        active={value === null}
-        onPress={() => onChange(null)}
-        testID={`${testIDPrefix}-all`}
-      />
-      {options.map((o) => (
-        <Chip
-          key={o}
-          label={o}
-          active={value === o}
-          onPress={() => onChange(value === o ? null : o)}
-          testID={`${testIDPrefix}-${o}`}
-        />
-      ))}
-    </ScrollView>
   );
 }
 
@@ -309,10 +269,6 @@ export function Empty({ title, hint }: { title: string; hint?: string }) {
   );
 }
 
-export function Divider() {
-  return <View style={s.divider} />;
-}
-
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.color.bg },
   card: {
@@ -322,7 +278,6 @@ const s = StyleSheet.create({
     borderColor: theme.color.border,
     padding: theme.space(3.5),
   },
-  h1: { color: theme.color.text, fontSize: theme.font.h1, fontWeight: '800', letterSpacing: -0.5 },
   h2: { color: theme.color.text, fontSize: theme.font.h2, fontWeight: '700' },
   body: { color: theme.color.text, fontSize: theme.font.body },
   dim: { color: theme.color.textDim, fontSize: theme.font.small },
@@ -342,7 +297,6 @@ const s = StyleSheet.create({
   btnDanger: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.color.danger },
   btnGhost: { backgroundColor: 'transparent' },
   btnLabel: { color: theme.color.text, fontWeight: '700', fontSize: theme.font.body },
-  chipRow: { gap: theme.space(2), paddingHorizontal: theme.space(4), paddingVertical: theme.space(2) },
   chip: {
     paddingVertical: theme.space(1.5),
     paddingHorizontal: theme.space(3),
@@ -404,5 +358,4 @@ const s = StyleSheet.create({
   empty: { alignItems: 'center', padding: theme.space(10), gap: theme.space(2) },
   emptyTitle: { color: theme.color.textDim, fontSize: theme.font.h3, fontWeight: '600' },
   emptyHint: { color: theme.color.textFaint, fontSize: theme.font.small, textAlign: 'center' },
-  divider: { height: 1, backgroundColor: theme.color.border },
 });

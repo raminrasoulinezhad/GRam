@@ -15,7 +15,7 @@ import {
   type BackupSummary,
   type ParsedBackup,
 } from '@/store/backup';
-import { requestPersistentStorage } from '@/lib/autoExport';
+import { requestPersistentStorage } from '@/lib/persistence';
 import {
   ARCHIVE_DIR,
   buildArchive,

@@ -5,7 +5,7 @@ Everything needed to work on GRam. For what the app *is* and how to install it, 
 
 ```bash
 npm install
-npm test           # 224 tests
+npm test           # 646 tests
 npm run typecheck
 npx expo start     # dev server; scan the QR with Expo Go
 ```
@@ -187,7 +187,7 @@ Never hand-edit `public/icons/`, `assets/icon.png`, `assets/favicon.png`, `asset
 
 ## Testing
 
-224 tests, no network, no snapshots.
+646 tests, no network, no snapshots.
 
 | Suite | Covers |
 |---|---|

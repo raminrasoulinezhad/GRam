@@ -21,7 +21,7 @@ const hasDom = () => isWeb && typeof document !== 'undefined';
 export type ExportOutcome = 'shared' | 'downloaded' | 'copied' | 'shown';
 
 /** True when the platform can hand a real file to the system share sheet. */
-export function canShareFile(filename: string): boolean {
+function canShareFile(filename: string): boolean {
   if (!isWeb || typeof navigator === 'undefined') return false;
   const nav = navigator as Navigator & { canShare?: (data: unknown) => boolean };
   if (typeof nav.share !== 'function' || typeof nav.canShare !== 'function') return false;
