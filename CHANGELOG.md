@@ -6,6 +6,29 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.1] — 2026-08-02
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **"Watch it done" — a coach demonstrating the movement**, on the exercise description, opening
+  in Instagram. **Four exercises so far**: the barbell squat, the bench press and the deadlift,
+  from Jeremy Ethier and Jeff Nippard.
+  - **Every link is accepted on evidence that is written into the file**: a named coach from a
+    fixed shortlist with a verified account, the post's own caption naming the movement, and
+    engagement in the tens of thousands. All three are recorded next to the link, so the next
+    person re-checks rather than trusts.
+  - **An exercise with no vetted link shows no card.** Coverage runs out fast — the head of the
+    catalog is well served, the tail is not served at all — and saying nothing is the right
+    answer there.
+
+The reason it is four and not eight hundred is in
+[`src/catalog/coaching.ts`](src/catalog/coaching.ts): nobody here can watch a video, so a link
+cannot be vouched for by looking at it. It is accepted on the three checkable things above, and
+Instagram serves a post's caption and like count only about half the time, so each entry costs
+several attempts. This is a start, not a finished list.
+
 ## [1.3.0] — 2026-08-02
 
 Storage schema **v7** — unchanged.

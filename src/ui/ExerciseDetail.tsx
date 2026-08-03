@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  coachingVideos,
   exerciseName,
   getExercise,
   imageUrl,
@@ -8,6 +9,7 @@ import {
   regressionLadder,
   SET_KIND_LABEL,
 } from '@/catalog';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDate, formatSet, relativeTime, titleCase } from '@/lib/format';
 import { exerciseHistory, selectSessions, useStore } from '@/store/useStore';
@@ -33,6 +35,7 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
   /** Which photo is open full screen, if any. */
   const [viewing, setViewing] = useState<number | null>(null);
   const ladder = useMemo(() => regressionLadder(exerciseId), [exerciseId]);
+  const videos = coachingVideos(exerciseId);
   const photos = useMemo(
     () =>
       (exercise?.images ?? []).map((path, i) => ({
@@ -157,6 +160,36 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
           </Card>
         ) : null}
 
+        {/*
+          * Coaches, not the app, explaining the movement. Each carries the name and the caption
+          * it was accepted on - see src/catalog/coaching.ts for why that is the bar.
+          */}
+        {videos.length > 0 ? (
+          <Card testID="coaching">
+            <H2>Watch it done</H2>
+            <Dim style={{ marginTop: theme.space(1) }}>
+              Opens in Instagram. Chosen for the coach and what the post itself says it covers.
+            </Dim>
+            {videos.map((v) => (
+              <Pressable
+                key={v.url}
+                accessibilityRole="link"
+                accessibilityLabel={`${v.caption}, by ${v.coach}. Opens Instagram.`}
+                testID={`video-${v.handle}`}
+                onPress={() => void Linking.openURL(v.url)}
+                style={s.video}
+              >
+                <Ionicons name="logo-instagram" size={20} color={theme.color.accent} />
+                <View style={{ flex: 1 }}>
+                  <Body style={{ fontWeight: '600' }}>{v.coach}</Body>
+                  <Dim numberOfLines={2}>{v.caption}</Dim>
+                </View>
+                <Ionicons name="open-outline" size={16} color={theme.color.textFaint} />
+              </Pressable>
+            ))}
+          </Card>
+        ) : null}
+
         <Card>
           <H2>How to</H2>
           {exercise.instructions.length === 0 ? (
@@ -236,6 +269,14 @@ const s = StyleSheet.create({
     borderBottomColor: theme.color.border,
   },
   histAgo: { color: theme.color.textFaint, fontSize: theme.font.tiny },
+  video: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space(3),
+    paddingVertical: theme.space(2.5),
+    borderBottomWidth: 1,
+    borderBottomColor: theme.color.border,
+  },
   rung: { flexDirection: 'row', gap: theme.space(3), marginTop: theme.space(3) },
   rungNum: {
     color: theme.color.accent,
