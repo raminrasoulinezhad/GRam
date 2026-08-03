@@ -110,7 +110,8 @@ static host works. **Netlify Drop is the quickest:**
 3. Wait ~20 seconds
 
 You get a URL like `https://sweet-lebkuchen-740b6f.netlify.app`. The silly name is
-auto-generated; rename it under **Site configuration → Change site name** if you like.
+auto-generated; rename it under **Site configuration → Change site name** — which is how this
+one became `grambygram.netlify.app`.
 
 That's it — HTTPS is automatic and `_redirects` is picked up without any configuration.
 

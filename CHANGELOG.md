@@ -6,6 +6,23 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.6] — 2026-08-02
+
+Storage schema **v7** — unchanged. Documentation only.
+
+### Changed
+
+- **The app now lives at `https://grambygram.netlify.app`.** The install links in
+  [README.md](README.md) pointed at the old auto-generated Netlify subdomain, which stopped
+  resolving the moment the site was renamed — all three served a 404.
+- Recorded in [docs/QUICKSTART.md](docs/QUICKSTART.md) that renaming the site is what produced
+  the current address, since the old auto-generated name is still the worked example there.
+
+> ⚠️ **The rename is a fresh install for anyone already using the app.** Browser storage is
+> scoped per origin, so workouts logged against the old address do not follow to the new one,
+> and the old home-screen icon now opens a 404. See
+> [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md#hosting-it).
+
 ## [1.3.5] — 2026-08-02
 
 Storage schema **v7** — unchanged. Documentation only.

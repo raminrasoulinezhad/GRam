@@ -6,7 +6,7 @@
 
 **Plan your sets. See which muscles you've actually trained.**
 
-### [▶ Open GRam](https://sweet-lebkuchen-740b6f.netlify.app)
+### [▶ Open GRam](https://grambygram.netlify.app)
 
 Free · No account · Works offline · Your data never leaves your phone
 
@@ -20,7 +20,7 @@ It installs to your home screen like a normal app — own icon, fullscreen, work
 
 ### iPhone
 
-1. Open **[the app link](https://sweet-lebkuchen-740b6f.netlify.app)** in **Safari**
+1. Open **[the app link](https://grambygram.netlify.app)** in **Safari**
    *(must be Safari — Chrome on iOS can't install apps)*
 2. Tap the **Share** button — the square with an arrow, in the bottom bar
 3. Scroll down and tap **Add to Home Screen**
@@ -28,7 +28,7 @@ It installs to your home screen like a normal app — own icon, fullscreen, work
 
 ### Android
 
-1. Open **[the app link](https://sweet-lebkuchen-740b6f.netlify.app)** in **Chrome**
+1. Open **[the app link](https://grambygram.netlify.app)** in **Chrome**
 2. Tap the **⋮** menu
 3. Tap **Install app** (or **Add to Home screen**)
 
