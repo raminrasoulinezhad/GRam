@@ -19,6 +19,7 @@ import {
   maxOffset,
   MIN_SCALE,
   pinchScale,
+  swipeFrom,
   type Point,
   type Size,
 } from './zoom';
@@ -37,6 +38,10 @@ const DOUBLE_TAP_MS = 280;
  * drag to move around, double tap to jump in and back out, and one clearly-labelled button to
  * leave. When an exercise has both a start and a finish frame they can be stepped between
  * without closing, since the pair only means something read together.
+ *
+ * Swipe does both of those without aiming at a button: sideways changes photo, up or down
+ * closes. Only while the image is fitted to the screen - once it is zoomed, a drag is how you
+ * move around it, and the buttons remain for both jobs.
  */
 export function ImageViewer({
   images,
@@ -75,7 +80,18 @@ export function ImageViewer({
    * A pinch fires move events far faster than React re-renders, so reading the starting scale
    * out of state would read a value several frames stale and the image would judder.
    */
-  const start = useRef({ scale: MIN_SCALE, offset: { x: 0, y: 0 }, distance: 0, touch: { x: 0, y: 0 } });
+  const start = useRef({
+    scale: MIN_SCALE,
+    offset: { x: 0, y: 0 },
+    distance: 0,
+    touch: { x: 0, y: 0 },
+    /*
+     * Whether a second finger ever landed during this gesture. A pinch that ends with one
+     * finger lifted first would otherwise look exactly like a long one-finger drag, and
+     * zooming out to fit and then releasing would page to the next photo.
+     */
+    pinched: false,
+  });
   const lastTap = useRef(0);
   const shown = index !== null && index >= 0 && index < images.length;
 
@@ -93,6 +109,14 @@ export function ImageViewer({
       setOffset((o) => clampOffset(o, frame, clamped));
     },
     [frame],
+  );
+
+  const step = useCallback(
+    (delta: number) => {
+      setAt((i) => (i + delta + images.length) % images.length);
+      reset();
+    },
+    [images.length, reset],
   );
 
   const responder = useMemo(
@@ -113,6 +137,7 @@ export function ImageViewer({
                   )
                 : 0,
             touch: { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY },
+            pinched: touches.length >= 2,
           };
 
           const now = Date.now();
@@ -126,6 +151,7 @@ export function ImageViewer({
         onPanResponderMove: (e: GestureResponderEvent) => {
           const touches = e.nativeEvent.touches;
           if (touches.length >= 2) {
+            start.current.pinched = true;
             const now = distance(
               { x: touches[0].pageX, y: touches[0].pageY },
               { x: touches[1].pageX, y: touches[1].pageY },
@@ -149,17 +175,30 @@ export function ImageViewer({
             ),
           );
         },
+        /*
+         * A finished drag that was not a pan and not a pinch: sideways changes photo, up or
+         * down closes.
+         *
+         * Decided on release rather than during the move because the two readings are mutually
+         * exclusive and there is no way to take one back - paging away from a photo the user
+         * was only nudging is worse than a moment's delay. `swipeFrom` returns null while the
+         * image is zoomed, which is what keeps panning working.
+         */
+        onPanResponderRelease: (_e, g) => {
+          if (start.current.pinched) return;
+          const zoomed = scale > MIN_SCALE;
+          const swipe = swipeFrom(g.dx, g.dy, zoomed);
+          if (swipe === 'dismiss') onClose();
+          else if (swipe === 'next') step(1);
+          else if (swipe === 'prev') step(-1);
+        },
       }),
-    [frame, offset, scale, zoomTo],
+    [frame, offset, scale, zoomTo, step, onClose],
   );
 
   if (!shown) return null;
 
   const current = images[Math.min(at, images.length - 1)];
-  const step = (delta: number) => {
-    setAt((i) => (i + delta + images.length) % images.length);
-    reset();
-  };
 
   return (
     <Modal

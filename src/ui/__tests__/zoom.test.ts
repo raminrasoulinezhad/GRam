@@ -6,6 +6,8 @@ import {
   MAX_SCALE,
   MIN_SCALE,
   pinchScale,
+  swipeFrom,
+  SWIPE_MIN_PX,
 } from '@/ui/zoom';
 
 describe('clampScale', () => {
@@ -101,5 +103,49 @@ describe('pinchScale', () => {
   it('does not move on a gesture that began with both fingers together', () => {
     // Dividing by that zero would be an Infinity scale and a blank screen.
     expect(pinchScale(1.5, 0, 300)).toBe(1.5);
+  });
+});
+
+describe('swipeFrom', () => {
+  it('pages forward when the finger goes left, back when it goes right', () => {
+    expect(swipeFrom(-120, 0, false)).toBe('next');
+    expect(swipeFrom(120, 0, false)).toBe('prev');
+  });
+
+  it('closes on a swipe either way vertically', () => {
+    // Both directions mean the same thing. A viewer that only closed downwards would feel
+    // broken the half of the time you flicked the other way.
+    expect(swipeFrom(0, -120, false)).toBe('dismiss');
+    expect(swipeFrom(0, 120, false)).toBe('dismiss');
+  });
+
+  it('ignores a drag too short to have been meant', () => {
+    expect(swipeFrom(SWIPE_MIN_PX - 1, 0, false)).toBeNull();
+    expect(swipeFrom(0, SWIPE_MIN_PX - 1, false)).toBeNull();
+    expect(swipeFrom(0, 0, false)).toBeNull();
+  });
+
+  it('ignores a diagonal drag rather than guessing', () => {
+    // 45 degrees is genuinely ambiguous, and the two readings do very different things.
+    expect(swipeFrom(100, 100, false)).toBeNull();
+    expect(swipeFrom(-100, 95, false)).toBeNull();
+  });
+
+  it('takes a clear winner even when the other axis moved', () => {
+    expect(swipeFrom(-200, 40, false)).toBe('next');
+    expect(swipeFrom(30, 200, false)).toBe('dismiss');
+  });
+
+  it('does nothing at all once the image is zoomed', () => {
+    // The whole point: dragging a zoomed photo moves it. Paging or closing instead would make
+    // a zoomed image impossible to look at.
+    for (const [dx, dy] of [[-300, 0], [300, 0], [0, -300], [0, 300]]) {
+      expect(swipeFrom(dx, dy, true)).toBeNull();
+    }
+  });
+
+  it('needs a real distance, not just a dominant axis', () => {
+    // 10px sideways is dominant over 0px vertical, and is still a tap with a shaky hand.
+    expect(swipeFrom(-10, 0, false)).toBeNull();
   });
 });

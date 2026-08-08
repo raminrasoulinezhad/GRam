@@ -63,3 +63,44 @@ export function pinchScale(startScale: number, startDistance: number, now: numbe
   if (startDistance <= 0) return clampScale(startScale);
   return clampScale((startScale * now) / startDistance);
 }
+
+/**
+ * How far a finger must travel before a drag counts as a swipe rather than a sloppy tap.
+ * Roughly a thumb's width; below this, small hand movements while double-tapping would page.
+ */
+export const SWIPE_MIN_PX = 60;
+
+/**
+ * How much the dominant axis must beat the other by.
+ *
+ * Without it a diagonal drag is a coin toss between paging and dismissing, and those two have
+ * very different consequences - one of them shuts the photo you were reading.
+ */
+export const SWIPE_RATIO = 1.3;
+
+export type Swipe = 'next' | 'prev' | 'dismiss' | null;
+
+/**
+ * What a finished one-finger drag meant.
+ *
+ * `zoomed` decides whether there is a question at all: once the image is bigger than the frame,
+ * dragging is how you move around it, and stealing that to change photos would make a zoomed
+ * image impossible to read. So a swipe is only a swipe at fit-to-screen.
+ *
+ * Sideways pages, either way vertically dismisses. Vertical is deliberately not split into up
+ * and down - both mean "get this off my screen", and a viewer that only closed one way would
+ * just feel broken half the time.
+ */
+export function swipeFrom(dx: number, dy: number, zoomed: boolean): Swipe {
+  if (zoomed) return null;
+
+  const ax = Math.abs(dx);
+  const ay = Math.abs(dy);
+
+  if (ax >= SWIPE_MIN_PX && ax >= ay * SWIPE_RATIO) {
+    // Dragging left pulls the next photo in from the right, the way paging works everywhere.
+    return dx < 0 ? 'next' : 'prev';
+  }
+  if (ay >= SWIPE_MIN_PX && ay >= ax * SWIPE_RATIO) return 'dismiss';
+  return null;
+}
