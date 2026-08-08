@@ -19,8 +19,12 @@ import { BackupCard } from '@/ui/BackupCard';
 import { theme } from '@/ui/theme';
 const SEXES = ['male', 'female', 'unspecified'] as const;
 
-/** The rest lengths worth one tap: short for isolation, ~2 min general, 3 min for heavy work. */
-const REST_PRESETS = [45, 60, 90, 120, 180] as const;
+/**
+ * The three rest lengths worth a dedicated button. Anything else is a job for the stepper
+ * beside them - a row of five presets was a menu to read rather than a shortcut to tap, and
+ * the two long ones were rarely the answer.
+ */
+const REST_PRESETS = [45, 60, 90] as const;
 
 export default function ProfileScreen() {
   const profile = useStore((s) => s.profile);
@@ -155,8 +159,8 @@ export default function ProfileScreen() {
         <Card>
           <H2>Rest timer</H2>
           <Dim style={s.hint}>
-            Starts counting by itself when you record a set. It applies to every exercise, in
-            plans you have already built as well as new ones. Set it to zero for no timer.
+            Starts by itself when you record a set, in plans you have already built as well as
+            new ones. Zero turns it off.
           </Dim>
           <View style={[s.row, s.wrap]}>
             {REST_PRESETS.map((sec) => (
@@ -170,7 +174,6 @@ export default function ProfileScreen() {
             ))}
           </View>
           <View style={{ marginTop: theme.space(3) }}>
-            <Text style={s.label}>OR SET YOUR OWN</Text>
             <NumberField
               testID="rest-seconds"
               value={settings.defaultRestSec}
