@@ -6,6 +6,35 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.18] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **A plan untouched for four weeks gets a mark, and the mark opens a page about that plan.**
+
+  The calendar is only what makes the app look. "You have not changed this in two months" is true
+  of plenty of good programmes, and telling someone to change something that is working is bad
+  advice with a timer attached. So the page does not argue from the date — it reads the sets
+  logged **since the plan was last edited** and reports, per exercise, whether the weight has
+  actually moved:
+
+  - **Still working** — the lift is climbing. Said out loud, first, because on some visits the
+    most useful thing this page can do is tell you to change nothing.
+  - **Not moving** — same weight across every session. This is the one worth acting on, and it
+    is where other exercises for the same muscle are offered. They open the how-to rather than
+    editing your plan; swapping in a movement sight unseen is how people end up doing an
+    exercise they cannot do.
+  - **Going backwards** — deliberately *not* offered alternatives. A falling lift is usually a
+    recovery problem, and a new movement would hide the signal rather than answer it.
+  - **Not enough recorded** — fewer than three sessions. Too little to draw a line through,
+    which is not the same as no progress and is never reported as such.
+
+  A kilo of slack either way keeps plate noise from being read as a trend, and the mark uses the
+  amber "worth a look" colour rather than the red used for the backup warning — nothing is at
+  risk here, and spending the same alarm on both teaches people to ignore the serious one.
+
 ## [1.3.17] — 2026-08-08
 
 Storage schema **v7** — unchanged.

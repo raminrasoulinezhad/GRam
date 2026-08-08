@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { exerciseName } from '@/catalog';
+import { isPlanStale, weeksSince } from '@/analytics/planReview';
 import { relativeTime } from '@/lib/format';
 import { WEEKDAYS, WEEKDAY_LABEL, WEEKDAY_SHORT, type Weekday } from '@/store/types';
 import { useStore } from '@/store/useStore';
@@ -81,6 +82,34 @@ export default function PlansScreen() {
                 </Body>
               ) : null}
             </Pressable>
+
+            {/*
+              * A plan left alone for a month gets a mark, and the mark opens a page about that
+              * plan rather than doing anything to it.
+              *
+              * Not the warning triangle and not the danger colour - those belong to the backup
+              * warning, where something really is at risk. Nothing is wrong with an old plan;
+              * you are only leaving progress on the table. Spending the same alarm on both
+              * teaches people to ignore the serious one.
+              *
+              * A sibling of the card's Pressable rather than a child, because a button inside a
+              * button is invalid HTML under react-native-web - see nestedControls.test.tsx.
+              */}
+            {isPlanStale(plan, Date.now()) ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push(`/replan/${plan.id}`)}
+                testID={`replan-${plan.id}`}
+                style={s.staleRow}
+              >
+                <Ionicons name="sparkles-outline" size={16} color={theme.color.warn} />
+                <Text style={s.staleLabel}>
+                  Unchanged for {weeksSince(plan.updatedAt, Date.now())} weeks — see what to change
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color={theme.color.warn} />
+              </Pressable>
+            ) : null}
+
             {/*
               * One button, because there is only one thing you come to this screen to do.
               *
@@ -194,6 +223,18 @@ const s = StyleSheet.create({
   resumeName: { color: theme.color.text, fontSize: theme.font.h2, fontWeight: '700' },
   planHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.space(2) },
   planName: { color: theme.color.text, fontSize: theme.font.h2, fontWeight: '700' },
+  staleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space(2),
+    marginTop: theme.space(3),
+    paddingHorizontal: theme.space(2),
+    paddingVertical: theme.space(2),
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: theme.color.warn,
+  },
+  staleLabel: { flex: 1, color: theme.color.warn, fontSize: theme.font.tiny, fontWeight: '700' },
   preview: { color: theme.color.textDim, fontSize: theme.font.small, marginTop: theme.space(2) },
   planActions: { flexDirection: 'row', gap: theme.space(2), marginTop: theme.space(3) },
 });

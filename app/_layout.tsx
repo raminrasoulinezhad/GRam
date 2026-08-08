@@ -46,6 +46,7 @@ export default function RootLayout() {
             <Stack.Screen name="exercise/[id]" options={{ title: 'Exercise' }} />
             <Stack.Screen name="picker" options={{ presentation: 'modal', title: 'Add exercise' }} />
             <Stack.Screen name="history/[id]" options={{ title: 'Workout' }} />
+            <Stack.Screen name="replan/[id]" options={{ title: 'Review plan' }} />
             </Stack>
               <MilestoneCelebration />
             </ExerciseSheetProvider>
