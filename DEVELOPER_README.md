@@ -95,10 +95,10 @@ so the deploy is reproducible and reviewable rather than living in dashboard set
 
 ### First-time setup
 
-**1. Push to GitHub** (already done — [raminrasoulinezhad/fitram](https://github.com/raminrasoulinezhad/fitram)):
+**1. Push to GitHub** (already done — [raminrasoulinezhad/GRam](https://github.com/raminrasoulinezhad/GRam)):
 
 ```bash
-git remote add origin https://github.com/<you>/fitram.git
+git remote add origin https://github.com/<you>/GRam.git
 git push -u origin main
 ```
 

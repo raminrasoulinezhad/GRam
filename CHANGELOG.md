@@ -6,6 +6,21 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.8] — 2026-08-03
+
+Storage schema **v7** — unchanged. Documentation only.
+
+### Changed
+
+- **The GitHub repository is now `raminrasoulinezhad/GRam`.** The remote and the link in
+  [DEVELOPER_README.md](DEVELOPER_README.md) follow it.
+
+> GitHub keeps a permanent redirect from the old `raminrasoulinezhad/fitram` path, so old clones
+> and links keep working — **until something is created at the old name**, which drops the
+> redirect for good. Nothing about the rename touches the four identifiers that still say
+> `fitram` on purpose; see
+> [docs/RELEASING.md](docs/RELEASING.md#names-that-kept-fitram-through-the-rebrand).
+
 ## [1.3.7] — 2026-08-03
 
 Storage schema **v7** — unchanged.
