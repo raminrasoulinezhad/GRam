@@ -16,7 +16,6 @@ import { countLoggedSets } from '@/analytics/volume';
 import { Button, Card, Chip, Dim, H2, NumberField, Screen } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
 import { BackupCard } from '@/ui/BackupCard';
-import { MilestonesCard } from '@/ui/Milestones';
 import { theme } from '@/ui/theme';
 const SEXES = ['male', 'female', 'unspecified'] as const;
 
@@ -140,7 +139,6 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Card>
-        <MilestonesCard />
         <BackupCard />
         {/*
           * Goal, experience and available equipment used to be collected here. All three were

@@ -6,6 +6,35 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.11] — 2026-08-03
+
+Storage schema **v7** — unchanged.
+
+### Fixed
+
+- **Search now finds movements the dataset files under a different name.** "side plank" returned
+  everything except the side plank, which is in there as *Side Bridge*; "pec deck" returned
+  *Neck Press*; "bicycle crunch" and "inner thigh" returned nothing at all. Fourteen exercises
+  carry an alias now.
+
+  These are attached per exercise rather than added to the word-level synonym table, and the
+  reason is in [search.ts](src/catalog/search.ts): mapping *plank* to *bridge* globally would
+  make a search for planks return glute bridges. A test pins that it does not.
+
+## [1.3.10] — 2026-08-03
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **Milestones moved from Profile to the top of the History page**, where the rest of the
+  looking-back lives, and shrank to about two-thirds of its old height — smaller badges, tighter
+  rows, and no explanatory line, since it said the same thing every time you read it.
+- **History rows are shorter.** The per-muscle chips are gone from each workout card: they were
+  the tallest thing in a card whose job is to be scanned, and the same breakdown is one tap away
+  on the workout's own page. The exercise list under each card is one line instead of two, and
+  the numbers are set smaller. A workout card is **124px** where it used to run past 200.
+
 ## [1.3.9] — 2026-08-03
 
 Storage schema **v7** — unchanged.

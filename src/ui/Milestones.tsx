@@ -20,7 +20,14 @@ const HINT: Record<MilestoneCategory, string> = {
   calories: 'Estimated from session length and your body weight.',
 };
 
-/** The three ladders, with where you sit on each. Tap one for its full history. */
+/**
+ * The three ladders, with where you sit on each. Tap one for its full history.
+ *
+ * Deliberately compact: it sits at the top of the History page, above the list of workouts, and
+ * every row it takes is a workout you cannot see. The badge, the rank and the progress bar stay
+ * because they answer "how am I doing"; the explanatory line under the heading went, because it
+ * said the same thing every time you looked at it.
+ */
 export function MilestonesCard() {
   const allSessions = useStore(selectSessions);
   const profile = useStore((s) => s.profile);
@@ -34,9 +41,6 @@ export function MilestonesCard() {
   return (
     <Card>
       <H2>Milestones</H2>
-      <Dim style={{ marginTop: theme.space(1) }}>
-        Counted since your very first record. Tap one to see every level.
-      </Dim>
 
       {progress.map((p) => (
         <Pressable
@@ -45,7 +49,7 @@ export function MilestonesCard() {
           testID={`milestone-${p.category}`}
           style={({ pressed }) => [s.row, pressed && { opacity: 0.6 }]}
         >
-          <MilestoneBadge level={p.level} size={54} />
+          <MilestoneBadge level={p.level} size={40} />
 
           <View style={{ flex: 1 }}>
             <Text style={s.category}>{CATEGORY_LABEL[p.category]}</Text>
@@ -211,18 +215,18 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.space(3),
-    paddingVertical: theme.space(3),
+    paddingVertical: theme.space(2),
     borderBottomWidth: 1,
     borderBottomColor: theme.color.border,
   },
   category: { color: theme.color.text, fontSize: theme.font.body, fontWeight: '700' },
   rank: { color: theme.color.accent, fontSize: theme.font.tiny, fontWeight: '700' },
   track: {
-    height: 7,
+    height: 5,
     borderRadius: 4,
     backgroundColor: theme.color.surfaceAlt,
     overflow: 'hidden',
-    marginTop: theme.space(2),
+    marginTop: theme.space(1),
   },
   fill: { height: '100%', borderRadius: 4, backgroundColor: theme.color.accent },
   progressText: { color: theme.color.textDim, fontSize: theme.font.tiny, marginTop: theme.space(1) },

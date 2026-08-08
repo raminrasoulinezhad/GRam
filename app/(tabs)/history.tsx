@@ -4,16 +4,11 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { exerciseName } from '@/catalog';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
-import {
-  countLoggedSets,
-  rankMuscles,
-  sessionTonnage,
-  sessionVolume,
-  volumeInWindow,
-} from '@/analytics/volume';
+import { countLoggedSets, rankMuscles, sessionTonnage, volumeInWindow } from '@/analytics/volume';
 import { formatDate, formatDuration, formatTime, toDisplayWeight } from '@/lib/format';
 import { completedSessions, selectSessions, useStore } from '@/store/useStore';
 import { Card, Chip, Dim, Empty, H2, Screen } from '@/ui/components';
+import { MilestonesCard } from '@/ui/Milestones';
 import { theme } from '@/ui/theme';
 
 export default function HistoryScreen() {
@@ -41,6 +36,9 @@ export default function HistoryScreen() {
           />
         ) : (
           <>
+            {/* Where you are overall, before the workout-by-workout account below it. */}
+            <MilestonesCard />
+
             <Card>
               <H2>Last 7 days</H2>
               <View style={s.statRow}>
@@ -58,7 +56,6 @@ export default function HistoryScreen() {
             {sessions.map((session) => {
               const sets = countLoggedSets(session);
               const tonnage = sessionTonnage(session);
-              const top = rankMuscles(sessionVolume(session)).slice(0, 5);
               const durationSec =
                 session.endedAt !== null
                   ? Math.round((session.endedAt - session.startedAt) / 1000)
@@ -86,12 +83,12 @@ export default function HistoryScreen() {
                         />
                       ) : null}
                     </View>
-                    <View style={s.chips}>
-                      {top.map(({ muscle, value }) => (
-                        <Chip key={muscle} label={`${MUSCLE_LABEL[muscle]} ${value}`} tone="primary" />
-                      ))}
-                    </View>
-                    <Dim style={{ marginTop: theme.space(2) }} numberOfLines={2}>
+                    {/*
+                      * No per-muscle breakdown here. It is on the session's own page, one tap
+                      * away, and it was the tallest thing in a card whose job is to let you
+                      * scan a list of workouts.
+                      */}
+                    <Dim style={{ marginTop: theme.space(1) }} numberOfLines={1}>
                       {session.entries.map((e) => exerciseName(e.exerciseId)).join(' · ')}
                     </Dim>
                   </Card>
@@ -115,11 +112,13 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 const s = StyleSheet.create({
-  content: { padding: theme.space(4), gap: theme.space(3), paddingBottom: theme.space(12) },
+  // Tighter than the other screens on purpose: this one is a list you scan, so fitting more
+  // workouts on a screen is worth more than the breathing room.
+  content: { padding: theme.space(4), gap: theme.space(2), paddingBottom: theme.space(12) },
   header: { flexDirection: 'row', alignItems: 'center', gap: theme.space(2) },
-  name: { color: theme.color.text, fontSize: theme.font.h2, fontWeight: '700' },
-  statRow: { flexDirection: 'row', gap: theme.space(6), marginTop: theme.space(3) },
-  statValue: { color: theme.color.text, fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
+  name: { color: theme.color.text, fontSize: theme.font.body, fontWeight: '700' },
+  statRow: { flexDirection: 'row', gap: theme.space(6), marginTop: theme.space(2) },
+  statValue: { color: theme.color.text, fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
   statLabel: { color: theme.color.textFaint, fontSize: theme.font.tiny, fontWeight: '600' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space(1), marginTop: theme.space(3) },
 });
