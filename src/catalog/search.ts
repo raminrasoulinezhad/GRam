@@ -165,6 +165,47 @@ type Doc = {
 };
 
 /**
+ * Names the dataset does not use for movements people look up by a different one.
+ *
+ * This is per exercise on purpose. The word-level SYNONYMS table below cannot express these:
+ * mapping "plank" to "bridge" would make a search for planks return glute bridges, and mapping
+ * "bicycle" to "air" is nonsense outside this one entry. The alias is attached to the exercise
+ * it actually describes.
+ *
+ * Only for a genuinely different name for the same movement - not for near-misses. If a search
+ * returns the wrong exercise because of ranking rather than vocabulary, that is a scoring
+ * problem and belongs in SCORE, not here.
+ */
+const ALSO_KNOWN_AS: Record<string, string[]> = {
+  // The dataset's word is "bridge"; everyone else's is "plank".
+  Side_Bridge: ['side plank'],
+  // Not the fan bike - this one is lying on the floor. The cardio machine is FitRam_Fan_Bike,
+  // and confusing the two is easy enough that the alias is worth having.
+  Air_Bike: ['bicycle crunch', 'bicycle kicks'],
+  // "Butterfly" is the dataset's name for the machine everyone calls the pec deck.
+  Butterfly: ['pec deck', 'chest fly machine'],
+  Thigh_Adductor: ['inner thigh', 'adductor machine'],
+  Thigh_Abductor: ['outer thigh', 'abductor machine'],
+  Hyperextensions_Back_Extensions: ['hyperextension', 'roman chair'],
+  'Lying_T-Bar_Row': ['t bar row'],
+  Cable_Crossover: ['cable fly', 'cable flye'],
+  Standing_Military_Press: ['overhead press', 'ohp', 'strict press'],
+  Lying_Triceps_Press: ['skull crusher', 'skullcrusher'],
+  'Chin-Up': ['chinup'],
+  Pullups: ['pull up', 'pullup'],
+  Barbell_Full_Squat: ['back squat'],
+  Bent_Over_Barbell_Row: ['barbell row', 'bent over row'],
+};
+
+/** An exercise's searchable words: its own name, plus any alias, without repeats. */
+function withAliases(id: string, name: string[]): string[] {
+  const extra = ALSO_KNOWN_AS[id];
+  if (extra === undefined) return name;
+  // Deduped so a word appearing in both the name and an alias is not scored twice.
+  return [...new Set([...name, ...extra.flatMap(tokenize)])];
+}
+
+/**
  * Built once at module load, with every stem precomputed.
  *
  * Everything in here exists so that the per-keystroke pass does no string allocation at all:
@@ -172,7 +213,7 @@ type Doc = {
  * them, and nothing inside the loop over 879 exercises calls stem() or squash().
  */
 const DOCS: Doc[] = EXERCISES.map((e) => {
-  const name = tokenize(e.name);
+  const name = withAliases(e.id, tokenize(e.name));
   const primary = e.primaryMuscles.flatMap((m) => [m, ...tokenize(m)]);
   const secondary = e.secondaryMuscles.flatMap((m) => [m, ...tokenize(m)]);
   return {

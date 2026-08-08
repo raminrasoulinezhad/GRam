@@ -221,3 +221,31 @@ describe('performance', () => {
     expect(Date.now() - start).toBeLessThan(1200); // 20 passes; ~60ms observed
   });
 });
+
+describe('names the dataset does not use', () => {
+  const top = (q: string) => searchExercises({ query: q })[0]?.name;
+
+  it.each([
+    ['side plank', 'Side Bridge'],
+    ['pec deck', 'Butterfly'],
+    ['bicycle crunch', 'Air Bike'],
+    ['inner thigh', 'Thigh Adductor'],
+    ['outer thigh', 'Thigh Abductor'],
+    ['back squat', 'Barbell Full Squat'],
+  ])('%s finds %s', (query, name) => {
+    expect(top(query)).toBe(name);
+  });
+
+  it('does not let an alias leak onto everything sharing a word', () => {
+    // The reason aliases are per exercise rather than word-level synonyms: "side plank" has to
+    // reach the Side Bridge without "plank" starting to mean "bridge" everywhere.
+    expect(top('plank')).toBe('Plank');
+    expect(top('glute bridge')).toContain('Glute Bridge');
+  });
+
+  it('keeps the two air bikes apart', () => {
+    // One is a floor ab exercise, the other is the fan bike. Same words, different rooms.
+    expect(top('bicycle crunch')).toBe('Air Bike');
+    expect(top('fan bike')).toBe('Fan Bike (Air Bike)');
+  });
+});
