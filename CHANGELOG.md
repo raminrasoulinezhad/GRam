@@ -6,6 +6,36 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.9] — 2026-08-03
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **Seventeen movements the upstream dataset never had**, bringing the catalog to **896**. The
+  gap was a consistent one: free-exercise-db is a bodybuilding-era catalogue, exhaustive on
+  barbell and machine variations — five sumo deadlifts, eight kinds of dip — and missing almost
+  everything bodyweight, isometric or unilateral that is programmed today.
+  - Hangs and pulling progressions: **Dead Hang**, **Negative Pull-Up**
+  - Unilateral legs: **Bulgarian Split Squat**, **Reverse Lunge**, **Single-Leg Romanian
+    Deadlift**, **Nordic Hamstring Curl**
+  - Isometrics and core: **Hollow Body Hold**, **L-Sit**, **Wall Sit**, **Bird Dog**,
+    **Copenhagen Plank**, **Ab Wheel Rollout**
+  - Everything else: **Pike Push-Up**, **Pendlay Row**, **Tibialis Raise**, **Burpee**,
+    **Rowing Machine (Erg)**
+
+  Each carries written instructions and a deliberately conservative muscle attribution, since
+  those feed the heatmap and the fatigue model. Two judgment calls are recorded in
+  [scripts/build-catalog.mjs](scripts/build-catalog.mjs): the dead hang is filed under forearms
+  rather than lats, because what ends the set is the grip; and the tibialis raise is filed under
+  calves, which is anatomically backwards but lights the right part of the body map, the dataset
+  having no shin muscle.
+
+### Fixed
+
+- The exercise-list test counted the catalog instead of hard-coding its size, so growing the
+  catalog no longer fails a test that has nothing to do with the change.
+
 ## [1.3.8] — 2026-08-03
 
 Storage schema **v7** — unchanged. Documentation only.

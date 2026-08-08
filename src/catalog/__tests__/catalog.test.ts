@@ -17,7 +17,7 @@ describe('bundled catalog integrity', () => {
   it('ships the full dataset plus our own additions', () => {
     const supplement = EXERCISES.filter((e) => isSupplement(e.id));
     expect(EXERCISES.length - supplement.length).toBe(873);
-    expect(supplement.length).toBe(6);
+    expect(supplement.length).toBe(23);
   });
 
   it('has unique ids and names', () => {

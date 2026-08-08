@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { RECOMMENDED } from '@/catalog';
+import { EXERCISES, RECOMMENDED } from '@/catalog';
 import { ExerciseList } from '@/ui/ExerciseList';
 
 jest.mock('expo-router', () => ({
@@ -17,7 +17,11 @@ const search = async (text: string) => {
 describe('the exercise list', () => {
   it('says how many exercises there are, and that a muscle works too', async () => {
     await renderList();
-    expect(screen.getByPlaceholderText('Search 879 exercises, or a muscle')).toBeTruthy();
+    // Counted rather than written down: the catalog grows when scripts/build-catalog.mjs is
+    // rerun, and a hard-coded number here only ever fails long after the change that moved it.
+    expect(
+      screen.getByPlaceholderText(`Search ${EXERCISES.length} exercises, or a muscle`),
+    ).toBeTruthy();
   });
 
   it('marks the recommended picks when a muscle is searched', async () => {
