@@ -152,13 +152,14 @@ export default function ProfileScreen() {
           * Rest applies to every exercise, so it belongs here rather than in each plan. The
           * store retimes existing plans to match - see setDefaultRest.
           */}
+        {/*
+          * One row: the three presets and the stepper sit together, because they are one
+          * choice made two ways. Stacked, with a paragraph above them, this was the tallest
+          * card on the page for a setting most people touch once.
+          */}
         <Card>
           <H2>Rest timer</H2>
-          <Dim style={s.hint}>
-            Starts by itself when you record a set, in plans you have already built as well as
-            new ones. Zero turns it off.
-          </Dim>
-          <View style={[s.row, s.wrap]}>
+          <View style={[s.row, s.wrap, s.restRow]}>
             {REST_PRESETS.map((sec) => (
               <Chip
                 key={sec}
@@ -168,17 +169,16 @@ export default function ProfileScreen() {
                 testID={`rest-${sec}`}
               />
             ))}
-          </View>
-          <View style={{ marginTop: theme.space(3) }}>
             <NumberField
               testID="rest-seconds"
               value={settings.defaultRestSec}
               suffix="sec"
-              width={132}
+              width={116}
               step={15}
               onChange={(n) => setDefaultRest(n ?? 0)}
             />
           </View>
+          <Dim style={s.hint}>Starts when you record a set. Zero turns it off.</Dim>
         </Card>
         <Card>
           <H2>Units</H2>
@@ -277,6 +277,8 @@ const s = StyleSheet.create({
     fontSize: theme.font.body,
   },
   row: { flexDirection: 'row', gap: theme.space(1.5), alignItems: 'center' },
+  // Presets and stepper share a line; a little more gap so the field is not crowded by chips.
+  restRow: { gap: theme.space(2) },
   wrap: { flexWrap: 'wrap', marginTop: theme.space(2) },
   measureRow: { flexDirection: 'row', gap: theme.space(4), marginTop: theme.space(3) },
   statRow: { flexDirection: 'row', gap: theme.space(5), marginTop: theme.space(3) },

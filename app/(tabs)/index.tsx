@@ -7,7 +7,6 @@ import { relativeTime } from '@/lib/format';
 import { WEEKDAYS, WEEKDAY_LABEL, WEEKDAY_SHORT, type Weekday } from '@/store/types';
 import { useStore } from '@/store/useStore';
 import { Body, Button, Card, Chip, Dim, Empty, Screen } from '@/ui/components';
-import { useConfirm } from '@/ui/confirm';
 import { WeekReview } from '@/ui/WeekReview';
 import { theme } from '@/ui/theme';
 
@@ -16,11 +15,8 @@ export default function PlansScreen() {
   const activeSessionId = useStore((s) => s.activeSessionId);
   const sessions = useStore((s) => s.sessions);
   const createPlan = useStore((s) => s.createPlan);
-  const deletePlan = useStore((s) => s.deletePlan);
-  const duplicatePlan = useStore((s) => s.duplicatePlan);
   const startSession = useStore((s) => s.startSession);
   const startEmptySession = useStore((s) => s.startEmptySession);
-  const confirm = useConfirm();
 
   const activeSession = sessions.find((x) => x.id === activeSessionId);
   const used = new Set(plans.map((p) => p.day));
@@ -40,16 +36,6 @@ export default function PlansScreen() {
   function handleStart(planId: string) {
     const id = startSession(planId);
     if (id) router.push(`/session/${id}`);
-  }
-
-  async function handleDelete(planId: string, name: string) {
-    const ok = await confirm({
-      title: 'Delete plan?',
-      message: `"${name}" will be removed. Logged workouts are kept.`,
-      confirmLabel: 'Delete',
-      destructive: true,
-    });
-    if (ok) deletePlan(planId);
   }
 
   return (
@@ -95,19 +81,22 @@ export default function PlansScreen() {
                 </Body>
               ) : null}
             </Pressable>
+            {/*
+              * One button, because there is only one thing you come to this screen to do.
+              *
+              * Edit went because tapping the card already opens the editor, and a card that is
+              * a link does not need a button saying so. Copy went because it made an unnamed
+              * duplicate on a day that already had a plan, which is a mess to undo and was
+              * almost never what anyone meant. Delete went to the plan's own page, where you
+              * have the thing in front of you and can see what you are throwing away - next to
+              * a red button on a list is the wrong place to make that decision.
+              */}
             <View style={s.planActions}>
               <Button
                 label="Start"
                 onPress={() => handleStart(plan.id)}
                 style={{ flex: 1 }}
                 testID={`start-${plan.id}`}
-              />
-              <Button label="Edit" variant="secondary" onPress={() => router.push(`/plan/${plan.id}`)} />
-              <Button label="Copy" variant="secondary" onPress={() => duplicatePlan(plan.id)} />
-              <Button
-                label="Delete"
-                variant="danger"
-                onPress={() => void handleDelete(plan.id, WEEKDAY_LABEL[plan.day])}
               />
             </View>
           </Card>

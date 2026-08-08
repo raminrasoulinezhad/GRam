@@ -24,6 +24,7 @@ export default function PlanEditorScreen() {
   const removePlanTemplate = useStore((s) => s.removePlanTemplate);
   const updatePlanTemplate = useStore((s) => s.updatePlanTemplate);
   const startSession = useStore((s) => s.startSession);
+  const deletePlan = useStore((s) => s.deletePlan);
   const confirm = useConfirm();
 
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -41,6 +42,23 @@ export default function PlanEditorScreen() {
     if (!plan) return;
     const sessionId = startSession(plan.id);
     if (sessionId) router.replace(`/session/${sessionId}`);
+  }
+
+  async function handleDelete() {
+    if (!plan) return;
+    const ok = await confirm({
+      title: `Delete ${WEEKDAY_LABEL[plan.day]}?`,
+      message:
+        plan.items.length > 0
+          ? `${plan.items.length} exercise${plan.items.length === 1 ? '' : 's'} will be removed from your week. Workouts you have already recorded from this plan are kept.`
+          : 'This day will be removed from your week.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!ok) return;
+    deletePlan(plan.id);
+    // Back to the week, because the page this is on no longer describes anything.
+    router.replace('/');
   }
 
   const totalSets = plan.items.reduce((n, i) => n + i.templates.length, 0);
@@ -166,6 +184,24 @@ export default function PlanEditorScreen() {
           onPress={() => router.push(`/picker?planId=${plan.id}`)}
           testID="add-exercise"
         />
+
+        {/*
+          * Deleting the day lives here, at the bottom of the thing it deletes, rather than on
+          * the week screen where it used to sit beside Start. Here you have scrolled past every
+          * exercise in it, so you can see what you are throwing away - and the button is far
+          * from the one you came to press.
+          */}
+        <View style={s.danger}>
+          <Button
+            label="Delete this plan"
+            variant="danger"
+            onPress={() => void handleDelete()}
+            testID="delete-plan"
+          />
+          <Dim style={s.dangerHint}>
+            Workouts you have already recorded from it are kept.
+          </Dim>
+        </View>
       </ScrollView>
 
       <View style={s.footer}>
@@ -177,6 +213,15 @@ export default function PlanEditorScreen() {
 
 const s = StyleSheet.create({
   content: { padding: theme.space(4), gap: theme.space(3), paddingBottom: theme.space(6) },
+  // Set apart from the editing above it, so it is never the button you meant to hit.
+  danger: {
+    marginTop: theme.space(6),
+    paddingTop: theme.space(4),
+    gap: theme.space(2),
+    borderTopWidth: 1,
+    borderTopColor: theme.color.border,
+  },
+  dangerHint: { textAlign: 'center' },
   label: {
     color: theme.color.textFaint,
     fontSize: theme.font.tiny,

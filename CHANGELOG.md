@@ -6,6 +6,25 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.17] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **A plan card on My week has one button now: Start.** Tapping the card itself opens the
+  editor, as it always did, so a card that is already a link did not need a button saying so.
+- **Deleting a plan moved to the bottom of the plan's own page**, below "+ Add exercise", behind
+  a confirmation that names the day and counts what goes with it. You make that decision having
+  scrolled past everything in the plan, rather than from a red button on a list.
+- **The rest-timer card is one row** — the three presets and the stepper together, with a single
+  short line under them. It was the tallest card on Profile for a setting most people set once.
+
+### Removed
+
+- **Copy, from the plan cards.** It made an unnamed duplicate on a day that already had a plan,
+  which is awkward to undo and was almost never what anyone meant.
+
 ## [1.3.16] — 2026-08-08
 
 Storage schema **v7** — unchanged.
