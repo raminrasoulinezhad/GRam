@@ -62,8 +62,30 @@ function addContribution(totals: MuscleTotals, exerciseId: string, weight: numbe
 }
 
 /**
- * Effective sets per muscle over a trailing window - "what did I actually hit this week".
- * The window is half-open: a set exactly `windowDays` old is excluded.
+ * Local midnight at the start of the day `daysBack` before `now`.
+ *
+ * Built from calendar components rather than by subtracting milliseconds, so it lands on real
+ * midnight through daylight saving. Subtracting 6 × 24h across a spring-forward boundary gives
+ * 1am, which would silently drop anything logged in that first hour.
+ */
+function startOfDayBefore(now: number, daysBack: number): number {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - daysBack);
+  return d.getTime();
+}
+
+/**
+ * Effective sets per muscle over the last `windowDays` **calendar days**, today included.
+ *
+ * Aligned to midnight rather than measured in hours, and the difference is the whole point. A
+ * rolling 168-hour window asked on Friday evening still reaches back past last Friday morning,
+ * so a lifter who trains every Friday sees that day counted twice and a week that looks heavier
+ * than it was. Counting calendar days means Friday shows Saturday through Friday: seven days,
+ * each weekday exactly once.
+ *
+ * Half-open at the top: sets stamped later than `now` are ignored, so a clock that has jumped
+ * forward cannot pull tomorrow's training into today's total.
  */
 export function volumeInWindow(
   sessions: Session[],
@@ -71,9 +93,9 @@ export function volumeInWindow(
   windowDays = 7,
 ): MuscleTotals {
   const totals = emptyTotals();
-  const since = now - windowDays * DAY_MS;
+  const since = startOfDayBefore(now, windowDays - 1);
   for (const set of loggedSets(sessions)) {
-    if (set.loggedAt <= since || set.loggedAt > now) continue;
+    if (set.loggedAt < since || set.loggedAt > now) continue;
     addContribution(totals, set.exerciseId, 1);
   }
   return totals;

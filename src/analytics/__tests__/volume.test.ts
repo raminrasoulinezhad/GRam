@@ -90,15 +90,61 @@ describe('volumeInWindow - effective sets', () => {
   });
 
   it('excludes sets older than the window', () => {
-    const old = mkSession([{ exerciseId: BENCH, sets: [mkSet(NOW - 8 * DAY_MS)] }]);
+    const old = mkSession([{ exerciseId: BENCH, sets: [mkSet(NOW - 9 * DAY_MS)] }]);
     expect(volumeInWindow([old], NOW).chest).toBe(0);
   });
 
-  it('treats the window as half-open at the far edge', () => {
-    const exactly = mkSession([{ exerciseId: BENCH, sets: [mkSet(NOW - 7 * DAY_MS)] }]);
-    const justInside = mkSession([{ exerciseId: BENCH, sets: [mkSet(NOW - 7 * DAY_MS + 1)] }]);
-    expect(volumeInWindow([exactly], NOW).chest).toBe(0);
-    expect(volumeInWindow([justInside], NOW).chest).toBeCloseTo(1);
+  /*
+   * The window is counted in calendar days, not in hours. These build explicit local times so
+   * the assertions do not depend on what time of day NOW happens to be.
+   */
+  describe('counted in calendar days, today included', () => {
+    /** Friday 20:00 local - late enough in the day that a rolling window reaches back a week. */
+    const friday8pm = new Date(2026, 7, 7, 20, 0, 0).getTime();
+    const at = (daysBack: number, hour: number) => {
+      const d = new Date(friday8pm);
+      d.setDate(d.getDate() - daysBack);
+      d.setHours(hour, 0, 0, 0);
+      return d.getTime();
+    };
+    const trained = (whenMs: number) =>
+      volumeInWindow([mkSession([{ exerciseId: BENCH, sets: [mkSet(whenMs)] }])], friday8pm).chest;
+
+    it('never counts the same weekday twice', () => {
+      // The bug this replaced: asked on Friday evening, a 168-hour window still reached back
+      // past last Friday morning, so someone who trains every Friday saw that day counted
+      // twice and a week that looked heavier than it was.
+      expect(trained(at(7, 9))).toBe(0);
+      expect(trained(at(7, 23))).toBe(0);
+    });
+
+    it('reaches back to midnight six days ago, not 144 hours', () => {
+      // Saturday, whatever the hour: a session at 00:30 last Saturday is in, and a rolling
+      // window anchored at 20:00 would have missed it.
+      expect(trained(at(6, 0))).toBeCloseTo(1);
+      expect(trained(at(6, 23))).toBeCloseTo(1);
+    });
+
+    it('includes everything from today, however early', () => {
+      expect(trained(at(0, 0))).toBeCloseTo(1);
+      expect(trained(at(0, 19))).toBeCloseTo(1);
+    });
+
+    it('stops at the midnight before the window opens', () => {
+      // 23:59 on the seventh day back is one minute outside.
+      const justOutside = new Date(friday8pm);
+      justOutside.setDate(justOutside.getDate() - 7);
+      justOutside.setHours(23, 59, 59, 999);
+      expect(trained(justOutside.getTime())).toBe(0);
+    });
+
+    it('covers seven whole days end to end', () => {
+      const days = [0, 1, 2, 3, 4, 5, 6].map((d) => at(d, 12));
+      const sessions = days.map((when) =>
+        mkSession([{ exerciseId: BENCH, sets: [mkSet(when)] }]),
+      );
+      expect(volumeInWindow(sessions, friday8pm).chest).toBeCloseTo(7);
+    });
   });
 
   it('ignores sets stamped in the future', () => {
@@ -107,9 +153,14 @@ describe('volumeInWindow - effective sets', () => {
   });
 
   it('honours a custom window length', () => {
-    const session = mkSession([{ exerciseId: BENCH, sets: [mkSet(NOW - 2 * DAY_MS)] }]);
-    expect(volumeInWindow([session], NOW, 1).chest).toBe(0);
-    expect(volumeInWindow([session], NOW, 3).chest).toBeCloseTo(1);
+    const noon = new Date(2026, 7, 7, 12, 0, 0).getTime();
+    const twoDaysAgo = new Date(noon);
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const session = mkSession([{ exerciseId: BENCH, sets: [mkSet(twoDaysAgo.getTime())] }]);
+
+    // windowDays counts days inclusive of today, so 1 is today only and 3 reaches back two days.
+    expect(volumeInWindow([session], noon, 1).chest).toBe(0);
+    expect(volumeInWindow([session], noon, 3).chest).toBeCloseTo(1);
   });
 
   it('silently skips sets referencing an unknown exercise', () => {

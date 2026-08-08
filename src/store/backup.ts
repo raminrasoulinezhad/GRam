@@ -40,9 +40,19 @@ export function buildBackup(state: PersistedState, appVersion: string, now: numb
   };
 }
 
-/** Pretty-printed: a backup is something a person may open, read and even hand-edit. */
+/**
+ * Compact, not pretty-printed.
+ *
+ * This used to be indented, on the reasoning that a backup is something a person may open and
+ * read. That reasoning stopped holding once the files got big: a decade of training at three
+ * workouts a week is about 33,000 sets, and indentation alone accounts for **57%** of the file
+ * - 7.4 MB pretty against 3.2 MB compact, for byte-identical data. Nobody hand-edits seven
+ * megabytes, and any editor or `jq .` will format it on demand for the rare person who looks.
+ *
+ * The file is still plain JSON with the same shape; only the whitespace is gone.
+ */
 export function serialiseBackup(backup: BackupFile): string {
-  return JSON.stringify(backup, null, 2);
+  return JSON.stringify(backup);
 }
 
 /**

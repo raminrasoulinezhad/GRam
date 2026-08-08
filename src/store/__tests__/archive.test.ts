@@ -279,7 +279,11 @@ describe('reading a folder that is not in perfect shape', () => {
 
   it('warns but keeps the data when a file fails its checksum', () => {
     const files = asMap(good);
-    const tampered = files.get('sessions/2026.json')!.replace('"reps": 8', '"reps": 9');
+    // Matched with a regex rather than a literal so the tamper does not depend on whether the
+    // file is indented - it is not any more, and a no-op edit would silently pass this test.
+    const original = files.get('sessions/2026.json')!;
+    const tampered = original.replace(/"reps":\s*8/, '"reps":9');
+    expect(tampered).not.toBe(original);
     files.set('sessions/2026.json', tampered);
     const result = readArchive(files);
     expect(result.ok).toBe(true);

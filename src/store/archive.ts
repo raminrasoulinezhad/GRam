@@ -90,8 +90,14 @@ export function checksum(text: string): string {
   return h.toString(16).padStart(8, '0');
 }
 
+/*
+ * Data shards are written compact. Indentation is 57% of a JSON file shaped like this, and
+ * these are the files that grow without limit - one per year of training, rewritten whenever
+ * anything changes. The manifest keeps its indentation: it is small, it does not grow with
+ * history, and it is the one file in the folder a person actually opens to see what is there.
+ */
 function file(path: string, kind: ArchiveEntry['kind'], value: unknown, count: number, year?: number) {
-  const text = `${JSON.stringify(value, null, 2)}\n`;
+  const text = `${JSON.stringify(value)}\n`;
   const entry: ArchiveEntry = {
     path,
     kind,

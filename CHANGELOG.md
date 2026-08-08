@@ -6,6 +6,27 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.2] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Fixed
+
+- **The "last 7 days" figures counted one weekday twice.** The window was 168 rolling hours, so
+  asked on a Friday evening it still reached back past *last* Friday morning — and anyone who
+  trains on a fixed weekly schedule saw that day counted twice and a week that looked heavier
+  than it was. It is now seven calendar days ending today: on Friday, Saturday through Friday,
+  each weekday exactly once. Built from calendar components rather than by subtracting hours, so
+  it lands on real midnight through daylight saving. Affects the Body page and History.
+
+### Changed
+
+- **Backups are about 57% smaller** — 7.4 MB down to 3.2 MB for a decade of training at three
+  workouts a week — with byte-identical data. The files were pretty-printed on the reasoning
+  that a person might open and read one; at seven megabytes that stopped being true, and any
+  editor or `jq .` formats it on demand. The folder archive's yearly shards are compact too; its
+  manifest stays indented, being small and the one file anyone actually opens.
+
 ## [1.4.1] — 2026-08-08
 
 Storage schema **v7** — unchanged.
