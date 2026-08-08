@@ -37,10 +37,10 @@ import { MUSCLES, type Muscle } from './generated';
  * To redo it: repeat the research (sources and criteria in docs/STUDY.md §6), change the picks
  * where the evidence has moved, update the comment saying why, and set both constants below.
  */
-export const RECOMMENDED_REVIEWED_FOR = '1.3';
+export const RECOMMENDED_REVIEWED_FOR = '1.4';
 
 /** Calendar date of the last review, so staleness is visible even between version bumps. */
-export const RECOMMENDED_REVIEWED_ON = '2026-08-02';
+export const RECOMMENDED_REVIEWED_ON = '2026-08-08';
 
 /** Exactly two exercise ids per muscle, best first. */
 export const RECOMMENDED: Record<Muscle, readonly [string, string]> = {
@@ -88,21 +88,43 @@ export const RECOMMENDED: Record<Muscle, readonly [string, string]> = {
   // Back extension is the direct one; the deadlift is the loaded one.
   'lower back': ['Hyperextensions_Back_Extensions', 'Barbell_Deadlift'],
 
-  // The cable crunch is the only common ab exercise you can progressively load, which is why
-  // it outranks the bicycle despite the bicycle topping the ACE activation study.
-  abdominals: ['Cable_Crunch', 'Air_Bike'],
+  /*
+   * Changed at the 1.4 review, because the catalog gained the movement that should have been
+   * here. The cable crunch keeps first place - it is the ab exercise you can most easily add
+   * weight to. Second goes to the ab wheel rollout, taking it from the bicycle crunch: the
+   * rollout loads the abs in the lengthened, overhead position and scales by how far you roll,
+   * which is exactly the pair of criteria this file weights above activation. The bicycle
+   * topped the ACE study, but that measures one set rather than months of growth, and it has
+   * nowhere to go once you can do it.
+   */
+  abdominals: ['Cable_Crunch', 'FitRam_Ab_Wheel_Rollout'],
 
   // Hip thrust puts peak tension at full hip extension; the RDL is Nippard's pick for the lower
   // glute and loads the stretched position.
   glutes: ['Barbell_Hip_Thrust', 'Romanian_Deadlift'],
 
+  /*
+   * Reviewed at 1.4 and left alone, but the reasoning was never written down. The squat loads
+   * the vastii heavily and carries the whole leg; the leg extension is the only common movement
+   * that trains the rectus femoris, which crosses the hip and is therefore slackened by every
+   * squat pattern. The Bulgarian split squat, new to the catalog this release, was considered
+   * and not taken: it is an excellent quad exercise but it is a harder version of what the
+   * squat already does, where the extension covers something the squat cannot.
+   */
   quadriceps: ['Barbell_Squat', 'Leg_Extensions'],
 
   // A 2023 study found the seated curl grows hamstrings more than the lying one - the hip is
   // flexed, so the muscle starts pre-stretched. The RDL covers the hip-extension function.
   hamstrings: ['Seated_Leg_Curl', 'Romanian_Deadlift'],
 
-  adductors: ['Thigh_Adductor', 'Band_Hip_Adductions'],
+  /*
+   * Changed at the 1.4 review. The machine keeps first place as the loadable one. Second goes
+   * to the Copenhagen plank, taking it from band hip adductions - the band version is a warm-up
+   * with nowhere to progress, and the Copenhagen is the adductor exercise with actual trial
+   * evidence behind it (Harøy 2019 in footballers; Ishøi 2016 on eccentric adduction strength).
+   * It also scales properly: bottom knee on the bench, then straight leg, then add weight.
+   */
+  adductors: ['Thigh_Adductor', 'FitRam_Copenhagen_Plank'],
 
   // Machine hip abduction is S-tier in Nippard's 2025 glute ranking for the upper glute.
   abductors: ['Thigh_Abductor', 'Monster_Walk'],

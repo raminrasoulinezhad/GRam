@@ -6,11 +6,30 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
-## [1.3.18] — 2026-08-08
+## [1.4.0] — 2026-08-08
 
-Storage schema **v7** — unchanged.
+Storage schema **v7** — unchanged. First release reviewed end to end for public use.
+
+### Changed
+
+- **Recommended picks re-reviewed for the 1.4 series.** Two changed, both because the catalog
+  gained the better movement this release:
+  - **Abdominals** — the ab wheel rollout replaces the bicycle crunch as the second pick. It
+    loads the abs in the lengthened, overhead position and scales by how far you roll, which is
+    the pair of criteria this list weights above activation. The bicycle topped the ACE study,
+    but that measures one set rather than months, and it has nowhere to go once you can do it.
+  - **Adductors** — the Copenhagen plank replaces band hip adductions. The band version is a
+    warm-up with no way to progress; the Copenhagen has actual trial evidence behind it
+    (Harøy 2019, Ishøi 2016) and scales from bent knee to straight leg to added weight.
+  - **Quadriceps** was reviewed and left alone, but its reasoning is now written down, including
+    why the new Bulgarian split squat was considered and not taken.
 
 ### Added
+
+- **Tests for everything shipped in the 1.3 series that had none**: the backup warning, the
+  birthday greeting, the plan review page, deleting a plan, the plan-card buttons, and the whole
+  Profile screen — including "Erase all data", which had no coverage at all despite being the
+  one irreversible action in the app. 74 new tests; 1,263 in total.
 
 - **A plan untouched for four weeks gets a mark, and the mark opens a page about that plan.**
 

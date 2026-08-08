@@ -187,6 +187,7 @@ export default function ProfileScreen() {
               <Chip
                 key={u}
                 label={u}
+                testID={`unit-${u}`}
                 active={settings.unit === u}
                 onPress={() => updateSettings({ unit: u })}
               />

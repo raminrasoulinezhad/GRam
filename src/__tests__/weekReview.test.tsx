@@ -297,3 +297,80 @@ describe('fixing an issue from the review', () => {
     expect(screen.queryByTestId('exercise-search')).toBeNull();
   });
 });
+
+describe('what a plan card offers', () => {
+  const WEEK = 7 * 86_400_000;
+
+  /** Ages a plan by rewriting updatedAt, which is what the staleness mark reads. */
+  function age(planId: string, weeks: number) {
+    useStore.setState((s) => ({
+      plans: s.plans.map((p) =>
+        p.id === planId ? { ...p, updatedAt: Date.now() - weeks * WEEK } : p,
+      ),
+    }));
+  }
+
+  it('offers Start and nothing else', async () => {
+    // Edit went because tapping the card opens the editor; Copy went because it made an unnamed
+    // duplicate on a day that already had a plan; Delete moved to the plan's own page.
+    const id = makePlan('monday', BENCH);
+    await renderScreen(<PlansScreen />);
+
+    expect(screen.getByTestId(`start-${id}`)).toBeTruthy();
+    expect(screen.queryByText('Edit')).toBeNull();
+    expect(screen.queryByText('Copy')).toBeNull();
+    expect(screen.queryByText('Delete')).toBeNull();
+  });
+
+  it('starts the workout from the card', async () => {
+    const id = makePlan('monday', BENCH);
+    await renderScreen(<PlansScreen />);
+
+    await fireEvent.press(screen.getByTestId(`start-${id}`));
+    expect(mockRouter.push).toHaveBeenCalledWith(expect.stringMatching(/^\/session\//));
+  });
+
+  it('leaves a recently changed plan unmarked', async () => {
+    const id = makePlan('monday', BENCH);
+    await renderScreen(<PlansScreen />);
+    expect(screen.queryByTestId(`replan-${id}`)).toBeNull();
+  });
+
+  it('still leaves it unmarked at three weeks', async () => {
+    const id = makePlan('monday', BENCH);
+    age(id, 3);
+    await renderScreen(<PlansScreen />);
+    expect(screen.queryByTestId(`replan-${id}`)).toBeNull();
+  });
+
+  it('marks a plan untouched for a month, and says how long', async () => {
+    const id = makePlan('monday', BENCH);
+    age(id, 9);
+    await renderScreen(<PlansScreen />);
+
+    expect(screen.getByTestId(`replan-${id}`)).toBeTruthy();
+    expect(screen.getByText(/Unchanged for 9 weeks/)).toBeTruthy();
+  });
+
+  it('opens the review page rather than changing anything', async () => {
+    const id = makePlan('monday', BENCH);
+    age(id, 9);
+    await renderScreen(<PlansScreen />);
+
+    const before = JSON.stringify(store().plans);
+    await fireEvent.press(screen.getByTestId(`replan-${id}`));
+
+    expect(mockRouter.push).toHaveBeenCalledWith(`/replan/${id}`);
+    expect(JSON.stringify(store().plans)).toBe(before);
+  });
+
+  it('marks only the stale day when the week is a mix', async () => {
+    const old = makePlan('monday', BENCH);
+    const fresh = makePlan('wednesday', SQUAT);
+    age(old, 9);
+    await renderScreen(<PlansScreen />);
+
+    expect(screen.getByTestId(`replan-${old}`)).toBeTruthy();
+    expect(screen.queryByTestId(`replan-${fresh}`)).toBeNull();
+  });
+});

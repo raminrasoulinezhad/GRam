@@ -1,5 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react-native';
-import { confirmDialog, dialogOpen, renderScreen } from '@/test-utils';
+import { cancelDialog, confirmDialog, dialogOpen, renderScreen } from '@/test-utils';
 import { useStore } from '@/store/useStore';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
@@ -163,5 +163,77 @@ describe('plan editor', () => {
     mockParams = { id: 'nope' };
     await renderScreen(<PlanEditorScreen />);
     expect(screen.getByText('Plan not found')).toBeTruthy();
+  });
+});
+
+describe('deleting the plan from its own page', () => {
+  it('offers the delete at the bottom, not on the week screen', async () => {
+    makePlan(BENCH);
+    await renderScreen(<PlanEditorScreen />);
+    expect(screen.getByTestId('delete-plan')).toBeTruthy();
+  });
+
+  it('asks first, and does nothing if you decline', async () => {
+    makePlan(BENCH, SQUAT);
+    await renderScreen(<PlanEditorScreen />);
+
+    await fireEvent.press(screen.getByTestId('delete-plan'));
+    expect(dialogOpen()).toBe(true);
+    await cancelDialog();
+
+    expect(store().plans).toHaveLength(1);
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+
+  it('names the day and counts what goes with it', async () => {
+    // "Delete this plan?" tells you nothing. Which day, and how much work, is the whole basis
+    // for answering.
+    makePlan(BENCH, SQUAT);
+    await renderScreen(<PlanEditorScreen />);
+    await fireEvent.press(screen.getByTestId('delete-plan'));
+
+    expect(screen.getByText('Delete Monday?')).toBeTruthy();
+    expect(screen.getByText(/2 exercises will be removed/)).toBeTruthy();
+  });
+
+  it('words an empty plan differently, because there is nothing to count', async () => {
+    makePlan();
+    await renderScreen(<PlanEditorScreen />);
+    await fireEvent.press(screen.getByTestId('delete-plan'));
+
+    expect(screen.getByText('This day will be removed from your week.')).toBeTruthy();
+  });
+
+  it('deletes on confirmation and leaves the page behind', async () => {
+    // replace, not push: the page it was on no longer describes anything, and going "back" to a
+    // deleted plan is a dead end.
+    makePlan(BENCH);
+    await renderScreen(<PlanEditorScreen />);
+
+    await fireEvent.press(screen.getByTestId('delete-plan'));
+    await confirmDialog();
+
+    expect(store().plans).toHaveLength(0);
+    expect(mockRouter.replace).toHaveBeenCalledWith('/');
+  });
+
+  it('keeps the workouts already recorded from it', async () => {
+    // The plan is a template. Deleting it must never touch the training you actually did - that
+    // is the one rule the whole app is built around.
+    const planId = makePlan(BENCH);
+    const sessionId = store().startSession(planId)!;
+    const session = store().sessions.find((s) => s.id === sessionId)!;
+    for (const entry of session.entries) {
+      for (const set of entry.sets) store().toggleSetLogged(sessionId, entry.id, set.id);
+    }
+    store().endSession(sessionId);
+
+    await renderScreen(<PlanEditorScreen />);
+    await fireEvent.press(screen.getByTestId('delete-plan'));
+    await confirmDialog();
+
+    expect(store().plans).toHaveLength(0);
+    expect(store().sessions).toHaveLength(1);
+    expect(store().sessions[0].entries[0].sets.every((s) => s.loggedAt !== null)).toBe(true);
   });
 });
