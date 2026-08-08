@@ -6,6 +6,17 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.1] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Removed
+
+- **The paragraph under the unit buttons on Profile.** It explained that weights are stored in
+  kilograms and that switching never rewrites your history — true, and worth knowing once, after
+  which it was a paragraph living under two buttons forever. The behaviour is pinned by a test
+  instead of described in the UI.
+
 ## [1.4.0] — 2026-08-08
 
 Storage schema **v7** — unchanged. First release reviewed end to end for public use.

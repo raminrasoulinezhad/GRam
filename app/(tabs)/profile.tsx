@@ -193,11 +193,12 @@ export default function ProfileScreen() {
               />
             ))}
           </View>
-          <Dim style={s.hint}>
-            Pounds to begin with; switch whenever you like and it stays switched, including
-            across updates. Weights are always stored in kilograms underneath, so changing this
-            never rewrites your history.
-          </Dim>
+          {/*
+            * No note here. It used to explain that weights are stored in kilograms underneath
+            * and that switching never rewrites your history - true, and reassuring exactly once,
+            * after which it was a paragraph sitting under two buttons forever. The behaviour it
+            * described is pinned by a test instead; see profile.screen.test.tsx.
+            */}
           <Text style={[s.label, s.spaced]}>EXERCISE PHOTOS</Text>
           <View style={s.row}>
             <Chip
