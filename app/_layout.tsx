@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { BackupReminder } from '@/ui/BackupReminder';
 import { ConfirmProvider } from '@/ui/confirm';
 import { ExerciseSheetProvider } from '@/ui/ExerciseSheet';
 import { MilestoneCelebration } from '@/ui/Milestones';
@@ -26,6 +27,8 @@ export default function RootLayout() {
         <Splash>
           <ConfirmProvider>
             <ExerciseSheetProvider>
+          {/* Above the navigator so it is visible on every screen, not just the tabs. */}
+          <BackupReminder />
           <Stack
             screenOptions={{
               headerStyle: { backgroundColor: theme.color.bg },

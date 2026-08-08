@@ -231,10 +231,23 @@ export type Staleness = {
 /** A session's worth of work. Below this, nagging costs more attention than it saves. */
 const DUE_SETS = 12;
 const URGENT_SETS = 40;
-const URGENT_DAYS = 45;
+/*
+ * A week of training living nowhere but this browser's storage.
+ *
+ * This was forty-five days, which was far too generous for what is actually at stake: there is
+ * no server and no account, so clearing site data or losing the phone loses everything since
+ * the last export, and six weeks of that is most of a training block. A week is the most worth
+ * risking, and it is the same threshold the app-wide banner uses - see ui/BackupReminder.tsx.
+ */
+const URGENT_DAYS = 7;
 
 export function staleness(
-  current: BackupSummary,
+  /*
+   * Only the set count is read, so the parameter asks for only that. A full BackupSummary still
+   * satisfies it, and callers that have nothing else to hand - the app-wide banner counts sets
+   * straight off the store - are not made to invent the other five fields.
+   */
+  current: Pick<BackupSummary, 'loggedSets'>,
   record: { lastExportedAt: number | null; lastExportedSets: number },
   now: number,
 ): Staleness {

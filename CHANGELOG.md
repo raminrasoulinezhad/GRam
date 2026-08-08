@@ -6,6 +6,52 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.14] — 2026-08-03
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **A warning across the top of the app when a backup is overdue.** Backups are manual, there is
+  no server and no account, so everything since the last export lives in one browser's storage —
+  clear the site data or lose the phone and it is gone with no copy anywhere. Nothing said so
+  before it happened.
+
+  Not a real push notification, deliberately: nothing can wake a closed offline web app, and
+  asking for notification permission to say "back up your data" would spend the one prompt most
+  people refuse on the dullest thing the app could say. It interrupts where interrupting is
+  free — at the top of the app, whenever it is open. Dismissing hides it until the next launch,
+  not for good.
+
+### Changed
+
+- **A backup is now overdue after a week, not forty-five days.** Six weeks of unsaved training is
+  most of a training block, which was never a sensible amount to risk. The Profile card and the
+  new banner read the same threshold, so there is one definition rather than two that drift.
+
+## [1.3.13] — 2026-08-03
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **The rest-timer setting is three presets instead of five** — 45s, 1:00 and 1:30 — with the
+  stepper beside them for anything else. Five buttons was a menu to read rather than a shortcut
+  to tap, and the two long ones were rarely the answer.
+
+## [1.3.12] — 2026-08-03
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **Swipe the full-screen photo.** Sideways moves between the start and finish frames, up or
+  down closes it — no aiming at a button with one hand mid-set. Only while the photo is fitted
+  to the screen: once it is zoomed, dragging still pans, because stealing that would make a
+  zoomed photo impossible to read. Both directions close, since a viewer that only dismissed one
+  way feels broken the half of the time you flick the other. A diagonal drag does nothing rather
+  than guessing between paging and closing.
+
 ## [1.3.11] — 2026-08-03
 
 Storage schema **v7** — unchanged.
