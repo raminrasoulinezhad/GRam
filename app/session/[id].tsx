@@ -10,17 +10,12 @@ import {
   regressionFor,
   type SetKind,
 } from '@/catalog';
-import {
-  countLoggedSets,
-  rankMuscles,
-  sessionPlannedVolume,
-  sessionVolume,
-} from '@/analytics/volume';
-import { MUSCLE_LABEL } from '@/analytics/muscleMap';
-import { formatDuration, formatSets, relativeTime } from '@/lib/format';
+import { countLoggedSets } from '@/analytics/volume';
+import { formatDuration, relativeTime } from '@/lib/format';
+import { orderEntries } from '@/lib/sessionOrder';
 import type { SessionEntry, SessionSet, SetValues } from '@/store/types';
 import { useStore } from '@/store/useStore';
-import { Button, Chip, Dim, Empty, Screen } from '@/ui/components';
+import { Button, Dim, Empty, Screen } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
 import { ExerciseCard } from '@/ui/ExerciseCard';
 import { RestTimer } from '@/ui/RestTimer';
@@ -158,8 +153,25 @@ const EntryCard = memo(function EntryCard({
         <View style={s.swap} testID={`easier-${entry.id}`}>
           <View style={{ flex: 1 }}>
             <Dim style={{ lineHeight: 18 }}>
-              Not there yet? <Text style={s.swapName}>{exerciseName(easier.easier)}</Text> —{' '}
-              {easier.why}
+              Not there yet?{' '}
+              {/*
+                * The suggestion is only useful if you know what it is, and most people will not
+                * recognise the name - so it opens the how-to page.
+                *
+                * A Text with onPress rather than a Pressable: this sits mid-sentence, and a
+                * Pressable is a block box that would break the line around it. It also keeps
+                * react-native-web from nesting a <button> inside the Swap button's row.
+                */}
+              <Text
+                style={s.swapName}
+                onPress={() => router.push(`/exercise/${easier.easier}`)}
+                accessibilityRole="link"
+                accessibilityHint={`Show how to do ${exerciseName(easier.easier)}`}
+                testID={`easier-name-${entry.id}`}
+              >
+                {exerciseName(easier.easier)}
+              </Text>{' '}
+              — {easier.why}
             </Dim>
           </View>
           <Button
@@ -215,20 +227,6 @@ const EntryCard = memo(function EntryCard({
     </ExerciseCard>
   );
 });
-
-/**
- * Where an exercise sits in the workout: finished at the top, then what is under way, then
- * what has not been started.
- *
- * The list reorders as you record, which is the point - the run of exercises still to do stays
- * together at the bottom instead of being interrupted by the ones already ticked off. Sorting
- * is stable, so within each of the three groups the plan's own order survives.
- */
-function progressRank(entry: SessionEntry): number {
-  const logged = entry.sets.filter((x) => x.loggedAt !== null).length;
-  if (logged === 0) return 2;
-  return logged === entry.sets.length ? 0 : 1;
-}
 
 export default function SessionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -309,25 +307,7 @@ export default function SessionScreen() {
   );
 
   const logged = useMemo(() => (session ? countLoggedSets(session) : 0), [session]);
-  const ordered = useMemo(
-    () => (session ? [...session.entries].sort((a, b) => progressRank(a) - progressRank(b)) : []),
-    [session],
-  );
-  /*
-   * Per muscle: effective sets recorded, out of what the whole workout comes to.
-   *
-   * Ranked by the planned total rather than by what is done, so the chips are the shape of
-   * today's session from the moment it starts - "chest 0/9" is the useful thing to see before
-   * you have recorded anything, and the row does not reshuffle as the numbers fill in.
-   */
-  const worked = useMemo(() => {
-    if (!session) return [];
-    const done = sessionVolume(session);
-    const planned = sessionPlannedVolume(session);
-    return rankMuscles(planned)
-      .slice(0, 6)
-      .map(({ muscle, value }) => ({ muscle, done: done[muscle], planned: value }));
-  }, [session]);
+  const ordered = useMemo(() => (session ? orderEntries(session.entries) : []), [session]);
 
   if (!session) {
     return (
@@ -383,11 +363,6 @@ export default function SessionScreen() {
     <Screen>
       <Stack.Screen options={{ title: session.planName }} />
 
-      {/*
-        * With the keyboard up there can be a third of the display left, so the header sheds its
-        * muscle chips and the footer goes entirely. Both are context; the row being edited is
-        * the thing that has to stay on screen, and it was the one going missing.
-        */}
       <View style={s.summary}>
         <View style={{ flex: 1 }}>
           <Text style={s.summaryBig}>
@@ -395,19 +370,6 @@ export default function SessionScreen() {
             <Text style={s.summarySmall}> / {totalSets} sets</Text>
           </Text>
           <Dim>Started {relativeTime(session.startedAt)}</Dim>
-        </View>
-        <View style={s.workedChips}>
-          {typing
-            ? null
-            : worked.map(({ muscle, done, planned }) => (
-                <Chip
-                  key={muscle}
-                  label={`${MUSCLE_LABEL[muscle]} ${formatSets(done)}/${formatSets(planned)}`}
-                  // Lit up once the muscle has had everything today's workout holds for it.
-                  tone={done >= planned ? 'primary' : 'secondary'}
-                  testID={`muscle-${muscle}`}
-                />
-              ))}
         </View>
       </View>
 
@@ -468,13 +430,6 @@ const s = StyleSheet.create({
   },
   summaryBig: { color: theme.color.text, fontSize: 30, fontWeight: '800', letterSpacing: -1 },
   summarySmall: { color: theme.color.textFaint, fontSize: theme.font.body, fontWeight: '600' },
-  workedChips: {
-    flex: 1.3,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.space(1),
-    justifyContent: 'flex-end',
-  },
   content: { padding: theme.space(4), gap: theme.space(3), paddingBottom: theme.space(6) },
   entryActions: { flexDirection: 'row', gap: theme.space(2), marginTop: theme.space(2) },
   perSide: { paddingBottom: theme.space(2), lineHeight: 18 },
@@ -487,7 +442,8 @@ const s = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.color.border,
   },
-  swapName: { color: theme.color.text, fontWeight: '700' },
+  // Underlined because it is a link, and nothing else in this row looks tappable except a button.
+  swapName: { color: theme.color.text, fontWeight: '700', textDecorationLine: 'underline' },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',

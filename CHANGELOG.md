@@ -6,6 +6,34 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.7] — 2026-08-03
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **A live workout now orders each group by when it got there.** Finishing an exercise moves it
+  to the *bottom* of the finished ones rather than back to its place in the plan, and recording
+  a first set moves that exercise to the bottom of the ones under way. The list reads as a
+  history: the further up something is, the longer ago you were doing it, and whatever you just
+  touched sits directly above the work still to come. Exercises nobody has touched keep the
+  plan's order, which is the only meaningful one they have. The three bands — finished, under
+  way, untouched — are unchanged.
+- An exercise you are part way through is placed by its **first** recorded set, not its latest,
+  so working through it does not make the card slide down the screen under your thumb.
+
+### Added
+
+- **Tapping the name of a suggested easier exercise opens its how-to page.** The suggestion is
+  only useful if you know what it is, and "Band Assisted Pull-Up" means nothing to most people
+  until they have seen it. Reading about it does not swap anything — the Swap button still does
+  that.
+
+### Removed
+
+- **The per-muscle `2/6` chips at the top of a live workout.** They were not earning the space.
+  `sessionPlannedVolume`, which existed only to compute their denominator, goes with them.
+
 ## [1.3.6] — 2026-08-02
 
 Storage schema **v7** — unchanged. Documentation only.

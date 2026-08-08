@@ -9,7 +9,6 @@ import {
   rankMuscles,
   recovery,
   SECONDARY_WEIGHT,
-  sessionPlannedVolume,
   sessionTonnage,
   sessionVolume,
   volumeInWindow,
@@ -265,21 +264,6 @@ describe('per-session summaries', () => {
 
   it('computes per-session muscle volume', () => {
     expect(sessionVolume(session).chest).toBeCloseTo(2);
-  });
-
-  it('counts every set, recorded or not, for the planned total', () => {
-    // The denominator of "chest 2/3" while the workout is still running.
-    expect(sessionPlannedVolume(session).chest).toBeCloseTo(3);
-    expect(sessionPlannedVolume(session).triceps).toBeCloseTo(3 * SECONDARY_WEIGHT);
-  });
-
-  it('plans exactly what it counts once everything has been recorded', () => {
-    const done = mkSession([{ exerciseId: BENCH, sets: [mkSet(NOW), mkSet(NOW)] }]);
-    expect(sessionPlannedVolume(done)).toEqual(sessionVolume(done));
-  });
-
-  it('plans nothing for a workout with no exercises', () => {
-    expect(sessionPlannedVolume(mkSession([]))).toEqual(emptyTotals());
   });
 
   it('ranks muscles by load, omitting untouched ones', () => {

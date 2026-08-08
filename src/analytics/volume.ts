@@ -115,21 +115,6 @@ export function sessionVolume(session: Session): MuscleTotals {
   return totals;
 }
 
-/**
- * Effective sets per muscle for every set in a session, recorded or not.
- *
- * The denominator of "shoulders 2/6" during a live workout: what the whole session comes to if
- * you finish it. Counting unrecorded sets is exactly what makes it a target rather than a
- * result, so this is deliberately the one place that looks at sets nothing has happened to yet.
- */
-export function sessionPlannedVolume(session: Session): MuscleTotals {
-  const totals = emptyTotals();
-  for (const entry of session.entries) {
-    for (const _set of entry.sets) addContribution(totals, entry.exerciseId, 1);
-  }
-  return totals;
-}
-
 /** Muscles with any load, heaviest first. */
 export function rankMuscles(totals: MuscleTotals): { muscle: Muscle; value: number }[] {
   return MUSCLES.map((muscle) => ({ muscle, value: totals[muscle] }))

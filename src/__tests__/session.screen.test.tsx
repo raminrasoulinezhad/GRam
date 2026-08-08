@@ -178,42 +178,6 @@ describe('active workout screen', () => {
     expect(store().sessions[0].entries[0].sets[0].timeSec).toBe(75);
   });
 
-  it('shows what each muscle is in for today, and how much of it is done', async () => {
-    startWorkout();
-    await renderScreen(<SessionScreen />);
-
-    // Before anything is recorded the chips already say what the workout holds: three sets of
-    // bench is three effective sets of chest, and half that for the triceps assisting.
-    expect(screen.getByText('Chest 0/3')).toBeTruthy();
-    expect(screen.getByText('Triceps 0/1.5')).toBeTruthy();
-
-    await fireEvent.press(screen.getByTestId(`log-${setIds()[0]}`));
-
-    expect(screen.getByText('Chest 1/3')).toBeTruthy();
-    expect(screen.getByText('Triceps 0.5/1.5')).toBeTruthy();
-  });
-
-  it('completes a muscle when the workout has nothing left for it', async () => {
-    startWorkout();
-    await renderScreen(<SessionScreen />);
-
-    for (const id of setIds()) await fireEvent.press(screen.getByTestId(`log-${id}`));
-
-    expect(screen.getByText('Chest 3/3')).toBeTruthy();
-  });
-
-  it('counts a muscle across every exercise that works it', async () => {
-    const s = store();
-    const planId = s.createPlan('monday');
-    s.addPlanItem(planId, BENCH);
-    s.addPlanItem(planId, BENCH);
-    mockParams = { id: s.startSession(planId)! };
-    await renderScreen(<SessionScreen />);
-
-    // Two exercises of three sets each, not three.
-    expect(screen.getByText('Chest 0/6')).toBeTruthy();
-  });
-
   it('starts a rest timer on record but not on un-record', async () => {
     startWorkout();
     await renderScreen(<SessionScreen />);
@@ -357,6 +321,17 @@ describe('offering an easier exercise', () => {
     expect(screen.getByText(/carries part of your weight/)).toBeTruthy();
   });
 
+  it('opens the how-to for the suggestion, which is a name you may not know', async () => {
+    startWorkout(PULLUPS);
+    await renderScreen(<SessionScreen />);
+
+    await fireEvent.press(screen.getByTestId(`easier-name-${entryId()}`));
+
+    expect(mockRouter.push).toHaveBeenCalledWith('/exercise/Band_Assisted_Pull-Up');
+    // Reading about it is not choosing it.
+    expect(store().sessions[0].entries[0].exerciseId).toBe(PULLUPS);
+  });
+
   it('swaps the exercise, keeping the number of sets the plan asked for', async () => {
     startWorkout(PULLUPS);
     await renderScreen(<SessionScreen />);
@@ -426,11 +401,10 @@ describe('while the keyboard is up', () => {
     startWorkout();
     await renderScreen(<SessionScreen />);
 
-    // A footer of buttons and two rows of muscle chips is most of what is left of the display
-    // once a keyboard has taken the rest, and the row being typed into was going under it.
+    // A footer of buttons is most of what is left of the display once a keyboard has taken the
+    // rest, and the row being typed into was going under it.
     expect(screen.queryByTestId('finish')).toBeNull();
     expect(screen.queryByTestId('discard')).toBeNull();
-    expect(screen.queryByTestId('muscle-chest')).toBeNull();
   });
 
   it('keeps the set count, which is the one line worth the space', async () => {
@@ -449,12 +423,11 @@ describe('while the keyboard is up', () => {
     expect(screen.getByTestId(`set-${setIds()[0]}-weight`)).toBeTruthy();
   });
 
-  it('brings the footer and the chips back when it closes', async () => {
+  it('brings the footer back when it closes', async () => {
     startWorkout();
     await renderScreen(<SessionScreen />);
 
     expect(screen.getByTestId('finish')).toBeTruthy();
-    expect(screen.getByTestId('muscle-chest')).toBeTruthy();
   });
 });
 
@@ -468,6 +441,19 @@ describe('the order exercises appear in', () => {
     mockParams = { id: sessionId };
     return sessionId;
   }
+
+  /*
+   * Recording stamps each set with Date.now(), and these tests tick sets off far faster than a
+   * millisecond - fast enough for two to share a stamp, which would leave the order they were
+   * recorded in unknowable. A hand tapping a phone never does that; the clock is stepped here
+   * so the test sees the same distinct stamps a real workout produces.
+   */
+  let clock = 0;
+  beforeEach(() => {
+    clock = 1_800_000_000_000;
+    jest.spyOn(Date, 'now').mockImplementation(() => (clock += 1_000));
+  });
+  afterEach(() => jest.restoreAllMocks());
 
   const entries = () => store().sessions[0].entries;
 
@@ -534,17 +520,68 @@ describe('the order exercises appear in', () => {
     expect(onScreen()).toEqual([bench, squat, plank]);
   });
 
-  it('holds the plan order within each group', async () => {
+  it('orders the finished ones by when they finished, newest last', async () => {
     startThree();
     await renderScreen(<SessionScreen />);
     const [bench, squat, plank] = entries().map((e) => `entry-${e.id}`);
 
-    // Finish the plank first, then the bench: both done, but bench came first in the plan.
+    // The plank is finished first and the bench second, so the bench - the one just put down -
+    // sits at the bottom of the finished group, nearest the work left.
     await fireEvent.press(screen.getByTestId(plank));
     await completeEntry(2);
     await fireEvent.press(screen.getByTestId(bench));
     await completeEntry(0);
 
-    expect(onScreen()).toEqual([bench, plank, squat]);
+    expect(onScreen()).toEqual([plank, bench, squat]);
+  });
+
+  it('orders the ones under way by when they were started, newest last', async () => {
+    startThree();
+    await renderScreen(<SessionScreen />);
+    const [bench, squat, plank] = entries().map((e) => `entry-${e.id}`);
+
+    // One set each, plank before squat. Both are under way; the plank started first.
+    await fireEvent.press(screen.getByTestId(plank));
+    await fireEvent.press(screen.getByTestId(`log-${entries()[2].sets[0].id}`));
+    await fireEvent.press(screen.getByTestId(squat));
+    await fireEvent.press(screen.getByTestId(`log-${entries()[1].sets[0].id}`));
+
+    expect(onScreen()).toEqual([plank, squat, bench]);
+  });
+
+  it('drops a newly finished exercise below one finished earlier', async () => {
+    startThree();
+    await renderScreen(<SessionScreen />);
+    const [bench, squat, plank] = entries().map((e) => `entry-${e.id}`);
+
+    // The bench opens by default, so it needs no tap to reach its sets.
+    await completeEntry(0);
+    expect(onScreen()).toEqual([bench, squat, plank]);
+
+    // Finishing the squat puts it under the bench rather than above it.
+    await fireEvent.press(screen.getByTestId(squat));
+    await completeEntry(1);
+
+    expect(onScreen()).toEqual([bench, squat, plank]);
+  });
+
+  it('does not move an exercise you are part way through as you keep recording', async () => {
+    startThree();
+    await renderScreen(<SessionScreen />);
+    const [bench, squat, plank] = entries().map((e) => `entry-${e.id}`);
+
+    // Bench started first, then the squat. Both under way, bench above squat. The bench card
+    // opens by default; opening the squat closes it, so it is reopened to reach its second set.
+    await fireEvent.press(screen.getByTestId(`log-${entries()[0].sets[0].id}`));
+    await fireEvent.press(screen.getByTestId(squat));
+    await fireEvent.press(screen.getByTestId(`log-${entries()[1].sets[0].id}`));
+    expect(onScreen()).toEqual([bench, squat, plank]);
+
+    // A second bench set must not slide it under the squat - it is still the older start, and
+    // the row being worked in has to hold still.
+    await fireEvent.press(screen.getByTestId(bench));
+    await fireEvent.press(screen.getByTestId(`log-${entries()[0].sets[1].id}`));
+
+    expect(onScreen()).toEqual([bench, squat, plank]);
   });
 });
