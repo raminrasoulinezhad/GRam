@@ -2,9 +2,8 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Constants from 'expo-constants';
 import { EXERCISES } from '@/catalog';
-import { ageFrom, bmi, readDeviceProfile } from '@/lib/device';
+import { ageFrom, bmi } from '@/lib/device';
 import {
-  formatDate,
   formatDuration,
   fromDisplayWeight,
   titleCase,
@@ -28,7 +27,6 @@ const REST_PRESETS = [45, 60, 90] as const;
 
 export default function ProfileScreen() {
   const profile = useStore((s) => s.profile);
-  const versionHistory = useStore((s) => s.versionHistory);
   const appVersion = Constants.expoConfig?.version ?? 'unknown';
   const settings = useStore((s) => s.settings);
   const allSessions = useStore(selectSessions);
@@ -37,8 +35,6 @@ export default function ProfileScreen() {
   const setDefaultRest = useStore((s) => s.setDefaultRest);
   const resetAll = useStore((s) => s.resetAll);
   const confirm = useConfirm();
-  // Read once per mount - none of it changes while the app is open.
-  const [device] = useState(readDeviceProfile);
   const stats = useMemo(() => {
     const done = completedSessions(allSessions);
     return {
@@ -221,40 +217,19 @@ export default function ProfileScreen() {
           </Dim>
         </Card>
         {/*
-          * About, with the log of every build this device has run.
+          * About: which build this is, and what it holds.
           *
-          * There is no server and no crash reporting, so "which version are you actually on?"
-          * has no other answer - and during the app-icon problem that question went several
-          * rounds before anyone could answer it. Now it is one glance, and the dates show
-          * whether updates are arriving at all.
+          * It used to also list every version this device had run, and the phone's OS string.
+          * Both were written for one bad week during the app-icon problem, when nobody could
+          * establish which build anyone was on. That question is answered by the single Version
+          * line above; the log was a growing list nobody read afterwards, and the OS string was
+          * a fact the user already knew about their own phone.
           */}
         <Card testID="about">
           <H2>About</H2>
           <Row label="Version" value={appVersion} />
           <Row label="Data format" value={`v${SCHEMA_VERSION}`} />
           <Row label="Exercises" value={String(EXERCISES.length)} />
-          {/*
-            * The rest of what the phone reports - model, language, region, time zone - used to
-            * have a card of its own. Nothing read any of it, and nothing acted on it, so it was
-            * a list of facts the user already knew about their own phone. The system string
-            * stays because it is the one line worth quoting when something is wrong.
-            */}
-          <Row label="System" value={device.osLabel} />
-
-          <Text style={[s.label, s.spaced]}>VERSIONS THIS DEVICE HAS RUN</Text>
-          {versionHistory.length === 0 ? (
-            <Dim>Nothing recorded yet — this launch will be the first.</Dim>
-          ) : (
-            [...versionHistory]
-              .reverse()
-              .map((v) => (
-                <Row key={v.version} label={v.version} value={formatDate(v.firstSeenAt)} />
-              ))
-          )}
-          <Dim style={{ marginTop: theme.space(2) }}>
-            Recorded on this device only, the first time each build runs. An imported backup does
-            not change it.
-          </Dim>
         </Card>
 
         <Button label="Erase all data" variant="danger" testID="erase" onPress={() => void handleReset()} />

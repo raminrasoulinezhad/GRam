@@ -1,61 +1,11 @@
-import * as Device from 'expo-device';
-import * as Localization from 'expo-localization';
-import { Platform } from 'react-native';
-
 /**
- * What the phone can tell us about itself without asking the user for anything.
+ * Small calculations about the person using the app.
  *
- * None of this needs a permission prompt and none of it leaves the device - it is read at
- * runtime purely to pick sensible defaults (kg vs lb, first day of week) and to show the
- * user which device this profile belongs to.
+ * This file used to also read what the phone could tell us about itself - model, OS string,
+ * locale, region, time zone - for a card on the Profile page. Nothing ever acted on any of it,
+ * the card is gone, and reading a device's identity for no reason is not a thing to leave
+ * lying around in an app whose selling point is that the data stays put.
  */
-export type DeviceProfile = {
-  /** "iPhone 15 Pro", "Pixel 8", or null on web / an unrecognised device. */
-  model: string | null;
-  manufacturer: string | null;
-  /** "iOS 18.2", "Android 15", "Web". */
-  osLabel: string;
-  platform: 'ios' | 'android' | 'web' | 'other';
-  /** False in a simulator or the browser. */
-  isPhysicalDevice: boolean;
-  /** BCP-47 tag, e.g. "en-CA". */
-  locale: string;
-  region: string | null;
-  timeZone: string | null;
-  /** What the phone's own region settings imply about weight units. */
-  measurementSystem: 'metric' | 'us' | 'uk' | null;
-};
-
-function platformName(): DeviceProfile['platform'] {
-  if (Platform.OS === 'ios' || Platform.OS === 'android' || Platform.OS === 'web') {
-    return Platform.OS;
-  }
-  return 'other';
-}
-
-export function readDeviceProfile(): DeviceProfile {
-  // Localization.getLocales() is never empty in practice, but a defensive read costs nothing
-  // and a crash on the profile tab would be a poor trade.
-  const locales = Localization.getLocales();
-  const primary = locales.length > 0 ? locales[0] : null;
-  const calendars = Localization.getCalendars();
-  const calendar = calendars.length > 0 ? calendars[0] : null;
-
-  const osVersion = Device.osVersion ?? '';
-  const osName = Device.osName ?? Platform.OS;
-
-  return {
-    model: Device.modelName,
-    manufacturer: Device.manufacturer,
-    osLabel: osVersion ? `${osName} ${osVersion}` : osName,
-    platform: platformName(),
-    isPhysicalDevice: Device.isDevice,
-    locale: primary?.languageTag ?? 'en',
-    region: primary?.regionCode ?? null,
-    timeZone: calendar?.timeZone ?? null,
-    measurementSystem: primary?.measurementSystem ?? null,
-  };
-}
 
 /**
  * Whole years since `birthDate` (an ISO yyyy-mm-dd string), or null if unset or unparseable.
@@ -86,4 +36,33 @@ export function bmi(heightCm: number | null, weightKg: number | null): number | 
   if (!heightCm || !weightKg || heightCm < 50 || heightCm > 260) return null;
   const m = heightCm / 100;
   return Math.round((weightKg / (m * m)) * 10) / 10;
+}
+
+/**
+ * True when `birthDate` falls on today's month and day.
+ *
+ * Compared as calendar components for the same reason `ageFrom` does it: a bare yyyy-mm-dd
+ * parsed by `new Date()` is UTC midnight, so anyone west of UTC would be wished a happy
+ * birthday on the wrong day - which is the one day of the year it is conspicuous to get wrong.
+ *
+ * The 29th of February is treated as the 1st of March in common years. Someone born on a leap
+ * day gets a greeting every year rather than one in four; skipping it would be the more
+ * literal reading and the worse one.
+ */
+export function isBirthday(birthDate: string | null, now = new Date()): boolean {
+  if (!birthDate) return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthDate.trim());
+  if (!match) return false;
+
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+
+  const nowMonth = now.getMonth() + 1;
+  const nowDay = now.getDate();
+  if (month === nowMonth && day === nowDay) return true;
+
+  const leapDay = month === 2 && day === 29;
+  const isLeapYear = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  return leapDay && !isLeapYear(now.getFullYear()) && nowMonth === 3 && nowDay === 1;
 }

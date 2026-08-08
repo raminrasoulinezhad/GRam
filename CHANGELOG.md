@@ -6,6 +6,36 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.3.16] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **A greeting on your birthday, by name.** Appears only if you have filled in a date of birth,
+  which the app already asks for to work out your age; nothing new is collected and nothing
+  leaves the device. A leap-day birthday is greeted on 1 March in common years — once every four
+  years is the literal reading and the unkind one.
+
+### Removed
+
+- **The per-muscle chips on History's "Last 7 days" card**, matching the workout rows below it.
+  The three counts above them — workouts, effective sets, muscles hit — say the useful part.
+
+## [1.3.15] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Removed
+
+- **The list of every version this device has run, and the system line, from Profile › About.**
+  Both were written during the app-icon problem, when nobody could establish which build anyone
+  was on. The single Version line answers that; the log was a growing list nobody read after the
+  week that prompted it, and the OS string told you something about your own phone you knew.
+- With them goes `readDeviceProfile`, which read the phone's model, OS, locale, region and time
+  zone. Nothing acted on any of it any more, and reading a device's identity for no reason is
+  not a thing to leave lying around in an app whose whole pitch is that your data stays put.
+
 ## [1.3.14] — 2026-08-03
 
 Storage schema **v7** — unchanged.
