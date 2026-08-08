@@ -3,11 +3,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { exerciseName } from '@/catalog';
-import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { countLoggedSets, rankMuscles, sessionTonnage, volumeInWindow } from '@/analytics/volume';
 import { formatDate, formatDuration, formatTime, toDisplayWeight } from '@/lib/format';
 import { completedSessions, selectSessions, useStore } from '@/store/useStore';
-import { Card, Chip, Dim, Empty, H2, Screen } from '@/ui/components';
+import { Card, Dim, Empty, H2, Screen } from '@/ui/components';
 import { MilestonesCard } from '@/ui/Milestones';
 import { theme } from '@/ui/theme';
 
@@ -45,11 +44,6 @@ export default function HistoryScreen() {
                 <Stat value={String(week.workouts)} label="workouts" />
                 <Stat value={week.sets.toFixed(0)} label="effective sets" />
                 <Stat value={String(week.ranked.length)} label="muscles hit" />
-              </View>
-              <View style={s.chips}>
-                {week.ranked.slice(0, 8).map(({ muscle, value }) => (
-                  <Chip key={muscle} label={`${MUSCLE_LABEL[muscle]} ${value.toFixed(1)}`} tone="primary" />
-                ))}
               </View>
             </Card>
 
@@ -120,5 +114,4 @@ const s = StyleSheet.create({
   statRow: { flexDirection: 'row', gap: theme.space(6), marginTop: theme.space(2) },
   statValue: { color: theme.color.text, fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
   statLabel: { color: theme.color.textFaint, fontSize: theme.font.tiny, fontWeight: '600' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space(1), marginTop: theme.space(3) },
 });

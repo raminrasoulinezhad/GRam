@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BackupReminder } from '@/ui/BackupReminder';
+import { BirthdayGreeting } from '@/ui/BirthdayGreeting';
 import { ConfirmProvider } from '@/ui/confirm';
 import { ExerciseSheetProvider } from '@/ui/ExerciseSheet';
 import { MilestoneCelebration } from '@/ui/Milestones';
@@ -27,7 +28,8 @@ export default function RootLayout() {
         <Splash>
           <ConfirmProvider>
             <ExerciseSheetProvider>
-          {/* Above the navigator so it is visible on every screen, not just the tabs. */}
+          {/* Above the navigator so they are visible on every screen, not just the tabs. */}
+          <BirthdayGreeting />
           <BackupReminder />
           <Stack
             screenOptions={{

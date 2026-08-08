@@ -1,4 +1,4 @@
-import { ageFrom, bmi } from '@/lib/device';
+import { ageFrom, bmi, isBirthday } from '@/lib/device';
 
 /*
  * There was a preferredUnit() here, mapping the phone's reported measurement system onto kg or
@@ -88,5 +88,55 @@ describe('ageFrom is timezone-safe', () => {
 
   it('tolerates surrounding whitespace', () => {
     expect(ageFrom('  1990-01-01  ', new Date('2026-08-01T12:00:00Z'))).toBe(36);
+  });
+});
+
+describe('isBirthday', () => {
+  const on = (iso: string) => new Date(`${iso}T09:30:00`);
+
+  it('is true on the month and day, whatever the year', () => {
+    expect(isBirthday('1990-06-14', on('2026-06-14'))).toBe(true);
+    expect(isBirthday('1990-06-14', on('2031-06-14'))).toBe(true);
+  });
+
+  it('is false on any other day', () => {
+    expect(isBirthday('1990-06-14', on('2026-06-13'))).toBe(false);
+    expect(isBirthday('1990-06-14', on('2026-06-15'))).toBe(false);
+    expect(isBirthday('1990-06-14', on('2026-07-14'))).toBe(false);
+  });
+
+  it('says nothing when no date has been given', () => {
+    expect(isBirthday(null, on('2026-06-14'))).toBe(false);
+    expect(isBirthday('', on('2026-06-14'))).toBe(false);
+  });
+
+  it('refuses anything that is not a plain calendar date', () => {
+    expect(isBirthday('14/06/1990', on('2026-06-14'))).toBe(false);
+    expect(isBirthday('1990-13-01', on('2026-01-01'))).toBe(false);
+    expect(isBirthday('not a date', on('2026-06-14'))).toBe(false);
+  });
+
+  it('greets a leap-day birthday on 1 March in a common year', () => {
+    // Once every four years would be the literal reading and the unkind one.
+    expect(isBirthday('2000-02-29', on('2027-03-01'))).toBe(true);
+    expect(isBirthday('2000-02-29', on('2027-02-28'))).toBe(false);
+  });
+
+  it('greets a leap-day birthday on the day itself in a leap year', () => {
+    expect(isBirthday('2000-02-29', on('2028-02-29'))).toBe(true);
+    // And not again the next day, which would be two greetings in one year.
+    expect(isBirthday('2000-02-29', on('2028-03-01'))).toBe(false);
+  });
+
+  it('knows 1900 was not a leap year and 2000 was', () => {
+    expect(isBirthday('1888-02-29', on('1900-03-01'))).toBe(true);
+    expect(isBirthday('1888-02-29', on('2000-03-01'))).toBe(false);
+  });
+
+  it('reads the date in local time, not UTC', () => {
+    // A bare yyyy-mm-dd through new Date() is UTC midnight, which lands on the previous day for
+    // anyone west of UTC - the one day of the year it is conspicuous to get wrong.
+    const lateEvening = new Date('2026-06-14T23:45:00');
+    expect(isBirthday('1990-06-14', lateEvening)).toBe(true);
   });
 });
