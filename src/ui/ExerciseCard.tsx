@@ -71,7 +71,7 @@ export function ExerciseCard({
               accessibilityLabel="Complete"
               testID={testID ? `${testID}-done` : undefined}
             >
-              <Ionicons name="checkmark" size={15} color="#04120A" />
+              <Ionicons name="checkmark" size={15} color={theme.color.onAccent} />
             </View>
           ) : status ? (
             <Text style={s.status}>{status}</Text>

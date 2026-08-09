@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { EXERCISES, RECOMMENDED } from '@/catalog';
+import { useStore } from '@/store/useStore';
 import { ExerciseList } from '@/ui/ExerciseList';
 
 jest.mock('expo-router', () => ({
@@ -80,5 +81,65 @@ describe('filters', () => {
     await fireEvent.press(screen.getByTestId('muscle-Chest'));
     // 151 exercises involve the chest; far fewer actually target it.
     expect(screen.getByText(/^\d+ exercises$/).props.children.join('')).not.toBe('151 exercises');
+  });
+});
+
+describe('how much of an exercise you have actually done', () => {
+  const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
+  const store = () => useStore.getState();
+
+  /** Logs `count` sets of `exerciseId` in one finished session. */
+  function record(exerciseId: string, count: number) {
+    const planId = store().createPlan('monday');
+    store().addPlanItem(planId, exerciseId);
+    const sessionId = store().startSession(planId)!;
+    const entry = store().sessions.find((s) => s.id === sessionId)!.entries[0];
+    while (
+      store().sessions.find((s) => s.id === sessionId)!.entries[0].sets.length < count
+    ) {
+      store().addSet(sessionId, entry.id);
+    }
+    for (const set of store().sessions.find((s) => s.id === sessionId)!.entries[0].sets.slice(
+      0,
+      count,
+    )) {
+      store().toggleSetLogged(sessionId, entry.id, set.id);
+    }
+    store().endSession(sessionId);
+  }
+
+  beforeEach(() => store().resetAll());
+
+  it('says nothing for an exercise never recorded', async () => {
+    // 896 rows, and a badge on every one of them would be noise rather than information.
+    await renderList();
+    await search('bench press');
+    expect(screen.queryByTestId(`logged-${BENCH}`)).toBeNull();
+  });
+
+  it('counts the sets recorded', async () => {
+    record(BENCH, 4);
+    await renderList();
+    await search('bench press');
+
+    expect(screen.getByTestId(`logged-${BENCH}`)).toBeTruthy();
+    expect(screen.getByText('4 sets')).toBeTruthy();
+  });
+
+  it('says "1 set", not "1 sets"', async () => {
+    record(BENCH, 1);
+    await renderList();
+    await search('bench press');
+    expect(screen.getByText('1 set')).toBeTruthy();
+  });
+
+  it('adds up across sessions', async () => {
+    // The number is a lifetime total, not this week's - the question it answers is "is this one
+    // of mine", and one heavy week does not make it so.
+    record(BENCH, 3);
+    record(BENCH, 2);
+    await renderList();
+    await search('bench press');
+    expect(screen.getByText('5 sets')).toBeTruthy();
   });
 });

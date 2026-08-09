@@ -207,7 +207,18 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
         </Card>
 
         <Card>
-          <H2>History</H2>
+          {/*
+            * The total in the heading, because the list below is capped at forty rows - without
+            * it, someone two hundred sets into their bench press cannot see that from here.
+            */}
+          <H2>
+            History
+            {history.length > 0 ? (
+              <Text style={s.histCount} testID="history-count">
+                {`  ${history.length} set${history.length === 1 ? '' : 's'}`}
+              </Text>
+            ) : null}
+          </H2>
           {history.length === 0 ? (
             <Dim style={{ marginTop: theme.space(2) }}>
               No recorded sets yet. Logged sets of this exercise show up here, newest first.
@@ -269,6 +280,8 @@ const s = StyleSheet.create({
     borderBottomColor: theme.color.border,
   },
   histAgo: { color: theme.color.textFaint, fontSize: theme.font.tiny },
+  // Sits inside the heading, so it has to read as a subtitle rather than part of the title.
+  histCount: { color: theme.color.textFaint, fontSize: theme.font.small, fontWeight: '600' },
   video: {
     flexDirection: 'row',
     alignItems: 'center',

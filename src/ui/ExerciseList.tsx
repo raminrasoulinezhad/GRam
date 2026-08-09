@@ -34,6 +34,11 @@ type Props = {
   header?: React.ReactNode;
 };
 
+/** "1 set" / "24 sets", so the chip reads as a sentence rather than a bare number. */
+function setsLabel(count: number): string {
+  return `${count} set${count === 1 ? '' : 's'}`;
+}
+
 export function ExerciseList({ onSelect, accessory, header, initialQuery = '' }: Props) {
   const [query, setQuery] = useState(initialQuery);
   const [group, setGroup] = useState<TrainingGroup | null>(null);
@@ -156,6 +161,19 @@ export function ExerciseList({ onSelect, accessory, header, initialQuery = '' }:
                   <Text style={s.name}>{item.name}</Text>
                 </View>
                 <View style={s.meta}>
+                  {/*
+                    * What you have actually done with it, ahead of what it is.
+                    *
+                    * Eight hundred-odd exercises all look equally plausible in a list, and the
+                    * ones worth telling apart are the few you already train. This is the only
+                    * place that separates "never tried" from "my main lift" without opening
+                    * the exercise. Counted in sets - the unit the rest of the app reasons in,
+                    * and a session count would call one warm-up set and five working sets the
+                    * same amount of work.
+                    */}
+                  {(history.get(item.id) ?? 0) > 0 ? (
+                    <Chip label={setsLabel(history.get(item.id)!)} testID={`logged-${item.id}`} />
+                  ) : null}
                   {item.primaryMuscles.map((m) => (
                     <Chip key={m} label={MUSCLE_LABEL[m]} tone="primary" />
                   ))}

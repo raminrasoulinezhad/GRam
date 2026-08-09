@@ -6,6 +6,30 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.11] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **Every exercise says how much of it you have done.** A chip on each row of the catalog and
+  the picker — "3 sets", "24 sets" — and a total beside the History heading on the exercise
+  page, which the forty-row list could not show. Nothing appears on an exercise you have never
+  recorded; a badge on all 896 would be noise.
+
+  Counted in sets, the unit the rest of the app reasons in. A session count would call one
+  warm-up set and five working sets the same amount of work.
+
+### Fixed
+
+- **The completed-exercise tick was invisible on the light themes.** One more hardcoded
+  near-black label, in a double-quoted attribute the first sweep for them missed.
+- **Four dependencies were missing from THIRD-PARTY-NOTICES.md** — the wheel picker,
+  expo-device, expo-localization and expo-updates. All MIT or Expo's own, all permissive, but
+  MIT requires the notice to travel with the software, so the omission was a licence breach
+  rather than an untidy file. A test now fails the suite when a dependency is not listed, with
+  the right version, so this cannot drift again.
+
 ## [1.4.10] — 2026-08-08
 
 Storage schema **v7** — unchanged.

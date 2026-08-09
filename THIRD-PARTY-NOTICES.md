@@ -69,13 +69,17 @@ notice be included in distributions, which is what this section is for.
 |---|---|---|
 | @expo/metro-runtime | 57.0.8 | Copyright (c) 2015-present 650 Industries, Inc. (aka Expo) |
 | @expo/vector-icons | 15.1.1 | Copyright (c) 2015 Joel Arvidsson |
+| @quidone/react-native-wheel-picker | 1.7.1 | Copyright (c) 2023 Quidone React Native Wheel Picker |
 | @react-native-async-storage/async-storage | 2.2.0 | Copyright (c) 2015-present, Facebook, Inc. |
 | expo | 57.0.9 | Copyright (c) 2015-present 650 Industries, Inc. (aka Expo) |
 | expo-asset | 57.0.8 | Copyright (c) 2015-present 650 Industries, Inc. (aka Expo) |
 | expo-constants | 57.0.8 | Copyright (c) 2015-present 650 Industries, Inc. (aka Expo) |
+| expo-device | 57.0.1 | Copyright (c) 2015-present 650 Industries, Inc. (aka Expo) |
 | expo-linking | 57.0.4 | Copyright (c) 2015-present 650 Industries, Inc. (aka Expo) |
+| expo-localization | 57.0.1 | Copyright (c) 2015-present 650 Industries, Inc. (aka Expo) |
 | expo-router | 57.0.9 | Copyright (c) 2015-present 650 Industries, Inc. (aka Expo) |
 | expo-status-bar | 57.0.1 | Copyright (c) 2015-present 650 Industries, Inc. (aka Expo) |
+| expo-updates | 57.0.11 | Copyright (c) 2015-present 650 Industries, Inc. (aka Expo) |
 | react | 19.2.3 | Copyright (c) Meta Platforms, Inc. and affiliates. |
 | react-dom | 19.2.3 | Copyright (c) Meta Platforms, Inc. and affiliates. |
 | react-native | 0.86.2 | Copyright (c) Meta Platforms, Inc. and affiliates. |
