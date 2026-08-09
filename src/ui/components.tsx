@@ -118,12 +118,25 @@ export function Chip({
   onPress,
   tone = 'default',
   testID,
+  style,
+  compact = false,
 }: {
   label: string;
   active?: boolean;
   onPress?: () => void;
   tone?: 'default' | 'primary' | 'secondary';
   testID?: string;
+  /** Applied to whichever element is outermost, for callers that need to place the chip. */
+  style?: StyleProp<ViewStyle>;
+  /**
+   * Tighter horizontal padding, for rows that must fit a fixed number of chips.
+   *
+   * The weekday picker needs seven across the narrowest phone. Stretching them with `flex: 1`
+   * looked like the obvious answer and collapsed the whole row to nothing - a flex basis of
+   * zero inside a container that was not distributing free space. Making each chip naturally
+   * narrow works everywhere and depends on nothing.
+   */
+  compact?: boolean;
 }) {
   const content = (
     <View
@@ -131,9 +144,11 @@ export function Chip({
       testID={onPress ? undefined : testID}
       style={[
         s.chip,
+        compact && s.chipCompact,
         active && s.chipActive,
         tone === 'primary' && s.chipPrimary,
         tone === 'secondary' && s.chipSecondary,
+        onPress ? null : style,
       ]}
     >
       <Text style={[s.chipLabel, active && s.chipLabelActive]} numberOfLines={1}>
@@ -143,7 +158,7 @@ export function Chip({
   );
   if (!onPress) return content;
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} testID={testID}>
+    <Pressable accessibilityRole="button" onPress={onPress} testID={testID} style={style}>
       {content}
     </Pressable>
   );
@@ -300,11 +315,13 @@ const s = StyleSheet.create({
   chip: {
     paddingVertical: theme.space(1.5),
     paddingHorizontal: theme.space(3),
+    alignItems: 'center',
     borderRadius: theme.radius.pill,
     backgroundColor: theme.color.surfaceAlt,
     borderWidth: 1,
     borderColor: theme.color.border,
   },
+  chipCompact: { paddingHorizontal: theme.space(1.5) },
   chipActive: { backgroundColor: theme.color.accent, borderColor: theme.color.accent },
   chipPrimary: { backgroundColor: theme.color.accentDim, borderColor: theme.color.accentDim },
   chipSecondary: { backgroundColor: theme.color.surfaceAlt },

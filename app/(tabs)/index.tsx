@@ -153,6 +153,9 @@ export default function PlansScreen() {
                     existing ? () => router.push(`/plan/${existing.id}`) : () => handleCreate(day)
                   }
                   testID={`add-${day}`}
+                  // Seven across one row. Wrapping put Sunday on a line of its own, which made
+                  // a seven-day week look like a five-day one at a glance.
+                  compact
                 />
               );
             })}
@@ -199,7 +202,7 @@ const s = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
-  dayChips: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space(1.5) },
+  dayChips: { flexDirection: 'row', gap: theme.space(1) },
   addInput: {
     flex: 1,
     // Without this an <input> keeps its ~200px intrinsic width on web and overflows the row.

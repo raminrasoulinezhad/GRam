@@ -6,6 +6,25 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.4] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **Date of birth is picked, not typed.** It was a text box asking for `YYYY-MM-DD` that kept
+  whatever you gave it — the wrong separator, the American order, a typo'd year, all
+  indistinguishable from a real answer, so a mistyped birthday quietly produced a wrong age. Now
+  three taps: year, then month, then day, with only the days that month actually has and 29
+  February offered only in leap years. The field reads "14 June 1990" rather than a stored
+  string, since `1990-06-14` is ambiguous to half the world.
+
+  Not a month grid, deliberately. A birthday is decades back and reaching 1990 by paging a
+  calendar means four hundred months; every platform that has thought about it opens on a year.
+
+- **The seven weekday buttons on My week fit one row.** Sunday was wrapping onto a line of its
+  own, which made a seven-day week read as a five-day one at a glance.
+
 ## [1.4.3] — 2026-08-08
 
 Storage schema **v7** — unchanged. **Nothing in the app looks different yet** — this adds the

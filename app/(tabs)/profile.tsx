@@ -15,6 +15,7 @@ import { countLoggedSets } from '@/analytics/volume';
 import { Button, Card, Chip, Dim, H2, NumberField, Screen } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
 import { BackupCard } from '@/ui/BackupCard';
+import { DateField } from '@/ui/DateField';
 import { theme } from '@/ui/theme';
 const SEXES = ['male', 'female', 'unspecified'] as const;
 
@@ -96,15 +97,10 @@ export default function ProfileScreen() {
             ))}
           </View>
           <Text style={[s.label, s.spaced]}>DATE OF BIRTH</Text>
-          <TextInput
+          <DateField
             testID="profile-birthdate"
-            value={profile.birthDate ?? ''}
-            onChangeText={(t) => updateProfile({ birthDate: t.trim() === '' ? null : t.trim() })}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={theme.color.textFaint}
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={s.input}
+            value={profile.birthDate}
+            onChange={(birthDate) => updateProfile({ birthDate })}
           />
           <View style={s.measureRow}>
             <View>
