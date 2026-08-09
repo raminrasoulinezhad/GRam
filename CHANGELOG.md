@@ -6,6 +6,29 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.3] — 2026-08-08
+
+Storage schema **v7** — unchanged. **Nothing in the app looks different yet** — this adds the
+palettes and the checks on them, not the switching.
+
+### Added
+
+- **Eight candidate themes** in [src/ui/themes.ts](src/ui/themes.ts), with **Carbon** — true
+  black — set as the intended default in place of Midnight. On the OLED panel in almost every
+  recent phone a black pixel is switched off, and a workout screen is mostly background held
+  awake for a whole session, so it is the one option here with a measurable argument behind it
+  rather than only a visual one.
+
+  Dark: Carbon, Midnight, Graphite, Blueprint, Neon. Light: Chalk, Platinum, Logbook. Two more
+  were drawn and cut — Iron, the charcoal-and-safety-orange every lifting app converges on, for
+  sitting too close to Carbon and Graphite; and Ember, the warm dark, which went with it.
+
+- **Automated checks on every palette**, because judging colour from hex codes does not work.
+  They caught real faults: text at 2.9:1 against its own background, an accent and a warning
+  twenty-four degrees apart in hue, ramps whose adjacent steps were within 1.1:1 — close enough
+  that two different training loads drew the same colour on the body map — and a heat ramp whose
+  hottest step was the same lime as the accent, so a hammered muscle looked like a button.
+
 ## [1.4.2] — 2026-08-08
 
 Storage schema **v7** — unchanged.
