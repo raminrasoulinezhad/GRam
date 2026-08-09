@@ -16,7 +16,17 @@
     <meta name="description" content="Plan your sets and see which muscles you have actually trained." />
 
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#0B1220" />
+    <!--
+      These three - and background-color below, and the two colours in manifest.json - are the
+      DEFAULT theme, Carbon. They are what the page shows in the moment before the bundle runs
+      and on the install splash screen, which is the one paint no JavaScript can reach.
+
+      src/ui/theme.ts overwrites them at import with whichever palette the user actually chose,
+      so someone on Chalk gets a white frame. Keep them matching DEFAULT_THEME in src/ui/themes.ts:
+      when they drifted (they said Midnight navy while the default had become Carbon black) the
+      app opened with a navy flash and installed with a navy splash behind a black screen.
+    -->
+    <meta name="theme-color" content="#000000" />
     <meta name="color-scheme" content="dark" />
 
     <!--
@@ -35,7 +45,7 @@
       html,
       body {
         height: 100%;
-        background-color: #0b1220;
+        background-color: #000000;
       }
       body {
         /*

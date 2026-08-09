@@ -6,6 +6,18 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.5.1] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Fixed
+
+- **The app opened with a navy flash and installed with a navy splash.** `index.html` and
+  `manifest.json` still described the old Midnight default after Carbon took over — and those
+  are the one paint no JavaScript can reach, because they are what the browser shows before the
+  bundle runs and what the PWA install screen uses. Both now say Carbon, and a test keeps them
+  matching `DEFAULT_THEME`.
+
 ## [1.5.0] — 2026-08-08
 
 Storage schema **v7** — unchanged.

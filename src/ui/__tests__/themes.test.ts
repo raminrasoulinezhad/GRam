@@ -175,3 +175,37 @@ describe('the set of palettes', () => {
     }
   });
 });
+
+describe('the colours no JavaScript can reach', () => {
+  /*
+   * The install splash and the frame painted before the bundle runs come from static files, so
+   * theme.ts cannot set them. They have to be written down as the default theme, and they have
+   * to be kept in step with it - which they were not: they still said Midnight navy after the
+   * default became Carbon black, so the app opened with a navy flash and installed with a navy
+   * splash behind a black screen.
+   */
+  const read = (file: string) =>
+    require('node:fs').readFileSync(require('node:path').resolve(__dirname, '../../..', file), 'utf8');
+
+  const bg = THEMES[DEFAULT_THEME].colors.bg;
+
+  it('paints the pre-bundle page in the default theme', () => {
+    const html = read('public/index.html');
+    expect(html).toContain(`<meta name="theme-color" content="${bg}" />`);
+    expect(html).toContain(`background-color: ${bg};`);
+  });
+
+  it('declares the install splash in the default theme', () => {
+    const manifest = JSON.parse(read('public/manifest.json')) as {
+      background_color: string;
+      theme_color: string;
+    };
+    expect([manifest.background_color, manifest.theme_color]).toEqual([bg, bg]);
+  });
+
+  it('declares a colour scheme matching the default theme', () => {
+    // Dark glyphs on a light default, or the browser draws white-on-white form controls.
+    const expected = THEMES[DEFAULT_THEME].light ? 'light' : 'dark';
+    expect(read('public/index.html')).toContain(`<meta name="color-scheme" content="${expected}" />`);
+  });
+});
