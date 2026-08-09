@@ -38,10 +38,10 @@ import { MUSCLES, type Muscle } from './generated';
  * where the evidence has moved, update the comment saying why, and set both constants below.
  */
 /*
- * 1.5 and 1.6: re-examined, nothing moved either time.
+ * 1.5, 1.6 and 1.7: re-examined, nothing moved any of the three times.
  *
  * Written down rather than passed over, because a stamp that advances without a reason is how
- * this check decays into a formality. Both fell on the same day as the substantive 1.4 review:
+ * this check decays into a formality. All three fell within a day of the substantive 1.4 review:
  * the catalog gained no exercises in between, and none of the sources published anything in
  * the interval. Every pick below still carries the reasoning it was chosen with.
  *
@@ -49,7 +49,7 @@ import { MUSCLES, type Muscle } from './generated';
  * the evidence has moved - they say only that it cannot have. The next release that lands on a
  * different week from 1.4 owes this file a real reading, not another note like this one.
  */
-export const RECOMMENDED_REVIEWED_FOR = '1.6';
+export const RECOMMENDED_REVIEWED_FOR = '1.7';
 
 /** Calendar date of the last review, so staleness is visible even between version bumps. */
 export const RECOMMENDED_REVIEWED_ON = '2026-08-08';

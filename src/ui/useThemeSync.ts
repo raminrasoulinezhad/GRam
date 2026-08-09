@@ -45,11 +45,11 @@ export function useThemeSync() {
  * a store. Native has no synchronous storage to read the choice back from at launch anyway, so
  * there is nothing a restart there would pick up; see `themeAppliesImmediately`.
  */
-export function reloadApp() {
+export function reloadApp(reopenPicker = false) {
   if (Platform.OS !== 'web') return;
-  // Leaves a note for the far side, so the restart comes back to this spot without the logo
-  // screen playing. See themeReload.ts.
-  markThemeReload();
+  // Leaves a note for the far side, so the restart comes back to this spot - and, when the
+  // change came from the picker, with the picker still open. See themeReload.ts.
+  markThemeReload(reopenPicker);
   try {
     globalThis.location?.reload();
   } catch {

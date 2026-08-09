@@ -26,7 +26,7 @@ const KEY = 'gram-theme-reload';
  */
 const FRESH_MS = 30_000;
 
-type Note = { y: number; at: number };
+type Note = { y: number; at: number; picker?: boolean };
 
 function store(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null {
   if (Platform.OS !== 'web') return null;
@@ -49,7 +49,7 @@ function consume(): Note | null {
     const note = JSON.parse(raw) as Partial<Note>;
     if (typeof note.y !== 'number' || typeof note.at !== 'number') return null;
     if (Date.now() - note.at > FRESH_MS) return null;
-    return { y: note.y, at: note.at };
+    return { y: note.y, at: note.at, picker: note.picker === true };
   } catch {
     return null;
   }
@@ -65,12 +65,23 @@ export function isThemeReload(): boolean {
   return arrived !== null;
 }
 
+/**
+ * True when the theme picker was open when the reload was triggered, so it can come back open.
+ *
+ * Applying on tap means each colour tried costs a restart. Without this, seeing a second one
+ * costs four gestures - scroll, tap the field, tap the theme, wait - which turns browsing nine
+ * palettes into a chore. Reopened, it is one tap per look.
+ */
+export function wasPickerOpen(): boolean {
+  return arrived?.picker === true;
+}
+
 /** Leaves the note. Called immediately before reloading. */
-export function markThemeReload(): void {
+export function markThemeReload(picker = false): void {
   const s = store();
   if (!s) return;
   try {
-    s.setItem(KEY, JSON.stringify({ y: lastScrollY, at: Date.now() } satisfies Note));
+    s.setItem(KEY, JSON.stringify({ y: lastScrollY, at: Date.now(), picker } satisfies Note));
   } catch {
     // Out of quota, or a browser refusing storage. The reload still works; it just lands at
     // the top, which is where it landed before any of this existed.

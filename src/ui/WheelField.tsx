@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { nearestIndex } from '@/lib/wheel';
 import { Button } from './components';
+import { Sheet } from './Sheet';
 import { theme } from './theme';
 import { WheelPicker } from './WheelPicker';
 
@@ -126,44 +127,28 @@ function WheelSheet({
   );
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={s.backdrop}>
-        <View style={s.sheet} testID={testID ? `${testID}-sheet` : undefined}>
-          <View style={s.header}>
-            <Text style={s.title}>{title}</Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-              hitSlop={10}
-              onPress={onClose}
-              testID={testID ? `${testID}-close` : undefined}
-            >
-              <Ionicons name="close" size={22} color={theme.color.textDim} />
-            </Pressable>
-          </View>
-
-          <View style={s.body}>
-            <WheelPicker
-              values={values}
-              value={draft}
-              onChange={setDraft}
-              format={format}
-              suffix={suffix}
-              testID={testID ? `${testID}-wheel` : undefined}
-            />
-          </View>
-
-          <View style={s.footer}>
-            <Button
-              label="Done"
-              style={{ flex: 1 }}
-              onPress={() => onPick(draft)}
-              testID={testID ? `${testID}-done` : undefined}
-            />
-          </View>
-        </View>
-      </View>
-    </Modal>
+    <Sheet
+      title={title}
+      onClose={onClose}
+      testID={testID ? `${testID}-sheet` : undefined}
+      footer={
+        <Button
+          label="Done"
+          style={{ flex: 1 }}
+          onPress={() => onPick(draft)}
+          testID={testID ? `${testID}-done` : undefined}
+        />
+      }
+    >
+      <WheelPicker
+        values={values}
+        value={draft}
+        onChange={setDraft}
+        format={format}
+        suffix={suffix}
+        testID={testID ? `${testID}-wheel` : undefined}
+      />
+    </Sheet>
   );
 }
 
@@ -190,23 +175,4 @@ const s = StyleSheet.create({
   value: { flex: 1, color: theme.color.text, fontSize: theme.font.body, fontWeight: '700' },
   valueCompact: { fontSize: theme.font.small },
 
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: theme.color.surface,
-    borderTopLeftRadius: theme.radius.lg,
-    borderTopRightRadius: theme.radius.lg,
-    borderTopWidth: 1,
-    borderColor: theme.color.border,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.space(3),
-    padding: theme.space(4),
-    borderBottomWidth: 1,
-    borderBottomColor: theme.color.border,
-  },
-  title: { flex: 1, color: theme.color.text, fontSize: theme.font.h2, fontWeight: '700' },
-  body: { padding: theme.space(4) },
-  footer: { flexDirection: 'row', padding: theme.space(4), paddingTop: 0 },
 });

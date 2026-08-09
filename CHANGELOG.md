@@ -6,6 +6,30 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.7.0] — 2026-08-09
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **The theme picker is a field, not a list.** Nine palettes sitting open took **769px on an
+  812px phone** — a whole screen, and a third of the Profile page, for a setting most people
+  touch twice. It is now the same control as date of birth, height and weight: one line saying
+  what is selected, and a sheet behind it. **The card is 138px and the page lost 631px.**
+
+  Choosing applies **on tap** — no Done button. This is a choice you make by looking at it, and
+  confirming something instantly reversible is a tax on trying the next one.
+
+  Because each change restarts the app, the sheet **comes back open** on the far side. Without
+  that, seeing a second colour would cost scrolling back, opening the field and tapping again;
+  with it, browsing the nine is one tap per look. Verified: Mocha then Lemon, one tap each.
+
+### Added
+
+- **A shared `Sheet`.** The date picker and the wheel field had grown identical copies of the
+  same chrome — backdrop, rounded top, header rule, close button — and the theme picker would
+  have been a third. Three copies is where a shared component stops being speculative.
+
 ## [1.6.0] — 2026-08-08
 
 Storage schema **v7** — unchanged.
