@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useStore } from '@/store/useStore';
 import { theme } from './theme';
+import { isThemeReload } from './themeReload';
 
 /** How long the logo stays up once everything is ready. */
 const MINIMUM_MS = 1800;
@@ -22,11 +23,21 @@ const FADE_MS = 320;
  * so without something covering that gap the app paints "No plans yet" for a frame and then
  * snaps to your real data. The splash holds until the store has actually loaded, then stays a
  * moment longer so it reads as intentional rather than as a flash.
+ *
+ * EXCEPT AFTER A THEME CHANGE
+ * That restart is not a launch - the user tapped a colour two seconds ago and is still on the
+ * page they tapped it from. Playing the logo there turns a setting into an event, and holding
+ * it for the full MINIMUM_MS makes changing your mind about a colour cost two seconds a go.
+ *
+ * The cover still appears, because the hydration gap is just as real on that path; it is
+ * simply the background colour with nothing on it, and it lifts the moment the store is ready
+ * rather than waiting out the brand delay. The result reads as a repaint, not a relaunch.
  */
 export function Splash({ children }: { children: ReactNode }) {
   const [done, setDone] = useState(false);
   const opacity = useRef(new Animated.Value(1)).current;
   const { width, height } = useWindowDimensions();
+  const quiet = isThemeReload();
 
   // Two versions of the artwork: a tall one that fills a phone, a wide one for a landscape
   // window. Using the wide logo on a phone would leave it stranded in a band of empty space.
@@ -56,9 +67,13 @@ export function Splash({ children }: { children: ReactNode }) {
       timers.push(setTimeout(() => !cancelled && setDone(true), FADE_MS + 250));
     };
 
+    // No brand delay on a theme change: the cover is there to hide the hydration gap, and the
+    // moment that closes there is nothing left to hide.
+    const linger = quiet ? 0 : MINIMUM_MS;
+
     const startFade = () => {
       if (cancelled) return;
-      timers.push(setTimeout(hide, MINIMUM_MS));
+      timers.push(setTimeout(hide, linger));
     };
 
     // hasHydrated() is already true when storage resolved before this mounted, in which case
@@ -68,30 +83,36 @@ export function Splash({ children }: { children: ReactNode }) {
     else unsub = useStore.persist.onFinishHydration(startFade);
 
     // Backstop: a storage failure must not strand anyone on the splash forever.
-    timers.push(setTimeout(hide, MINIMUM_MS + 3000));
+    timers.push(setTimeout(hide, linger + 3000));
 
     return () => {
       cancelled = true;
       unsub?.();
       for (const t of timers) clearTimeout(t);
     };
-  }, [opacity]);
+  }, [opacity, quiet]);
 
   return (
     <View style={s.root}>
       {children}
       {!done ? (
-        <Animated.View style={[s.overlay, { opacity }]} pointerEvents="none" testID="splash">
-          <Image
-            source={
-              portrait
-                ? require('../../assets/logo-portrait.jpg')
-                : require('../../assets/logo.jpg')
-            }
-            style={s.image}
-            resizeMode="cover"
-            accessibilityLabel="GRam"
-          />
+        <Animated.View
+          style={[s.overlay, { opacity }]}
+          pointerEvents="none"
+          testID={quiet ? 'splash-quiet' : 'splash'}
+        >
+          {quiet ? null : (
+            <Image
+              source={
+                portrait
+                  ? require('../../assets/logo-portrait.jpg')
+                  : require('../../assets/logo.jpg')
+              }
+              style={s.image}
+              resizeMode="cover"
+              accessibilityLabel="GRam"
+            />
+          )}
         </Animated.View>
       ) : null}
     </View>

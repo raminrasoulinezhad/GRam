@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Constants from 'expo-constants';
 import { EXERCISES } from '@/catalog';
@@ -20,6 +20,7 @@ import { DateField } from '@/ui/DateField';
 import { ThemeCard } from '@/ui/ThemeCard';
 import { WheelField } from '@/ui/WheelField';
 import { theme } from '@/ui/theme';
+import { useKeepScrollAcrossThemeChange } from '@/ui/themeReload';
 const SEXES = ['male', 'female', 'unspecified'] as const;
 
 /**
@@ -51,6 +52,8 @@ export default function ProfileScreen() {
   const setDefaultRest = useStore((s) => s.setDefaultRest);
   const resetAll = useStore((s) => s.resetAll);
   const confirm = useConfirm();
+  const scroller = useRef<ScrollView>(null);
+  const onScroll = useKeepScrollAcrossThemeChange(scroller);
   const stats = useMemo(() => {
     const done = completedSessions(allSessions);
     return {
@@ -72,7 +75,17 @@ export default function ProfileScreen() {
   }
   return (
     <Screen>
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+      {/*
+        * Changing the theme restarts the app, and the picker is most of a page down from here.
+        * This is what brings you back to it rather than to the top - see ui/themeReload.ts.
+        */}
+      <ScrollView
+        ref={scroller}
+        onScroll={onScroll}
+        scrollEventThrottle={100}
+        contentContainerStyle={s.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {/*
           * Who you are, in one card.
           *

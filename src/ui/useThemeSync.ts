@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { useStore } from '@/store/useStore';
 import { readLaunchTheme, theme, writeLaunchTheme } from './theme';
+import { markThemeReload } from './themeReload';
 
 /**
  * Keeps the launch cache honest about which theme the store says to use.
@@ -46,6 +47,9 @@ export function useThemeSync() {
  */
 export function reloadApp() {
   if (Platform.OS !== 'web') return;
+  // Leaves a note for the far side, so the restart comes back to this spot without the logo
+  // screen playing. See themeReload.ts.
+  markThemeReload();
   try {
     globalThis.location?.reload();
   } catch {

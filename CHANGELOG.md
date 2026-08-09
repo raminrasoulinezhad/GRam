@@ -6,6 +6,26 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.5.2] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Fixed
+
+- **Changing the theme no longer plays the logo screen or throws you back to the top of
+  Profile.** The palette change still restarts the app — it has to, the stylesheets are built at
+  import — but the restart now carries two things across it: that it was deliberate, and where
+  you were. You land back on the picker you just tapped, at the same scroll position, with no
+  brand moment in between. It reads as a repaint rather than a relaunch.
+
+  The cover is still drawn, because the store rehydrates asynchronously on this path too and
+  without it the page paints defaults for a frame. It is just the background colour with nothing
+  on it, and it lifts the moment the store is ready instead of waiting out the full 1.8s.
+
+  A cold start is unchanged: logo, brand moment, top of the page. The note is deleted the
+  instant it is read, so a manual refresh later never inherits a scroll position nobody asked
+  for.
+
 ## [1.5.1] — 2026-08-08
 
 Storage schema **v7** — unchanged.
