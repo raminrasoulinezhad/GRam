@@ -78,17 +78,22 @@ describe('a past workout reads as a record until you ask to edit it', () => {
 });
 
 describe('correcting what was recorded', () => {
-  it('edits weight and reps of a logged set', async () => {
-    // Kilograms, so the number typed is the number stored - see the note in session.screen.test.
+  it('corrects the weight of a logged set through the wheel', async () => {
+    /*
+     * Kilograms, so the row on the wheel is the number stored. Seeded at 92.4 - between two
+     * rows, since the wheel counts in whole numbers - so opening and confirming visibly snaps
+     * it to 92 and proves the write went all the way through.
+     */
     store().updateSettings({ unit: 'kg' });
     pastWorkout();
+    const setId = sets()[0].id;
+    store().updateSet(session().id, session().entries[0].id, setId, { weightKg: 92.4, reps: 4 });
     await openEditor();
 
-    const setId = sets()[0].id;
-    await fireEvent.changeText(screen.getByTestId(`edit-set-${setId}-weight`), '92.5');
-    await fireEvent.changeText(screen.getByTestId(`edit-set-${setId}-reps`), '4');
+    await fireEvent.press(screen.getByTestId(`edit-set-${setId}-weight`));
+    await fireEvent.press(screen.getByTestId(`edit-set-${setId}-weight-done`));
 
-    expect(sets()[0]).toMatchObject({ weightKg: 92.5, reps: 4 });
+    expect(sets()[0].weightKg).toBe(92);
     // The correction does not un-record the set.
     expect(sets()[0].loggedAt).not.toBeNull();
   });

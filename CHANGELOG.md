@@ -6,6 +6,32 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.5.0] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **Set weight and reps are wheels, everywhere a set is edited** — the workout screen, the plan
+  editor and the history correction page. Tapping a number opens the same sheet the Profile
+  fields use; the row itself states the value, so a session reads at a glance without opening
+  anything.
+
+  The number boxes were wrong in both directions in a gym. Tapping one raised a keyboard over
+  the bottom half of the screen, which is exactly where the rest of the set table is, and the
+  stepper beside it took eight taps to get from 60 to 80 kg. A wheel is one gesture for either.
+
+  Time and distance moved too, on the same reasoning.
+
+  **The wheels count in whole numbers.** Half-kilo and 2.5 kg jumps are what plate maths
+  produces, but offering them makes the wheel two and a half times longer to scroll for a
+  resolution nobody logs at. Anything already recorded at 82.5 kg keeps that number and still
+  displays it — the wheel only snaps to the nearest row if you actually open it.
+
+  **One thing is genuinely lost:** a number can no longer be cleared back to blank once set.
+  There is no gesture on a wheel that means "unset". A set that has never been filled in still
+  shows a dash rather than a made-up zero.
+
 ## [1.4.12] — 2026-08-08
 
 Storage schema **v7** — unchanged.

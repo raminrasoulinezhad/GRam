@@ -29,6 +29,8 @@ export function WheelField({
   suffix,
   title,
   placeholder = 'Not set',
+  width,
+  compact = false,
   testID,
 }: {
   value: number | null;
@@ -39,6 +41,15 @@ export function WheelField({
   /** Heading for the sheet. Defaults to the suffix, which is usually enough. */
   title?: string;
   placeholder?: string;
+  /** Fixed width, for a set row where several sit side by side in a table. */
+  width?: number;
+  /**
+   * Tighter padding and no top margin, for the set tables.
+   *
+   * A workout screen shows a dozen of these at once, so the padding that reads as generous on
+   * the Profile page reads as a wall of boxes here.
+   */
+  compact?: boolean;
   testID?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -51,12 +62,24 @@ export function WheelField({
         accessibilityLabel={`${title ?? suffix ?? 'Value'}: ${label}`}
         onPress={() => setOpen(true)}
         testID={testID}
-        style={({ pressed }) => [s.field, pressed && { opacity: 0.7 }]}
+        style={({ pressed }) => [
+          s.field,
+          compact && s.fieldCompact,
+          width !== undefined && { width },
+          pressed && { opacity: 0.7 },
+        ]}
       >
-        <Text style={[s.value, value === null && { color: theme.color.textFaint }]} numberOfLines={1}>
+        <Text
+          style={[
+            s.value,
+            compact && s.valueCompact,
+            value === null && { color: theme.color.textFaint },
+          ]}
+          numberOfLines={1}
+        >
           {label}
         </Text>
-        <Ionicons name="chevron-down" size={16} color={theme.color.textFaint} />
+        <Ionicons name="chevron-down" size={compact ? 13 : 16} color={theme.color.textFaint} />
       </Pressable>
 
       {open ? (
@@ -157,7 +180,15 @@ const s = StyleSheet.create({
     backgroundColor: theme.color.surfaceAlt,
     marginTop: theme.space(1),
   },
+  fieldCompact: {
+    gap: theme.space(1),
+    paddingVertical: theme.space(2),
+    paddingHorizontal: theme.space(2),
+    borderRadius: theme.radius.sm,
+    marginTop: 0,
+  },
   value: { flex: 1, color: theme.color.text, fontSize: theme.font.body, fontWeight: '700' },
+  valueCompact: { fontSize: theme.font.small },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
   sheet: {

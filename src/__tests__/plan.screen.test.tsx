@@ -109,16 +109,21 @@ describe('plan editor', () => {
     expect(screen.getByText(/1 exercise · 4 sets/)).toBeTruthy();
   });
 
-  it('edits a template weight and reps', async () => {
-    // Kilograms, so the number typed is the number stored - see the note in session.screen.test.
+  it('edits a template weight through the wheel', async () => {
+    // Kilograms, so the row is the number stored. Seeded off the wheel's whole numbers, so
+    // confirming has something to change and the write is observable.
     store().updateSettings({ unit: 'kg' });
     makePlan(BENCH);
-    await renderScreen(<PlanEditorScreen />);
-
-    await openItem();
     const templateId = plan().items[0].templates[0].id;
-    await fireEvent.changeText(screen.getByTestId(`tpl-${templateId}-weight`), '100');
-    await fireEvent.changeText(screen.getByTestId(`tpl-${templateId}-reps`), '3');
+    store().updatePlanTemplate(plan().id, plan().items[0].id, templateId, {
+      weightKg: 100.4,
+      reps: 3,
+    });
+    await renderScreen(<PlanEditorScreen />);
+    await openItem();
+
+    await fireEvent.press(screen.getByTestId(`tpl-${templateId}-weight`));
+    await fireEvent.press(screen.getByTestId(`tpl-${templateId}-weight-done`));
 
     expect(plan().items[0].templates[0]).toMatchObject({ weightKg: 100, reps: 3 });
   });

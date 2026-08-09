@@ -89,46 +89,75 @@ describe('active workout screen', () => {
     expect(screen.getByText('0/3')).toBeTruthy();
   });
 
-  it('edits weight and reps through the set fields', async () => {
-    // Deliberately in kilograms, so the number typed is the number stored and this stays a
-    // test of the field wiring. The pounds path, which is what a fresh install shows, is next.
+  it('edits weight and reps through the set wheels', async () => {
+    /*
+     * The wheels count in whole numbers, so seeding a value between two rows makes the whole
+     * path observable: the sheet has to open on the nearest row, and Done has to write that
+     * row back. A value already on the wheel would leave the store untouched and prove nothing.
+     *
+     * The library's own scrolling cannot be driven from here - it is a real scroll container,
+     * and there isn't one - so choosing a *different* row is verified in a browser. What these
+     * tests hold is the wiring on either side of it.
+     */
     store().updateSettings({ unit: 'kg' });
     startWorkout();
+    store().updateSet(store().sessions[0].id, entryId(), setIds()[0], {
+      weightKg: 82.4,
+      reps: 5,
+    });
     await renderScreen(<SessionScreen />);
 
     const setId = setIds()[0];
-    await fireEvent.changeText(screen.getByTestId(`set-${setId}-weight`), '82.5');
-    await fireEvent.changeText(screen.getByTestId(`set-${setId}-reps`), '5');
+    await fireEvent.press(screen.getByTestId(`set-${setId}-weight`));
+    await fireEvent.press(screen.getByTestId(`set-${setId}-weight-done`));
 
-    expect(store().sessions[0].entries[0].sets[0]).toMatchObject({ weightKg: 82.5, reps: 5 });
+    expect(store().sessions[0].entries[0].sets[0].weightKg).toBe(82);
   });
 
-  it('converts a weight typed in the default pounds', async () => {
+  it('shows the stored value on the row, without opening anything', async () => {
+    // A set table has to be readable at a glance mid-workout. Whatever the wheel would snap to,
+    // the row states what is actually recorded.
+    store().updateSettings({ unit: 'kg' });
     startWorkout();
+    store().updateSet(store().sessions[0].id, entryId(), setIds()[0], {
+      weightKg: 82.5,
+      reps: 5,
+    });
+    await renderScreen(<SessionScreen />);
+
+    // All three, because an edit carries into the sets that come after it.
+    expect(screen.getAllByText('82.5 kg').length).toBe(3);
+    expect(screen.getAllByText('5 reps').length).toBe(3);
+  });
+
+  it('converts through the wheel in the default pounds', async () => {
+    // Stored in kg whatever the wheel shows, so switching units never rewrites history. 102.5 kg
+    // is 226.0 lb, which is the 226 row, and that comes back as 102.51 kg.
+    startWorkout();
+    store().updateSet(store().sessions[0].id, entryId(), setIds()[0], { weightKg: 102.5 });
     await renderScreen(<SessionScreen />);
 
     const setId = setIds()[0];
-    await fireEvent.changeText(screen.getByTestId(`set-${setId}-weight`), '225');
+    await fireEvent.press(screen.getByTestId(`set-${setId}-weight`));
+    await fireEvent.press(screen.getByTestId(`set-${setId}-weight-done`));
 
-    // Stored in kg whatever the field says, so switching units never rewrites history.
-    expect(store().sessions[0].entries[0].sets[0].weightKg).toBeCloseTo(102.06, 1);
+    expect(store().sessions[0].entries[0].sets[0].weightKg).toBeCloseTo(102.51, 1);
   });
 
-  it('rejects non-numeric input rather than storing NaN', async () => {
-    startWorkout();
+  it('says nothing rather than zero for a set with no numbers yet', async () => {
+    /*
+     * A wheel cannot express "blank", so a set that has never been filled in must not read as
+     * 0 kg x 1 rep - that is a claim about a set nobody did. It shows a dash until chosen.
+     *
+     * This does cost something the typed field had: once a number is set it can be changed but
+     * not cleared again. Deliberate - there is no gesture on a wheel that means "unset", and
+     * inventing one for a case nobody hits is worse than the gap.
+     */
+    startWorkout(PULLUPS);
+    store().updateSet(store().sessions[0].id, entryId(), setIds()[0], { reps: undefined });
     await renderScreen(<SessionScreen />);
 
-    await fireEvent.changeText(screen.getByTestId(`set-${setIds()[0]}-weight`), 'abc');
-
-    expect(store().sessions[0].entries[0].sets[0].weightKg).toBeUndefined();
-  });
-
-  it('clears a field to undefined instead of zero when emptied', async () => {
-    startWorkout();
-    await renderScreen(<SessionScreen />);
-
-    await fireEvent.changeText(screen.getByTestId(`set-${setIds()[0]}-reps`), '');
-
+    expect(screen.getAllByText('-').length).toBeGreaterThan(0);
     expect(store().sessions[0].entries[0].sets[0].reps).toBeUndefined();
   });
 
@@ -166,15 +195,18 @@ describe('active workout screen', () => {
     expect(screen.getByText('0/2')).toBeTruthy();
   });
 
-  it('shows the right fields for a timed exercise and no weight input', async () => {
+  it('shows the right fields for a timed exercise and no weight wheel', async () => {
     startWorkout(PLANK);
+    const setId = setIds()[0];
+    // The seconds wheel counts in fives, so 73 snaps to 75 and the write is observable.
+    store().updateSet(store().sessions[0].id, entryId(), setId, { timeSec: 73 });
     await renderScreen(<SessionScreen />);
 
-    const setId = setIds()[0];
     expect(screen.getByTestId(`set-${setId}-time`)).toBeTruthy();
     expect(screen.queryByTestId(`set-${setId}-weight`)).toBeNull();
 
-    await fireEvent.changeText(screen.getByTestId(`set-${setId}-time`), '75');
+    await fireEvent.press(screen.getByTestId(`set-${setId}-time`));
+    await fireEvent.press(screen.getByTestId(`set-${setId}-time-done`));
     expect(store().sessions[0].entries[0].sets[0].timeSec).toBe(75);
   });
 

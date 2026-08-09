@@ -1,15 +1,51 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { SetKind } from '@/catalog';
 import { fromDisplayWeight, toDisplayWeight } from '@/lib/format';
+import { range } from '@/lib/wheel';
 import type { SetValues } from '@/store/types';
-import { NumberField } from './components';
 import { theme } from './theme';
+import { WheelField } from './WheelField';
 
 /**
  * The editable numbers for one set, laid out according to its kind.
- * Weight is stored in kg always; only the display converts, so switching units never
- * rewrites history.
+ *
+ * Weight is stored in kg always; only the display converts, so switching units never rewrites
+ * history.
+ *
+ * WHY WHEELS AND NOT TYPED FIELDS
+ * These were number boxes with a stepper. Both halves were wrong in a gym: tapping the box
+ * raises a keyboard over the bottom half of the screen - exactly where the rest of the set
+ * table is - and the stepper needs eight taps to get from 60 to 80 kg. A wheel is one gesture
+ * for either, and it puts nothing over the screen except the sheet you asked for.
+ *
+ * Each field states its value on the row, so a session can be read without opening anything.
+ *
+ * WHOLE NUMBERS
+ * The wheels count in ones. Half-kilo and 2.5 kg jumps are what plate maths actually produces,
+ * but a wheel that offers them is two and a half times longer to scroll for a resolution
+ * nobody logs at - and anything already recorded at 82.5 kg keeps that number until the wheel
+ * is actually used, because the row shows the stored value and the wheel only snaps to the
+ * nearest row when you open it.
  */
+
+/*
+ * What each wheel offers.
+ *
+ * Ranges are generous at the top rather than tight: a wheel you can scroll past the end of is
+ * a bug, and the cost of an unused row is nothing. Weight starts at 0, which is how a
+ * bodyweight movement gets logged, and reps at 1, because a set of zero reps is not a set.
+ */
+const WEIGHTS_KG = range(0, 300, 1);
+const WEIGHTS_LB = range(0, 660, 1);
+const REPS = range(1, 100, 1);
+const SECONDS = range(0, 1800, 5);
+const METRES = range(0, 20000, 50);
+
+/** Up to one decimal, so a stored 82.5 kg still reads as 82.5 and 80 does not read as 80.0. */
+function trim(n: number): string {
+  return String(Math.round(n * 10) / 10);
+}
+
 export function SetFields({
   kind,
   values,
@@ -29,24 +65,29 @@ export function SetFields({
     case 'weight_reps':
       return (
         <View style={s.row}>
-          <NumberField
+          <WheelField
             testID={tid('weight')}
-            value={values.weightKg === undefined ? undefined : toDisplayWeight(values.weightKg, unit)}
+            title="Weight"
+            values={unit === 'lb' ? WEIGHTS_LB : WEIGHTS_KG}
+            value={values.weightKg === undefined ? null : toDisplayWeight(values.weightKg, unit)}
+            format={trim}
             suffix={unit}
             width={104}
-            step={2.5}
-            onChange={(n) =>
-              onChange({ weightKg: n === undefined ? undefined : fromDisplayWeight(n, unit) })
-            }
+            compact
+            placeholder="-"
+            onChange={(shown) => onChange({ weightKg: fromDisplayWeight(shown, unit) })}
           />
           <Text style={s.times}>x</Text>
-          <NumberField
+          <WheelField
             testID={tid('reps')}
-            value={values.reps}
+            title="Reps"
+            values={REPS}
+            value={values.reps ?? null}
             suffix="reps"
-            width={92}
-            step={1}
-            onChange={(n) => onChange({ reps: n })}
+            width={102}
+            compact
+            placeholder="-"
+            onChange={(reps) => onChange({ reps })}
           />
         </View>
       );
@@ -54,13 +95,16 @@ export function SetFields({
     case 'reps':
       return (
         <View style={s.row}>
-          <NumberField
+          <WheelField
             testID={tid('reps')}
-            value={values.reps}
+            title="Reps"
+            values={REPS}
+            value={values.reps ?? null}
             suffix="reps"
-            width={104}
-            step={1}
-            onChange={(n) => onChange({ reps: n })}
+            width={112}
+            compact
+            placeholder="-"
+            onChange={(reps) => onChange({ reps })}
           />
         </View>
       );
@@ -68,13 +112,16 @@ export function SetFields({
     case 'time':
       return (
         <View style={s.row}>
-          <NumberField
+          <WheelField
             testID={tid('time')}
-            value={values.timeSec}
+            title="Time"
+            values={SECONDS}
+            value={values.timeSec ?? null}
             suffix="sec"
-            width={104}
-            step={5}
-            onChange={(n) => onChange({ timeSec: n })}
+            width={112}
+            compact
+            placeholder="-"
+            onChange={(timeSec) => onChange({ timeSec })}
           />
         </View>
       );
@@ -82,21 +129,27 @@ export function SetFields({
     case 'distance_time':
       return (
         <View style={s.row}>
-          <NumberField
+          <WheelField
             testID={tid('distance')}
-            value={values.distanceM}
+            title="Distance"
+            values={METRES}
+            value={values.distanceM ?? null}
             suffix="m"
-            width={100}
-            step={100}
-            onChange={(n) => onChange({ distanceM: n })}
+            width={106}
+            compact
+            placeholder="-"
+            onChange={(distanceM) => onChange({ distanceM })}
           />
-          <NumberField
+          <WheelField
             testID={tid('time')}
-            value={values.timeSec}
+            title="Time"
+            values={SECONDS}
+            value={values.timeSec ?? null}
             suffix="sec"
-            width={100}
-            step={10}
-            onChange={(n) => onChange({ timeSec: n })}
+            width={106}
+            compact
+            placeholder="-"
+            onChange={(timeSec) => onChange({ timeSec })}
           />
         </View>
       );

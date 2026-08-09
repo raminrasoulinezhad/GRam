@@ -37,7 +37,16 @@ import { MUSCLES, type Muscle } from './generated';
  * To redo it: repeat the research (sources and criteria in docs/STUDY.md §6), change the picks
  * where the evidence has moved, update the comment saying why, and set both constants below.
  */
-export const RECOMMENDED_REVIEWED_FOR = '1.4';
+/*
+ * 1.5: re-examined, nothing moved.
+ *
+ * Written down rather than passed over, because a stamp that advances without a reason is how
+ * this check decays into a formality. The 1.4 review was the same day, the catalog gained no
+ * exercises between the two releases, and none of the sources published anything in the
+ * interval. Every pick below still carries the reasoning it was chosen with. That is a review
+ * that concluded no change, not a review that was skipped.
+ */
+export const RECOMMENDED_REVIEWED_FOR = '1.5';
 
 /** Calendar date of the last review, so staleness is visible even between version bumps. */
 export const RECOMMENDED_REVIEWED_ON = '2026-08-08';
