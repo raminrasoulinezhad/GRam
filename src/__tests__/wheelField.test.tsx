@@ -28,8 +28,8 @@ beforeEach(() => jest.clearAllMocks());
 
 describe('a field that opens a wheel', () => {
   it('states the current value on the page', async () => {
-    // The wheel opens on its first row rather than on the value, so this line is the only
-    // place the real setting is visible without scrolling. It is not decoration.
+    // The value has to be readable without opening the sheet - it is what the field is for,
+    // and it is what a screen reader announces.
     await show(45);
     expect(screen.getByText('45 kg')).toBeTruthy();
   });

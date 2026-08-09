@@ -64,15 +64,23 @@ export function WheelPicker({
   /*
    * Open on the current value.
    *
-   * On react-native-web the wheel renders at its first row whatever `value` says, which for a
-   * body weight means starting at 30 kg every time. Everything the library exposes to fix that
-   * runs through the same ScrollView API that ignores it. What does work - proven before this
-   * was a dependency at all - is setting the scroll container's own `scrollTop`, so that is
-   * what this does, once, after the rows have a height.
+   * On react-native-web the wheel renders at its first row whatever `value` says, so a body
+   * weight opens at 30 kg and a set of 80 kg opens at zero. The library HAS a fix for exactly
+   * this - Picker.tsx re-applies the offset after mount - but it is gated to `Platform.OS ===
+   * 'ios'`, and its other correction path (useSyncScrollEffect) cannot help, because it skips
+   * when the list's recorded index already equals the wanted one. Which it does: the library
+   * passed `contentOffset` and believes it worked. Only the DOM disagrees.
    *
-   * Reaching into rendered output is not something to do lightly. It is contained to this one
-   * effect, it is web-only, and it degrades to "opens at the top" rather than breaking if the
-   * library changes its internals.
+   * So the offset is written to the scroll container directly, which is proven to hold. It is
+   * contained to this one effect, it is web-only, and if the library changes its internals this
+   * degrades to "opens at the top" rather than breaking.
+   *
+   * WHY setTimeout AND NOT requestAnimationFrame
+   * The previous attempt used rAF and never fired at all when the page was not compositing -
+   * a backgrounded tab, or an installed app the moment before it is brought forward. Worse, it
+   * made the bug look unfixable when it was only unobserved. Timers run either way. The
+   * schedule re-asserts across the sheet's slide-in animation, because the library lays the
+   * list out again as the height settles and whichever write lands last wins.
    */
   const boxRef = useRef<View>(null);
   useEffect(() => {
@@ -81,23 +89,31 @@ export function WheelPicker({
     if (!box?.querySelectorAll) return;
 
     const target = index * ITEM_HEIGHT;
-    let frames = 0;
-    const place = () => {
-      const scroller = [...box.querySelectorAll('*')].find(
-        (el): el is HTMLElement => el instanceof HTMLElement && el.scrollHeight > el.clientHeight + 10,
-      );
-      /*
-       * Set it on every frame of the window rather than stopping once it looks right.
-       *
-       * Bailing out on the first successful write did not hold: the library positions the list
-       * itself as it lays out and as a sheet animates in, and whichever of those happens last
-       * wins. Re-asserting for the whole window costs thirty assignments and is the difference
-       * between the wheel opening on your weight and opening on 30 kg.
-       */
-      if (scroller) scroller.scrollTop = target;
-      if (++frames < 30) requestAnimationFrame(place);
+    let cancelled = false;
+    // Once a finger is on the wheel, the position is the user's business. Re-asserting under a
+    // drag would drag it back out from under them.
+    const stop = () => {
+      cancelled = true;
     };
-    requestAnimationFrame(place);
+    box.addEventListener('pointerdown', stop);
+    box.addEventListener('touchstart', stop);
+
+    const place = () => {
+      if (cancelled) return;
+      const scroller = [...box.querySelectorAll('*')].find(
+        (el): el is HTMLElement =>
+          el instanceof HTMLElement && el.scrollHeight > el.clientHeight + 10,
+      );
+      if (scroller) scroller.scrollTop = target;
+    };
+    const timers = [0, 16, 50, 120, 250, 400].map((ms) => setTimeout(place, ms));
+
+    return () => {
+      cancelled = true;
+      for (const t of timers) clearTimeout(t);
+      box.removeEventListener('pointerdown', stop);
+      box.removeEventListener('touchstart', stop);
+    };
     // Once, for the value the wheel opened with. Later changes come through the library.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

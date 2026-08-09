@@ -6,6 +6,25 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.12] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Fixed
+
+- **The wheel opens on your value.** The known limitation from 1.4.6 is gone: height opens at
+  180, not 120, and weight at 176, not 66.
+
+  The patch was there all along and never ran. It was driven by `requestAnimationFrame`, and a
+  page that is not compositing frames — a backgrounded tab, an installed app the moment before
+  it is brought forward — never fires one. So the fix looked impossible when it was only
+  unobserved. Timers run either way.
+
+  Worth recording what the library does here, because it nearly hid this: it *has* a mount-time
+  correction for exactly this bug, gated to `Platform.OS === 'ios'`, and its other correction
+  path skips when the list's recorded index already matches the wanted one — which it does,
+  because `contentOffset` was passed and the library believes it worked. Only the DOM disagrees.
+
 ## [1.4.11] — 2026-08-08
 
 Storage schema **v7** — unchanged.

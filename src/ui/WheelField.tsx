@@ -13,10 +13,9 @@ import { WheelPicker } from './WheelPicker';
  * two of them showing at once is mostly wheel. Worse, the same control has to go into set rows,
  * where a dozen are on screen together - inline they would turn one screen of work into six.
  *
- * So the wheel lives in a sheet and the page keeps a one-line field, which is also the only
- * place the *current* value is stated plainly. That matters more than usual here: the wheel
- * opens on its first row rather than on your value (see WheelPicker), so the field is what
- * tells you what is actually set.
+ * So the wheel lives in a sheet and the page keeps a one-line field, which is also where the
+ * current value is stated plainly - readable without opening anything, and the thing a screen
+ * reader announces.
  *
  * The choice is committed on Done rather than as the wheel turns. Writing per scroll tick would
  * push a store update per frame of a drag, and for a recorded set it would rewrite history

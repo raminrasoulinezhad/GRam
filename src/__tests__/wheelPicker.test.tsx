@@ -24,10 +24,9 @@ beforeEach(() => jest.clearAllMocks());
  * plain numbers into the items it wants, and picking the row a stored value corresponds to.
  * The dragging is the library's and is verified in a browser, not here.
  *
- * KNOWN LIMITATION, deliberately not asserted either way: on react-native-web the wheel opens
- * on its first row rather than on `value`. See the note in ui/WheelPicker.tsx - the position is
- * patched from an effect that does not always take. Dragging works; the opening row may not be
- * yours. There is no test here claiming otherwise.
+ * The OPENING POSITION is not asserted here and cannot be: it is a scrollTop written to the
+ * library's own scroll container from a web-only effect, and there is no scroll container in
+ * this environment. It is verified in a browser instead - see the note in ui/WheelPicker.tsx.
  */
 describe('the wheel', () => {
   it('offers every value it was given', async () => {
