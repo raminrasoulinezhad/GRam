@@ -6,6 +6,16 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.9] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **The plan editor's day chips fit on one row.** At full padding the last day or two wrapped,
+  and a week broken across two lines reads as a five-day week with an afterthought. Same
+  compact chips My week already uses; all seven now span 271px of a 375px screen.
+
 ## [1.4.8] — 2026-08-08
 
 Storage schema **v7** — unchanged.

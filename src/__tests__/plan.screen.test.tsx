@@ -84,6 +84,21 @@ describe('plan editor', () => {
     expect(screen.queryByTestId('plan-name')).toBeNull();
   });
 
+  it('keeps the whole week on one row', async () => {
+    /*
+     * Seven chips, no wrapping. A week split across two lines reads as a five-day week with an
+     * afterthought, and this row is the one place the shape of the week is visible at a glance.
+     * Compact padding is what buys the space; without it Sunday dropped to a line of its own.
+     */
+    makePlan(BENCH);
+    await renderScreen(<PlanEditorScreen />);
+
+    const row = screen.getByTestId('day-monday').parent;
+    const style = Object.assign({}, ...[row?.props.style].flat(Infinity).filter(Boolean));
+    expect(style.flexDirection).toBe('row');
+    expect(style.flexWrap).toBeUndefined();
+  });
+
   it('adds a template set', async () => {
     makePlan(BENCH);
     await renderScreen(<PlanEditorScreen />);

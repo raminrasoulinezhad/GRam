@@ -81,6 +81,9 @@ export default function PlanEditorScreen() {
                 active={plan.day === day}
                 onPress={() => setPlanDay(plan.id, day)}
                 testID={`day-${day}`}
+                // Seven across one row, as on My week. At full padding the last day or two
+                // wrapped, and a week broken across two lines does not read as a week.
+                compact
               />
             ))}
           </View>
@@ -231,7 +234,8 @@ const s = StyleSheet.create({
   },
   dayChips: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    // No wrapping. With `compact` chips all seven fit, and letting them wrap is what put
+    // Sunday alone on a second line.
     gap: theme.space(1.5),
     marginTop: theme.space(2),
     marginBottom: theme.space(2),
