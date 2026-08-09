@@ -120,6 +120,22 @@ describe('deciding whether a search is about a muscle', () => {
     expect(muscleTermsIn('')).toEqual([]);
   });
 
+  it('does not treat a movement named after a muscle as a muscle search', () => {
+    /*
+     * Every word has to name a muscle, not merely one of them. These all begin with the name of
+     * a muscle and are all names of specific movements - "leg raise" used to come back with the
+     * two exercises recommended for calves ahead of any actual leg raise.
+     */
+    for (const query of ['leg raise', 'calf raise', 'leg press', 'chest press', 'back squat']) {
+      expect([query, muscleTermsIn(query)]).toEqual([query, []]);
+    }
+  });
+
+  it('still expands a phrase where every word is a muscle', () => {
+    expect(new Set(muscleTermsIn('chest triceps'))).toEqual(new Set(['chest', 'triceps']));
+    expect(new Set(muscleTermsIn('abs core'))).toEqual(new Set(['abdominals']));
+  });
+
   it('counts the filter chip as well as the text', () => {
     expect(focusMuscles({ muscle: 'chest' })).toEqual(['chest']);
     expect(focusMuscles({ query: 'press', muscle: 'triceps' })).toEqual(['triceps']);

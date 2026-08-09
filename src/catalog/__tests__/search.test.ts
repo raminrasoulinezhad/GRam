@@ -249,3 +249,37 @@ describe('names the dataset does not use', () => {
     expect(top('fan bike')).toBe('Fan Bike (Air Bike)');
   });
 });
+
+describe('a movement whose name starts with a muscle', () => {
+  /*
+   * These searches used to be read as searches for the *muscle*, which switched the list into
+   * recommendation order: "leg raise" opened with the two exercises the evidence recommends for
+   * calves, so Standing Calf Raises came back above every actual leg raise in the catalog.
+   *
+   * The rule is now that a query is only about a muscle when every word of it names one. That
+   * is enforced in muscleTermsIn; these are the searches it was broken for.
+   */
+  it('answers "leg raise" with leg raises', () => {
+    expect(names('leg raise')[0]).toContain('Leg Raise');
+    expect(names('leg raise').slice(0, 3).join(' | ')).not.toContain('Standing Calf Raises');
+  });
+
+  it('answers "calf raise" with calf raises', () => {
+    expect(names('calf raise')[0]).toContain('Calf Raise');
+  });
+
+  it('answers "leg press" with the leg press', () => {
+    expect(names('leg press')[0]).toBe('Leg Press');
+  });
+
+  it('answers "chest press" with chest presses', () => {
+    expect(names('chest press')[0]).toContain('Chest Press');
+  });
+
+  it('still recommends when the query really is a muscle', () => {
+    // The other half of the rule. A bare muscle word must keep its recommendation ordering -
+    // that ordering is the point of typing a muscle rather than a movement.
+    expect(names('calves')[0]).toBe('Standing Calf Raises');
+    expect(names('chest')[0]).toBe('Incline Dumbbell Press');
+  });
+});

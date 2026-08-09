@@ -6,6 +6,21 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.10] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Fixed
+
+- **"leg raise" answered with Standing Calf Raises.** A search counted as a search *for a
+  muscle* if any one of its words named one, so "leg raise" read as "legs" and switched the
+  list into recommendation order — putting the two exercises recommended for calves above every
+  actual leg raise. The same hit "calf raise", "leg press", "chest press" and "back squat".
+
+  Now every word has to name a muscle for the query to count as one. Typing a bare "chest" or
+  "legs" still opens with the recommendations, which is the point of typing a muscle instead of
+  a movement.
+
 ## [1.4.9] — 2026-08-08
 
 Storage schema **v7** — unchanged.

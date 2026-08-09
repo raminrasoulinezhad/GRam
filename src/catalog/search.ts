@@ -414,26 +414,49 @@ export function scoreQuery(query: string): Map<string, number> | null {
 const MUSCLE_SET: ReadonlySet<string> = new Set(MUSCLES);
 const MUSCLE_STEMS: ReadonlyMap<string, Muscle> = new Map(MUSCLES.map((m) => [stem(m), m]));
 
+/** The muscles one word names, if it names any. */
+function musclesForWord(raw: string): Muscle[] {
+  if (MUSCLE_SET.has(raw)) return [raw as Muscle];
+
+  const found: Muscle[] = [];
+  const byStem = MUSCLE_STEMS.get(stem(raw));
+  if (byStem) found.push(byStem);
+  // "abs" -> abdominals, "legs" -> four separate muscles.
+  for (const phrase of SYNONYMS[raw] ?? []) {
+    if (MUSCLE_SET.has(phrase)) found.push(phrase as Muscle);
+  }
+  return found;
+}
+
 /**
  * The muscles a query is asking about, if any.
  *
  * "chest", "pecs" and "legs" are all muscle searches; "bench press" is not. This is what turns
  * on the recommendation ordering, so it deliberately only fires on words that name a muscle -
  * an exercise name that merely happens to train something does not count.
+ *
+ * EVERY word has to name one, and that is the whole subtlety.
+ *
+ * Requiring only *some* word made "leg raise" a search for legs, so the answer opened with the
+ * two exercises recommended for calves - Standing Calf Raises above every actual leg raise in
+ * the catalog. The same went for "calf raise", "leg press" and "chest press": all of them are
+ * the names of movements that happen to begin with the name of a muscle, and none of them is a
+ * request for a coach's opinion.
+ *
+ * The cost is that a phrase like "upper chest" stops counting as a muscle search, because
+ * "upper" is not a muscle. That is the right way round to be wrong: it falls back to ordinary
+ * relevance ranking, which still answers with chest work, whereas the old behaviour answered a
+ * question about one exercise with a recommendation about another.
  */
 export function muscleTermsIn(query: string): Muscle[] {
+  const words = tokenize(query);
+  if (words.length === 0) return [];
+
   const found = new Set<Muscle>();
-  for (const raw of tokenize(query)) {
-    if (MUSCLE_SET.has(raw)) {
-      found.add(raw as Muscle);
-      continue;
-    }
-    const byStem = MUSCLE_STEMS.get(stem(raw));
-    if (byStem) found.add(byStem);
-    // "abs" -> abdominals, "legs" -> four separate muscles.
-    for (const phrase of SYNONYMS[raw] ?? []) {
-      if (MUSCLE_SET.has(phrase)) found.add(phrase as Muscle);
-    }
+  for (const raw of words) {
+    const muscles = musclesForWord(raw);
+    if (muscles.length === 0) return [];
+    for (const m of muscles) found.add(m);
   }
   return [...found];
 }
