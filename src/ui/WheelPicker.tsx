@@ -83,6 +83,47 @@ export function WheelPicker({
    * list out again as the height settles and whichever write lands last wins.
    */
   const boxRef = useRef<View>(null);
+
+  /*
+   * Make the wheel stop ON a row, never between two.
+   *
+   * The library asks for this - it passes `snapToOffsets` with a stop at every row - and
+   * react-native-web drops the prop on the floor. Measured on the rendered scroller:
+   * `scroll-snap-type: none`. So a flick coasts to wherever friction runs out, the highlight
+   * band sits across two numbers, and which one is selected becomes a guess.
+   *
+   * The browser can do this properly, and does it better than a JS correction would: CSS scroll
+   * snapping is applied by the compositor, so the momentum ends on a row instead of being
+   * yanked back onto one afterwards. `center` rather than `start` because the selected row is
+   * the middle of the viewport - the list carries (height - itemHeight) / 2 of padding to put
+   * it there.
+   *
+   * Re-applied when the values change, because switching kg to lb replaces every row.
+   */
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const box = boxRef.current as unknown as HTMLElement | null;
+    if (!box?.querySelectorAll) return;
+
+    const apply = () => {
+      const scroller = [...box.querySelectorAll('*')].find(
+        (el): el is HTMLElement =>
+          el instanceof HTMLElement && el.scrollHeight > el.clientHeight + 10,
+      );
+      const content = scroller?.firstElementChild;
+      if (!scroller || !content) return;
+
+      scroller.style.scrollSnapType = 'y mandatory';
+      for (const row of content.children) {
+        if (row instanceof HTMLElement) row.style.scrollSnapAlign = 'center';
+      }
+    };
+    // Same reasoning as the positioning below: timers, and more than one, because the rows are
+    // not in the DOM on the first tick and the sheet is still animating on the second.
+    const timers = [0, 50, 150, 400].map((ms) => setTimeout(apply, ms));
+    return () => timers.forEach(clearTimeout);
+  }, [values]);
+
   useEffect(() => {
     if (Platform.OS !== 'web' || index === 0) return;
     const box = boxRef.current as unknown as HTMLElement | null;

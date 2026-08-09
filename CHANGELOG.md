@@ -6,6 +6,40 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.8.0] — 2026-08-09
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **Bench angles.** Fifty-one exercises are named for a slope and not one of them says what the
+  slope is. "Incline Dumbbell Press" and "Incline Dumbbell Curl" are both inclines and they are
+  not the same bench — 30° against 45–60° — and setting a press at 45 quietly turns a chest
+  exercise into a shoulder press. The angle now shows as a chip in the catalog, on the line
+  under the exercise name in a plan or workout, and in full on the exercise page with a sentence
+  on why that angle and not another.
+
+  Three senses of "incline" live in the catalog and only one is a bench you can tilt. Press-ups,
+  the cable pushdown and the treadmill walk deliberately say nothing, because a confident
+  "about 30°" on a press-up is worse than silence.
+
+- **A stopwatch for held sets.** Planks, wall sits and dead hangs are the only sets you cannot
+  count after the fact. Tapping the stopwatch on a timed set gives five seconds to get into
+  position, counts the hold down on a face big enough to read from the floor, and beeps at the
+  end — two tones and a buzz, because by then you are not looking at the screen. Finish early
+  and it records what you actually held.
+
+  The clock is anchored to a timestamp, never to a tick count, so a throttled tab or a sleeping
+  phone cannot make the recorded time wrong.
+
+### Fixed
+
+- **The wheels stop on a number, not between two.** The library asks for this and
+  react-native-web drops the request: measured on the rendered scroller, `scroll-snap-type` was
+  `none`, so a flick coasted to wherever friction ran out and the highlight sat across two
+  values. Snapping is now applied as CSS, which lets the browser end the momentum on a row
+  rather than yanking it back onto one afterwards.
+
 ## [1.7.0] — 2026-08-09
 
 Storage schema **v7** — unchanged.

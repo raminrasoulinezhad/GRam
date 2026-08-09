@@ -10,6 +10,7 @@ import {
   SET_KIND_LABEL,
 } from '@/catalog';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { slopeFor } from '@/catalog/slope';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDate, formatSet, relativeTime, titleCase } from '@/lib/format';
 import { exerciseHistory, selectSessions, useStore } from '@/store/useStore';
@@ -51,11 +52,28 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
     [exercise],
   );
 
+  const slope = slopeFor(exerciseId);
+
   if (!exercise) return <Empty title="Exercise not found" />;
 
   return (
     <ScrollView contentContainerStyle={s.content}>
         <Text style={s.title}>{exercise.name}</Text>
+
+        {/*
+          * The bench angle, directly under the name, because "incline" on its own is the one
+          * instruction in this catalog you cannot follow without already knowing the answer.
+          * See catalog/slope.ts - these are conventions, not data, so the wording hedges.
+          */}
+        {slope ? (
+          <View style={s.slope} testID="slope">
+            <Ionicons name="options-outline" size={16} color={theme.color.accent} />
+            <Text style={s.slopeText}>
+              <Text style={s.slopeDegrees}>Bench at about {slope.degrees}. </Text>
+              {slope.why}
+            </Text>
+          </View>
+        ) : null}
 
         <View style={s.facts}>
           {exercise.equipment ? <Chip label={titleCase(exercise.equipment)} /> : null}
@@ -280,6 +298,18 @@ const s = StyleSheet.create({
     borderBottomColor: theme.color.border,
   },
   histAgo: { color: theme.color.textFaint, fontSize: theme.font.tiny },
+  slope: {
+    flexDirection: 'row',
+    gap: theme.space(2),
+    marginTop: theme.space(2),
+    padding: theme.space(3),
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.color.surfaceAlt,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.color.accent,
+  },
+  slopeText: { flex: 1, color: theme.color.textDim, fontSize: theme.font.small, lineHeight: 19 },
+  slopeDegrees: { color: theme.color.text, fontWeight: '700' },
   // Sits inside the heading, so it has to read as a subtitle rather than part of the title.
   histCount: { color: theme.color.textFaint, fontSize: theme.font.small, fontWeight: '600' },
   video: {

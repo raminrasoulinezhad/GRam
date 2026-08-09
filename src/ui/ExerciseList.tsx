@@ -8,6 +8,7 @@ import {
   searchExercises,
   type Exercise,
 } from '@/catalog';
+import { slopeFor } from '@/catalog/slope';
 import { titleCase } from '@/lib/format';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import {
@@ -173,6 +174,17 @@ export function ExerciseList({ onSelect, accessory, header, initialQuery = '' }:
                     */}
                   {(history.get(item.id) ?? 0) > 0 ? (
                     <Chip label={setsLabel(history.get(item.id)!)} testID={`logged-${item.id}`} />
+                  ) : null}
+                  {/*
+                    * The bench angle, where "Incline" in the name does not say it. Tone
+                    * "primary" because it is a setup instruction, not a fact about the kit.
+                    */}
+                  {slopeFor(item.id) ? (
+                    <Chip
+                      label={slopeFor(item.id)!.degrees}
+                      tone="primary"
+                      testID={`slope-${item.id}`}
+                    />
                   ) : null}
                   {item.primaryMuscles.map((m) => (
                     <Chip key={m} label={MUSCLE_LABEL[m]} tone="primary" />

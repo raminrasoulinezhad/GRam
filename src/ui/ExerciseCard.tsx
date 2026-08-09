@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { exerciseName } from '@/catalog';
+import { slopeFor } from '@/catalog/slope';
 import { Card } from './components';
 import { ExerciseThumb } from './ExerciseThumb';
 import { theme } from './theme';
@@ -38,6 +39,13 @@ export function ExerciseCard({
   testID?: string;
 }) {
   const name = exerciseName(exerciseId);
+  /*
+   * The bench angle joins the subtitle rather than getting a row of its own. This card is the
+   * one you read while setting up, so it is exactly where the angle is wanted - but it is a
+   * detail, and the set count is the headline.
+   */
+  const slope = slopeFor(exerciseId);
+  const line = slope ? `${subtitle} · ${slope.degrees}` : subtitle;
 
   return (
     <Card style={[s.card, done && s.cardDone]}>
@@ -51,7 +59,7 @@ export function ExerciseCard({
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${name}, ${subtitle}${expanded ? ', open' : ', closed'}`}
+          accessibilityLabel={`${name}, ${line}${expanded ? ', open' : ', closed'}`}
           onPress={onToggle}
           testID={testID}
           style={s.headerMain}
@@ -61,7 +69,7 @@ export function ExerciseCard({
               {name}
             </Text>
             <Text style={s.subtitle} numberOfLines={1}>
-              {subtitle}
+              {line}
             </Text>
           </View>
 

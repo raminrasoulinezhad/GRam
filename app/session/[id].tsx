@@ -17,6 +17,7 @@ import type { SessionEntry, SessionSet, SetValues } from '@/store/types';
 import { useStore } from '@/store/useStore';
 import { Button, Dim, Empty, Screen } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
+import { HoldTimer } from '@/ui/HoldTimer';
 import { ExerciseCard } from '@/ui/ExerciseCard';
 import { RestTimer } from '@/ui/RestTimer';
 import { SetFields } from '@/ui/SetFields';
@@ -45,6 +46,12 @@ const SetRow = memo(function SetRow({
   onRemove: (setId: string) => void;
 }) {
   const logged = set.loggedAt !== null;
+  /*
+   * A held set is the only kind you cannot count yourself, so it gets a stopwatch. Offered for
+   * time-based sets only; everything else is a number you already know when you finish.
+   */
+  const [timing, setTiming] = useState(false);
+
   return (
     <View style={[s.setRow, logged && s.setRowLogged]}>
       <Text style={[s.setNum, logged && { color: theme.color.accent }]}>{index + 1}</Text>
@@ -58,6 +65,31 @@ const SetRow = memo(function SetRow({
       />
 
       <View style={{ flex: 1 }} />
+
+      {kind === 'time' ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Time this set"
+          testID={`time-${set.id}`}
+          hitSlop={6}
+          onPress={() => setTiming(true)}
+        >
+          <Ionicons name="stopwatch-outline" size={19} color={theme.color.accent} />
+        </Pressable>
+      ) : null}
+
+      {timing ? (
+        <HoldTimer
+          target={set.timeSec ?? 0}
+          onClose={() => setTiming(false)}
+          onDone={(seconds) => {
+            // Record what was actually held, then mark the set done - the same two things you
+            // would otherwise do by hand, in the order that leaves the number right.
+            onChange(set.id, { timeSec: seconds });
+            if (!logged) onToggle(set.id);
+          }}
+        />
+      ) : null}
 
       <Pressable
         accessibilityRole="button"
