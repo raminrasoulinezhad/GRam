@@ -1,10 +1,9 @@
 /**
- * The arithmetic behind a scroll wheel, kept apart from the scrolling.
+ * Sizing and value lookup for the wheel pickers.
  *
- * A wheel is a list that snaps, plus a rule for turning a scroll offset back into "which item is
- * under the line". That rule is easy to get subtly wrong - off by half an item, or unbounded at
- * the ends so an overscroll picks something that does not exist - and it is impossible to test
- * by flinging a real one. So it lives here.
+ * The gesture itself is a dependency's problem now - see ui/WheelPicker.tsx for why. What is
+ * left here is what the app still decides for itself: how tall a row is, how many are visible,
+ * what values a wheel offers, and which row a stored value corresponds to.
  */
 
 /** Height of one row. Everything below is in multiples of it. */
@@ -73,46 +72,4 @@ export function nearestIndex(values: readonly number[], value: number | null): n
     }
   }
   return best;
-}
-
-/** Offset in pixels for the whole list, clamped to the ends. */
-export function clampOffset(y: number, count: number): number {
-  if (count <= 1) return 0;
-  return Math.min((count - 1) * ITEM_HEIGHT, Math.max(0, y));
-}
-
-/**
- * How far a flick carries, in pixels.
- *
- * A plain snap-to-nearest on release makes a wheel feel stuck: flicking hard should travel,
- * the way a physical one does. This is a crude constant-deceleration model rather than a
- * simulation - what matters is that a fast flick moves many rows and a slow drag moves none.
- */
-export const FLING_MS = 220;
-
-/**
- * Where a gesture ends up, as an index.
- *
- * `velocity` is in pixels per millisecond, positive when the finger is moving *down* - which
- * scrolls the list *up*, towards earlier values, hence the subtraction.
- */
-export function flingIndex(offset: number, velocity: number, count: number): number {
-  return indexAt(clampOffset(offset - velocity * FLING_MS, count), count);
-}
-
-/**
- * Which rows are worth drawing at this offset.
- *
- * The weight wheel has 441 values and the height wheel 111. Mounting all of them costs a tree
- * far larger than five visible rows justify, and it is re-laid-out on every frame of a drag.
- * Only the window around the offset is rendered, plus a couple of rows of slack so a fast flick
- * does not show gaps at the edges.
- */
-export function visibleRange(offset: number, count: number, buffer = 2) {
-  const middle = Math.round(offset / ITEM_HEIGHT);
-  const half = (VISIBLE_ITEMS - 1) / 2 + buffer;
-  return {
-    from: Math.max(0, middle - half),
-    to: Math.min(count - 1, middle + half),
-  };
 }

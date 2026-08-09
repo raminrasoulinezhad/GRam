@@ -1,6 +1,6 @@
 {
   "name": "gram",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "private": true,
   "license": "Apache-2.0",
   "description": "A strength-training tracker that plans your sets and maps which muscles you have actually trained.",
@@ -20,6 +20,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~57.0.8",
     "@expo/vector-icons": "^15.0.2",
+    "@quidone/react-native-wheel-picker": "^1.7.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.9",
     "expo-asset": "~57.0.8",

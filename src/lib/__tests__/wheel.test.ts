@@ -1,12 +1,9 @@
 import {
-  clampOffset,
-  flingIndex,
   indexAt,
   ITEM_HEIGHT,
   nearestIndex,
   offsetFor,
   range,
-  visibleRange,
   VISIBLE_ITEMS,
   WHEEL_PADDING,
 } from '@/lib/wheel';
@@ -99,62 +96,5 @@ describe('finding where a stored value sits', () => {
 
   it('survives an empty list', () => {
     expect(nearestIndex([], 50)).toBe(0);
-  });
-});
-
-describe('dragging the list', () => {
-  it('cannot be dragged past either end', () => {
-    expect(clampOffset(-9999, 10)).toBe(0);
-    expect(clampOffset(9999, 10)).toBe(9 * ITEM_HEIGHT);
-  });
-
-  it('pins a single-value wheel', () => {
-    expect(clampOffset(500, 1)).toBe(0);
-  });
-
-  it('carries further the harder it is flicked', () => {
-    // A wheel that only ever snapped to the nearest row would feel stuck.
-    const gentle = flingIndex(offsetFor(20), -0.2, 100);
-    const hard = flingIndex(offsetFor(20), -2, 100);
-    expect(hard).toBeGreaterThan(gentle);
-    expect(gentle).toBeGreaterThan(20);
-  });
-
-  it('goes the way the finger went', () => {
-    // vy is positive downward, and dragging down reveals earlier values.
-    expect(flingIndex(offsetFor(50), 1, 100)).toBeLessThan(50);
-    expect(flingIndex(offsetFor(50), -1, 100)).toBeGreaterThan(50);
-  });
-
-  it('stops at the end however hard it is thrown', () => {
-    expect(flingIndex(offsetFor(95), -50, 100)).toBe(99);
-    expect(flingIndex(offsetFor(5), 50, 100)).toBe(0);
-  });
-
-  it('does not move when released without a flick', () => {
-    expect(flingIndex(offsetFor(30), 0, 100)).toBe(30);
-  });
-});
-
-describe('which rows to draw', () => {
-  it('draws only a window, not all 441 weights', () => {
-    const { from, to } = visibleRange(offsetFor(200), 441);
-    expect(to - from).toBeLessThanOrEqual(VISIBLE_ITEMS + 4);
-  });
-
-  it('centres the window on what is under the marker', () => {
-    const { from, to } = visibleRange(offsetFor(200), 441);
-    expect(from).toBeLessThan(200);
-    expect(to).toBeGreaterThan(200);
-  });
-
-  it('does not run off either end of the list', () => {
-    expect(visibleRange(offsetFor(0), 441).from).toBe(0);
-    expect(visibleRange(offsetFor(440), 441).to).toBe(440);
-  });
-
-  it('covers what is on screen plus slack for a fast flick', () => {
-    const { from, to } = visibleRange(offsetFor(200), 441, 2);
-    expect(to - from + 1).toBeGreaterThanOrEqual(VISIBLE_ITEMS);
   });
 });

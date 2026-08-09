@@ -6,6 +6,30 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.6] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Fixed
+
+- **The height and weight wheels move again.** As shipped in 1.4.5 they did not respond to a
+  drag at all in the installed app, which made both fields unusable — worse than the typed
+  fields they replaced. They are now built on
+  [@quidone/react-native-wheel-picker](https://github.com/quidone/react-native-wheel-picker)
+  (MIT), which scrolls a real browser scroll container, so dragging is the browser's job rather
+  than something the app has to win from it.
+
+  **Known limitation:** the wheel opens on its first row rather than on your current value, so
+  you may have to scroll to it. The cause is a react-native-web quirk — the same one that broke
+  two hand-written versions before this — and it is not solved yet.
+
+### Removed
+
+- The hand-rolled wheel and its gesture arithmetic. Two implementations, neither of which worked
+  on the web: one could not be positioned, the other could not be dragged because a browser
+  claims a vertical touch drag for page scrolling before React Native's responder system is
+  consulted.
+
 ## [1.4.5] — 2026-08-08
 
 Storage schema **v7** — unchanged.
