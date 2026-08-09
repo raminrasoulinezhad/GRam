@@ -86,10 +86,15 @@ export function WheelPicker({
       const scroller = [...box.querySelectorAll('*')].find(
         (el): el is HTMLElement => el instanceof HTMLElement && el.scrollHeight > el.clientHeight + 10,
       );
-      // Keep setting until it sticks. The rows need a few frames to get a height, and the
-      // library resets the position itself as it lays out - so one early write is discarded.
+      /*
+       * Set it on every frame of the window rather than stopping once it looks right.
+       *
+       * Bailing out on the first successful write did not hold: the library positions the list
+       * itself as it lays out and as a sheet animates in, and whichever of those happens last
+       * wins. Re-asserting for the whole window costs thirty assignments and is the difference
+       * between the wheel opening on your weight and opening on 30 kg.
+       */
       if (scroller) scroller.scrollTop = target;
-      if (scroller && Math.abs(scroller.scrollTop - target) < 1) return;
       if (++frames < 30) requestAnimationFrame(place);
     };
     requestAnimationFrame(place);

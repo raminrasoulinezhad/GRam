@@ -6,6 +6,24 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.7] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **The wheels are behind a field instead of sitting open on the page.** Two wheels showing at
+  once made the Body card mostly wheel — about 200px each. Height and weight are now one-line
+  fields reading "180 cm" and "176 lb"; tapping one opens the wheel in a sheet, and the choice
+  is committed on Done rather than as the wheel turns. The field is **43px** where the wheel was
+  202.
+
+  It also puts the current value somewhere legible, which matters while the wheel still opens on
+  its first row: the field says what is set even when the wheel does not.
+
+  The same field is what the set rows will use — a dozen open wheels on a workout screen would
+  turn one screen of work into six.
+
 ## [1.4.6] — 2026-08-08
 
 Storage schema **v7** — unchanged.

@@ -17,7 +17,7 @@ import { Button, Card, Chip, Dim, H2, NumberField, Screen } from '@/ui/component
 import { useConfirm } from '@/ui/confirm';
 import { BackupCard } from '@/ui/BackupCard';
 import { DateField } from '@/ui/DateField';
-import { WheelPicker } from '@/ui/WheelPicker';
+import { WheelField } from '@/ui/WheelField';
 import { theme } from '@/ui/theme';
 const SEXES = ['male', 'female', 'unspecified'] as const;
 
@@ -117,15 +117,17 @@ export default function ProfileScreen() {
             onChange={(birthDate) => updateProfile({ birthDate })}
           />
           {/*
-            * Wheels rather than typed fields. These are two numbers a person changes maybe
-            * twice a year, and a keyboard covering half the screen to enter one of them is a
-            * poor trade - as was a stepper, which needed forty taps to go from 80 kg to 100.
+            * A field that opens a wheel, rather than a wheel on the page. These are two numbers
+            * a person changes maybe twice a year: a keyboard covering half the screen was the
+            * wrong trade, a stepper needed forty taps to go from 80 kg to 100, and two wheels
+            * sitting open made the card mostly wheel.
             */}
           <View style={s.measureRow}>
             <View style={{ flex: 1 }}>
               <Text style={s.label}>HEIGHT</Text>
-              <WheelPicker
+              <WheelField
                 testID="profile-height"
+                title="Height"
                 values={HEIGHTS_CM}
                 value={profile.heightCm}
                 suffix="cm"
@@ -139,13 +141,14 @@ export default function ProfileScreen() {
                 * kilograms everything is stored in. Switching units rebuilds it, and the marker
                 * lands on the equivalent row rather than on the same row number.
                 */}
-              <WheelPicker
+              <WheelField
                 testID="profile-weight"
+                title="Weight"
                 values={settings.unit === 'lb' ? WEIGHTS_LB : WEIGHTS_KG}
                 value={
                   profile.weightKg === null
                     ? null
-                    : toDisplayWeight(profile.weightKg, settings.unit)
+                    : Math.round(toDisplayWeight(profile.weightKg, settings.unit))
                 }
                 suffix={settings.unit}
                 onChange={(shown) =>
