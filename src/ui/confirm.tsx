@@ -80,7 +80,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                   style={[s.btn, pending.destructive ? s.btnDanger : s.btnPrimary]}
                   onPress={() => pending.resolve(true)}
                 >
-                  <Text style={[s.btnLabel, pending.destructive && { color: '#2A0A0A' }]}>
+                  <Text style={[s.btnLabel, pending.destructive && { color: theme.color.onDanger }]}>
                     {pending.confirmLabel ?? 'OK'}
                   </Text>
                 </Pressable>
@@ -139,6 +139,6 @@ const s = StyleSheet.create({
   btnPrimary: { backgroundColor: theme.color.accent },
   btnDanger: { backgroundColor: theme.color.danger },
   btnGhost: { backgroundColor: theme.color.surfaceAlt, borderWidth: 1, borderColor: theme.color.border },
-  btnLabel: { color: '#04120A', fontWeight: '700', fontSize: theme.font.body },
+  btnLabel: { color: theme.color.onAccent, fontWeight: '700', fontSize: theme.font.body },
   btnGhostLabel: { color: theme.color.textDim, fontWeight: '700', fontSize: theme.font.body },
 });

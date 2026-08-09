@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 import { cancelDialog, confirmDialog, dialogOpen, renderScreen } from '@/test-utils';
 import { EXERCISES } from '@/catalog';
 import { SCHEMA_VERSION } from '@/store/migrations';
@@ -19,6 +19,56 @@ const store = () => useStore.getState();
 beforeEach(() => {
   jest.clearAllMocks();
   store().resetAll();
+});
+
+/**
+ * Every string rendered on the page, in layout order.
+ *
+ * Walks the rendered tree rather than querying, because the point of these assertions is the
+ * order things appear in - and a query returns matches, not positions.
+ */
+function textInOrder(): string[] {
+  const out: string[] = [];
+  const walk = (node: unknown) => {
+    if (typeof node === 'string') out.push(node);
+    else if (Array.isArray(node)) node.forEach(walk);
+    else if (node && typeof node === 'object') walk((node as { children?: unknown }).children);
+  };
+  walk(screen.toJSON());
+  return out;
+}
+
+describe('the shape of the page', () => {
+  it('asks about you once, not across two cards', async () => {
+    await renderScreen(<ProfileScreen />);
+
+    // The "Body" heading is what used to divide them. If it comes back, so has the split.
+    expect(screen.queryByText('Body')).toBeNull();
+
+    const you = screen.getByTestId('profile-you');
+    for (const id of ['profile-name', 'profile-birthdate', 'profile-height', 'profile-weight']) {
+      expect([id, within(you).queryByTestId(id) !== null]).toEqual([id, true]);
+    }
+  });
+
+  it('answers where the body measurements end up', async () => {
+    // The question someone actually has when an app asks for their weight.
+    await renderScreen(<ProfileScreen />);
+    expect(screen.getByText('They stay on this machine. Nowhere else.')).toBeTruthy();
+  });
+
+  it('puts the quick settings first and the chores last', async () => {
+    await renderScreen(<ProfileScreen />);
+    const order = textInOrder();
+    const at = (label: string) => order.indexOf(label);
+
+    expect(at('Units')).toBeGreaterThan(-1);
+    expect(at('Units')).toBeLessThan(at('Rest timer'));
+    expect(at('Rest timer')).toBeLessThan(at('Look'));
+    // The theme picker sits directly before backup, which is where it was asked for.
+    expect(at('Look')).toBeLessThan(at('Backup and transfer'));
+    expect(at('Backup and transfer')).toBeLessThan(at('About'));
+  });
 });
 
 describe('the rest timer setting', () => {

@@ -70,7 +70,7 @@ const SetRow = memo(function SetRow({
         <Ionicons
           name={logged ? 'checkmark' : 'ellipse-outline'}
           size={18}
-          color={logged ? '#04120A' : theme.color.textFaint}
+          color={logged ? theme.color.onAccent : theme.color.textFaint}
         />
       </Pressable>
 

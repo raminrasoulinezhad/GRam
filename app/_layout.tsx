@@ -11,6 +11,7 @@ import { Splash } from '@/ui/Splash';
 import { useAutoBackup } from '@/ui/useAutoBackup';
 import { useVersionLog } from '@/ui/useVersionLog';
 import { useViewportHeight } from '@/ui/useViewportHeight';
+import { useThemeSync } from '@/ui/useThemeSync';
 import { theme } from '@/ui/theme';
 
 export default function RootLayout() {
@@ -20,11 +21,14 @@ export default function RootLayout() {
   useViewportHeight();
   // Records which builds this device has run, for Profile > About.
   useVersionLog();
+  // Catches the painted palette up with the stored one - see the hook for when they diverge.
+  useThemeSync();
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.color.bg }}>
       <SafeAreaProvider>
-        <StatusBar style="light" />
+        {/* Dark glyphs on the light palettes; white ones would vanish into a white ground. */}
+        <StatusBar style={theme.light ? 'dark' : 'light'} />
         <Splash>
           <ConfirmProvider>
             <ExerciseSheetProvider>

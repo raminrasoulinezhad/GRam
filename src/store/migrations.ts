@@ -1,3 +1,4 @@
+import { DEFAULT_THEME } from '@/ui/themes';
 import type { Plan, Profile, Session, Settings } from './types';
 
 /**
@@ -28,6 +29,11 @@ export const DEFAULT_SETTINGS: Settings = {
    * stored settings are spread over these defaults, so this only ever decides a first launch.
    */
   unit: 'lb',
+  /*
+   * No migration step, and none needed: `coerce` spreads the stored settings over these
+   * defaults, so an install from before themes existed picks this up on its next launch.
+   */
+  themeId: DEFAULT_THEME,
   defaultRestSec: 90,
   defaultSetCount: 3,
   bodyGender: 'male',

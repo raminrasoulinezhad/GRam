@@ -102,5 +102,5 @@ const s = StyleSheet.create({
     paddingVertical: theme.space(2),
     backgroundColor: theme.color.accent,
   },
-  actionLabel: { color: '#04120A', fontSize: theme.font.tiny, fontWeight: '800' },
+  actionLabel: { color: theme.color.onAccent, fontSize: theme.font.tiny, fontWeight: '800' },
 });

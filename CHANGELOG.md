@@ -6,6 +6,43 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.8] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **Eight themes, and a picker that works.** The palettes have existed since 1.4.5 but nothing
+  read them — every colour in the app came from a single hardcoded object. Profile > Look now
+  offers all eight, each row painted in the palette it is offering rather than described in
+  words. Carbon stays the default.
+
+  The chosen theme is resolved at import, before the first stylesheet is built, which is why it
+  paints correctly from the first frame with no flash. The cost is that *changing* it reloads
+  the app — the stylesheets were already built and cannot be repainted in place. Nothing is
+  lost; the card says so before you tap.
+
+  The choice is stored in settings, so a backup carries it to a new phone, and mirrored into a
+  small `gram-theme` key that can be read synchronously at launch. `useThemeSync` reconciles
+  the two after a restore.
+
+### Fixed
+
+- **Filled buttons were unreadable on the light themes.** Every solid accent button hardcoded a
+  near-black label, which is right on Carbon's bright green and invisible on Chalk's dark one.
+  Palettes now carry `onAccent` and `onDanger`, and a test holds every theme to 4.5:1 on both.
+- **The page frame ignored the theme.** The html background, `theme-color` and `color-scheme`
+  were pinned to the old navy in `index.html`, so a light theme came out as a white app in a
+  navy surround with dark scrollbars. All three are now set from the palette at launch.
+
+### Changed
+
+- **Profile is reorganised.** Name and body were two cards with a heading, a paragraph and a
+  border between your name and your height; they are now one. The note under the measurements
+  says where they go — "They stay on this machine. Nowhere else." — instead of what they are
+  for. The settings then run cheapest-to-decide first: Units, Rest timer, Look, Backup and
+  transfer, About.
+
 ## [1.4.7] — 2026-08-08
 
 Storage schema **v7** — unchanged.

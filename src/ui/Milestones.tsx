@@ -298,5 +298,5 @@ const s = StyleSheet.create({
     paddingVertical: theme.space(3),
     paddingHorizontal: theme.space(10),
   },
-  celebrateBtnLabel: { color: '#04120A', fontWeight: '800', fontSize: theme.font.body },
+  celebrateBtnLabel: { color: theme.color.onAccent, fontWeight: '800', fontSize: theme.font.body },
 });

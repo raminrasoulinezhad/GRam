@@ -101,7 +101,7 @@ export function Button({
       <Text
         style={[
           s.btnLabel,
-          variant === 'primary' && { color: '#04120A' },
+          variant === 'primary' && { color: theme.color.onAccent },
           variant === 'danger' && { color: theme.color.danger },
           variant === 'ghost' && { color: theme.color.textDim },
         ]}
@@ -326,7 +326,7 @@ const s = StyleSheet.create({
   chipPrimary: { backgroundColor: theme.color.accentDim, borderColor: theme.color.accentDim },
   chipSecondary: { backgroundColor: theme.color.surfaceAlt },
   chipLabel: { color: theme.color.textDim, fontSize: theme.font.tiny, fontWeight: '600' },
-  chipLabelActive: { color: '#04120A' },
+  chipLabelActive: { color: theme.color.onAccent },
   numWrap: {
     flexDirection: 'row',
     alignItems: 'center',

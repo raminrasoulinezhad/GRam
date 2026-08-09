@@ -69,6 +69,23 @@ describe('every palette is usable, not just handsome', () => {
     }
   });
 
+  it.each(named)('%s labels its filled buttons legibly', (_n, t: ThemeMeta) => {
+    /*
+     * The label sitting *on* a solid accent or danger button. This is the check that caught the
+     * real bug: every filled button used to hardcode a near-black label, which is correct on
+     * Carbon's bright green and unreadable on Chalk's dark one. 4.5:1 because these are button
+     * labels at body size, not headings.
+     */
+    expect(['onAccent', contrast(t.colors.onAccent, t.colors.accent) >= 4.5]).toEqual([
+      'onAccent',
+      true,
+    ]);
+    expect(['onDanger', contrast(t.colors.onDanger, t.colors.danger) >= 4.5]).toEqual([
+      'onDanger',
+      true,
+    ]);
+  });
+
   it.each(named)('%s does not confuse its accent with its alarms', (_n, t: ThemeMeta) => {
     // One of these means "well done" and the others mean "something is wrong". A palette where
     // they look alike turns a warning into decoration.

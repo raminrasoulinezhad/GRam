@@ -17,6 +17,7 @@ import { Button, Card, Chip, Dim, H2, NumberField, Screen } from '@/ui/component
 import { useConfirm } from '@/ui/confirm';
 import { BackupCard } from '@/ui/BackupCard';
 import { DateField } from '@/ui/DateField';
+import { ThemeCard } from '@/ui/ThemeCard';
 import { WheelField } from '@/ui/WheelField';
 import { theme } from '@/ui/theme';
 const SEXES = ['male', 'female', 'unspecified'] as const;
@@ -72,7 +73,15 @@ export default function ProfileScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-        <Card>
+        {/*
+          * Who you are, in one card.
+          *
+          * Name and body used to be two, which put a heading, a paragraph and a card border
+          * between your name and your height - three separations for facts that are the same
+          * kind of thing and get entered on the same afternoon. Merged, everything the app
+          * knows about its single user is one glance instead of a scroll.
+          */}
+        <Card testID="profile-you">
           <Text style={s.label}>YOUR NAME</Text>
           <TextInput
             testID="profile-name"
@@ -88,13 +97,15 @@ export default function ProfileScreen() {
             {age !== null ? <Stat value={String(age)} label="years old" /> : null}
             {index !== null ? <Stat value={String(index)} label="BMI" /> : null}
           </View>
-        </Card>
-        <Card>
-          <H2>Body</H2>
-          <Dim style={s.hint}>
-            Used for the body figure and, later, to size your starting weights. It stays on this
-            device.
-          </Dim>
+
+          <View style={s.divider} />
+
+          {/*
+            * The old line explained what these fields were *for*. The question someone actually
+            * has when a fitness app asks for their body is where it ends up, so that is what
+            * the sentence answers now.
+            */}
+          <Dim style={s.hint}>They stay on this machine. Nowhere else.</Dim>
           <Text style={[s.label, s.spaced]}>SEX</Text>
           <View style={s.row}>
             {SEXES.map((value) => (
@@ -158,7 +169,6 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Card>
-        <BackupCard />
         {/*
           * Goal, experience and available equipment used to be collected here. All three were
           * write-only: nothing in the app read them back, and the equipment card went further
@@ -168,37 +178,10 @@ export default function ProfileScreen() {
           * back the day something actually uses them; see docs/ROADMAP.md.
           */}
         {/*
-          * Rest applies to every exercise, so it belongs here rather than in each plan. The
-          * store retimes existing plans to match - see setDefaultRest.
+          * The settings run cheapest-to-decide first: units is one tap you make once, rest is a
+          * number, the look is eight things to compare. Backup and About sit at the bottom
+          * because neither is a setting - one is a chore and the other is a reference.
           */}
-        {/*
-          * One row: the three presets and the stepper sit together, because they are one
-          * choice made two ways. Stacked, with a paragraph above them, this was the tallest
-          * card on the page for a setting most people touch once.
-          */}
-        <Card>
-          <H2>Rest timer</H2>
-          <View style={[s.row, s.wrap, s.restRow]}>
-            {REST_PRESETS.map((sec) => (
-              <Chip
-                key={sec}
-                label={formatDuration(sec)}
-                active={settings.defaultRestSec === sec}
-                onPress={() => setDefaultRest(sec)}
-                testID={`rest-${sec}`}
-              />
-            ))}
-            <NumberField
-              testID="rest-seconds"
-              value={settings.defaultRestSec}
-              suffix="sec"
-              width={116}
-              step={15}
-              onChange={(n) => setDefaultRest(n ?? 0)}
-            />
-          </View>
-          <Dim style={s.hint}>Starts when you record a set. Zero turns it off.</Dim>
-        </Card>
         <Card>
           <H2>Units</H2>
           <View style={[s.row, s.spaced]}>
@@ -237,6 +220,39 @@ export default function ProfileScreen() {
             network and carry no third-party rights. See THIRD-PARTY-NOTICES.md.
           </Dim>
         </Card>
+        {/*
+          * Rest applies to every exercise, so it belongs here rather than in each plan. The
+          * store retimes existing plans to match - see setDefaultRest.
+          *
+          * One row: the three presets and the stepper sit together, because they are one
+          * choice made two ways. Stacked, with a paragraph above them, this was the tallest
+          * card on the page for a setting most people touch once.
+          */}
+        <Card>
+          <H2>Rest timer</H2>
+          <View style={[s.row, s.wrap, s.restRow]}>
+            {REST_PRESETS.map((sec) => (
+              <Chip
+                key={sec}
+                label={formatDuration(sec)}
+                active={settings.defaultRestSec === sec}
+                onPress={() => setDefaultRest(sec)}
+                testID={`rest-${sec}`}
+              />
+            ))}
+            <NumberField
+              testID="rest-seconds"
+              value={settings.defaultRestSec}
+              suffix="sec"
+              width={116}
+              step={15}
+              onChange={(n) => setDefaultRest(n ?? 0)}
+            />
+          </View>
+          <Dim style={s.hint}>Starts when you record a set. Zero turns it off.</Dim>
+        </Card>
+        <ThemeCard />
+        <BackupCard />
         {/*
           * About: which build this is, and what it holds.
           *
@@ -286,6 +302,14 @@ const s = StyleSheet.create({
     marginBottom: theme.space(1.5),
   },
   spaced: { marginTop: theme.space(3) },
+  // Separates the two halves of the merged card. A rule rather than a second card: it keeps
+  // name and body together as one thing while still marking where the numbers start.
+  divider: {
+    height: 1,
+    backgroundColor: theme.color.border,
+    marginTop: theme.space(4),
+    marginBottom: theme.space(3),
+  },
   hint: { marginTop: theme.space(1), lineHeight: 19 },
   input: {
     backgroundColor: theme.color.surfaceAlt,

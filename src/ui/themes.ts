@@ -44,6 +44,16 @@ export type Palette = {
   accentDim: string;
   danger: string;
   warn: string;
+  /**
+   * Label colour for text sitting *on* a filled accent button, and likewise for danger.
+   *
+   * These exist because the accent flips from bright to dark between the dark and light
+   * palettes. Every filled button used to hardcode a near-black label, which is right on
+   * Carbon's #00E676 and unreadable on Chalk's #15803D. `text` cannot stand in: it is chosen
+   * against `bg`, and on a light theme that is dark ink on a dark button.
+   */
+  onAccent: string;
+  onDanger: string;
   ramp: readonly [string, string, string, string, string, string];
 };
 
@@ -90,6 +100,8 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
       accentDim: '#166534',
       danger: '#F87171',
       warn: '#FBBF24',
+      onAccent: '#04120A',
+      onDanger: '#2A0A0A',
       ramp: ['#1E293B', '#164E63', '#0E7490', '#0891B2', '#F59E0B', '#EF4444'],
     },
   },
@@ -123,6 +135,8 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
       accentDim: '#0B3D24',
       danger: '#FF5370',
       warn: '#FFC400',
+      onAccent: '#04120A',
+      onDanger: '#2A0A0A',
       ramp: ['#141418', '#0B3D4D', '#0E6B7C', '#12A0A0', '#FFB300', '#FF3D00'],
     },
   },
@@ -160,6 +174,8 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
       // Darker than the other themes' amber. The accent here is almost white and has no hue to
       // be told apart by, so the difference has to be carried by lightness alone.
       warn: '#D99400',
+      onAccent: '#141418',
+      onDanger: '#2A0A0A',
       ramp: ['#26262B', '#0E4B6E', '#1D7FA8', '#3FB0A0', '#F2A007', '#E03131'],
     },
   },
@@ -191,6 +207,8 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
       accentDim: '#0E4F5C',
       danger: '#FF6B81',
       warn: '#FFC145',
+      onAccent: '#04161C',
+      onDanger: '#2A0A0A',
       ramp: ['#16283A', '#194156', '#165869', '#22754B', '#A37409', '#F16C51'],
     },
   },
@@ -221,6 +239,8 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
       warn: '#FFB300',
       // The fifth step was lime, the same colour as the accent, so a hammered muscle looked
       // like a button. Amber instead, which also keeps the ramp warming toward the magenta top.
+      onAccent: '#141A00',
+      onDanger: '#2A0011',
       ramp: ['#1E2632', '#12556B', '#0E8F9E', '#5FD68A', '#E8A317', '#FF2E88'],
     },
   },
@@ -256,6 +276,8 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
       accentDim: '#BBF7D0',
       danger: '#B91C1C',
       warn: '#B45309',
+      onAccent: '#FFFFFF',
+      onDanger: '#FFFFFF',
       ramp: ['#EDEFF1', '#B2D2E9', '#69BBD9', '#C38C1C', '#D05B17', '#C23520'],
     },
   },
@@ -285,6 +307,8 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
       accentDim: '#DBE5FB',
       danger: '#B42318',
       warn: '#8A5A00',
+      onAccent: '#FFFFFF',
+      onDanger: '#FFFFFF',
       ramp: ['#EEEEF0', '#BFCFE7', '#8EB3DE', '#C68B23', '#D4581A', '#C33222'],
     },
   },
@@ -314,6 +338,8 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
       // Pushed toward olive: at #8A6100 it sat 24 degrees from the burnt-orange accent, close
       // enough that "worth a look" and "well done" read as the same colour.
       warn: '#6E5A00',
+      onAccent: '#FFF6EF',
+      onDanger: '#FFFFFF',
       ramp: ['#E8E4DB', '#BAC7A2', '#98AD54', '#A8832A', '#AE581F', '#A52D1B'],
     },
   },

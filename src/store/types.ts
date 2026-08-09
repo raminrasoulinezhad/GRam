@@ -1,4 +1,5 @@
 import type { SetKind } from '@/catalog';
+import type { ThemeId } from '@/ui/themes';
 
 /** The numbers a set carries. Which of them are meaningful is decided by the entry's SetKind. */
 export type SetValues = {
@@ -109,6 +110,12 @@ export type Session = {
 
 export type Settings = {
   unit: 'kg' | 'lb';
+  /**
+   * Which palette the app paints with. Kept in the store, and not only in its launch cache,
+   * so it travels in a backup - restoring onto a new phone should bring back the look along
+   * with the training history. See src/ui/theme.ts for how it reaches the stylesheets.
+   */
+  themeId: ThemeId;
   defaultRestSec: number;
   defaultSetCount: number;
   bodyGender: 'male' | 'female';
