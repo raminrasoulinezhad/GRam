@@ -86,7 +86,7 @@ Two details that make it real rather than a compromise:
 - **Offline is verified, not assumed.** A service worker precaches the app shell and JS bundle at
   install time — not lazily, because the worker registers after the first bundle fetch and a
   lazy cache would leave the very first offline launch blank. Tested by loading the app, killing
-  the web server outright, and reloading: it opens with all 879 exercises.
+  the web server outright, and reloading: it opens with the whole catalog.
 - **Storage survives.** Safari evicts script-writable storage after seven days of not visiting a
   site — but **home-screen web apps are exempt**. This is precisely why "Add to Home Screen"
   matters and why a Safari tab is not equivalent.

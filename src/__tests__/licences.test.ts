@@ -81,3 +81,20 @@ describe('the project licence', () => {
     expect(notices).toMatch(/photograph/i);
   });
 });
+
+describe('what the README advertises', () => {
+  /*
+   * The front page states the size of the catalog, and the catalog grows whenever
+   * scripts/build-catalog.mjs is rerun. It said 879 for two releases after it became 896 -
+   * the third thing this session found quietly out of step with the code it describes.
+   *
+   * Only the live claim is checked. docs/STUDY.md deliberately keeps 879 where it records a
+   * measurement actually performed over the catalog as it stood then; restating that with
+   * today's number would falsify the record rather than update it.
+   */
+  it('quotes the number of exercises the app actually ships', () => {
+    // Required lazily: the catalog is a large JSON import and nothing else here needs it.
+    const { EXERCISES } = require('@/catalog') as { EXERCISES: unknown[] };
+    expect(read('README.md')).toContain(`**${EXERCISES.length} exercises**`);
+  });
+});

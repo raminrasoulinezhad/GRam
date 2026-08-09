@@ -168,13 +168,14 @@ Sources are consolidated at the bottom of this document.
 ## 7. What to do when the exercise is too hard
 
 A plan is only useful if you can perform it. Someone whose Monday says "pull-ups" and who cannot
-do one has no move: the app holds 879 exercises and no opinion about which of them is a way in.
+do one has no move: the app holds 896 exercises and no opinion about which of them is a way in.
 This section is why the answer is a hand-written list rather than a derived one.
 
 ### The derived version was built and measured first
 
 The rule tried: for each exercise, find the ones sharing its primary muscle and its push/pull
-direction that sit lower on the catalog's `level` field, and keep the best. Over all 879:
+direction that sit lower on the catalog's `level` field, and keep the best. Over all 879 -
+the catalog as it stood when this was measured:
 
 | Rule | Covered | Edges | Median candidates |
 |---|---|---|---|

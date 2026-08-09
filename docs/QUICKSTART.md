@@ -139,7 +139,7 @@ Done. GRam is now on your home screen.
 ### Does it really work offline?
 
 Yes, and I tested it rather than assuming: I loaded the app, **shut the web server down
-completely**, reloaded, and the app opened normally with all 879 exercises available. A service
+completely**, reloaded, and the app opened normally with the whole catalog available. A service
 worker stores the whole app on the phone the first time you open it.
 
 ### Will my workouts survive?

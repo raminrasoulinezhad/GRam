@@ -44,7 +44,7 @@ Then open it from the new icon. If there's no address bar at the top, it install
 ### 📋 Plan your week
 
 A plan is a **day of the week** — Monday push, Wednesday pull, and so on. Fill each day from
-**879 exercises**, searchable by name, equipment or muscle and filtered by primary muscle. The
+**896 exercises**, searchable by name, equipment or muscle and filtered by primary muscle. The
 week review then checks the shape of it: every major muscle group twice a week on two different
 days, with one tap to fix whatever is missing.
 
