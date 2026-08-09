@@ -190,9 +190,12 @@ describe('the colours no JavaScript can reach', () => {
   const bg = THEMES[DEFAULT_THEME].colors.bg;
 
   it('paints the pre-bundle page in the default theme', () => {
-    const html = read('public/index.html');
-    expect(html).toContain(`<meta name="theme-color" content="${bg}" />`);
-    expect(html).toContain(`background-color: ${bg};`);
+    // Case-insensitive: the meta tag carries the palette's own casing and the CSS below it is
+    // written lowercase by convention. Both are the same colour, which is the thing that matters.
+    const html = read('public/index.html').toLowerCase();
+    const want = bg.toLowerCase();
+    expect(html).toContain(`<meta name="theme-color" content="${want}" />`);
+    expect(html).toContain(`background-color: ${want};`);
   });
 
   it('declares the install splash in the default theme', () => {
@@ -200,7 +203,8 @@ describe('the colours no JavaScript can reach', () => {
       background_color: string;
       theme_color: string;
     };
-    expect([manifest.background_color, manifest.theme_color]).toEqual([bg, bg]);
+    const seen = [manifest.background_color, manifest.theme_color].map((c) => c.toLowerCase());
+    expect(seen).toEqual([bg.toLowerCase(), bg.toLowerCase()]);
   });
 
   it('declares a colour scheme matching the default theme', () => {

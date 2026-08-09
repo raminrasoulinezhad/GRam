@@ -16,7 +16,7 @@ const mockWrite = jest.fn();
 
 jest.mock('@/ui/theme', () => ({
   // `theme.id` is the palette actually on screen, fixed at import in the real module.
-  theme: { id: 'carbon' },
+  theme: { id: 'midnight' },
   readLaunchTheme: () => mockRead(),
   writeLaunchTheme: (id: string) => mockWrite(id),
 }));
@@ -38,7 +38,7 @@ async function mount() {
 }
 
 /** Changes the stored theme on a mounted app, which re-runs the effect. */
-async function chooseAgain(themeId: 'carbon' | 'neon' | 'logbook') {
+async function chooseAgain(themeId: 'midnight' | 'neon' | 'logbook') {
   await act(async () => {
     useStore.getState().updateSettings({ themeId });
   });
@@ -76,7 +76,7 @@ afterEach(() => {
 
 describe('catching the painted palette up with the stored one', () => {
   it('does nothing when they already agree', async () => {
-    mockRead.mockReturnValue('carbon');
+    mockRead.mockReturnValue('midnight');
     await mount();
 
     expect(mockWrite).not.toHaveBeenCalled();
@@ -86,7 +86,7 @@ describe('catching the painted palette up with the stored one', () => {
   it('caches the stored theme when the launch cache disagrees', async () => {
     // The restore-from-backup case: the blob brought a theme across from another device.
     useStore.getState().updateSettings({ themeId: 'logbook' });
-    mockRead.mockReturnValue('carbon');
+    mockRead.mockReturnValue('midnight');
     mockWrite.mockReturnValue(true);
 
     await mount();
@@ -102,7 +102,7 @@ describe('catching the painted palette up with the stored one', () => {
      * be followed by a reload, however wrong the colours are.
      */
     useStore.getState().updateSettings({ themeId: 'logbook' });
-    mockRead.mockReturnValue('carbon');
+    mockRead.mockReturnValue('midnight');
     mockWrite.mockReturnValue(false);
 
     await mount();
@@ -114,13 +114,13 @@ describe('catching the painted palette up with the stored one', () => {
   it('does not reload when the palette on screen is already the right one', async () => {
     // Cache was stale but happened to have painted correctly anyway. Fixing the cache is
     // enough; a reload here would be a visible restart that changed nothing.
-    useStore.getState().updateSettings({ themeId: 'carbon' });
+    useStore.getState().updateSettings({ themeId: 'midnight' });
     mockRead.mockReturnValue('neon');
     mockWrite.mockReturnValue(true);
 
     await mount();
 
-    expect(mockWrite).toHaveBeenCalledWith('carbon');
+    expect(mockWrite).toHaveBeenCalledWith('midnight');
     expect(reload).not.toHaveBeenCalled();
   });
 
@@ -146,7 +146,7 @@ describe('catching the painted palette up with the stored one', () => {
      * repeated reloads. Once it has committed to restarting, it stops acting.
      */
     useStore.getState().updateSettings({ themeId: 'logbook' });
-    mockRead.mockReturnValue('carbon');
+    mockRead.mockReturnValue('midnight');
     mockWrite.mockReturnValue(true);
 
     await mount();

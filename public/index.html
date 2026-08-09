@@ -18,15 +18,15 @@
     <link rel="manifest" href="/manifest.json" />
     <!--
       These three - and background-color below, and the two colours in manifest.json - are the
-      DEFAULT theme, Carbon. They are what the page shows in the moment before the bundle runs
+      DEFAULT theme, Midnight. They are what the page shows in the moment before the bundle runs
       and on the install splash screen, which is the one paint no JavaScript can reach.
 
       src/ui/theme.ts overwrites them at import with whichever palette the user actually chose,
       so someone on Chalk gets a white frame. Keep them matching DEFAULT_THEME in src/ui/themes.ts:
-      when they drifted (they said Midnight navy while the default had become Carbon black) the
-      app opened with a navy flash and installed with a navy splash behind a black screen.
+      when they drifted - they said navy while the default was briefly Carbon black - the app
+      opened with a flash of the wrong colour and installed with a mismatched splash.
     -->
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#0B1220" />
     <meta name="color-scheme" content="dark" />
 
     <!--
@@ -45,7 +45,7 @@
       html,
       body {
         height: 100%;
-        background-color: #000000;
+        background-color: #0b1220;
       }
       body {
         /*

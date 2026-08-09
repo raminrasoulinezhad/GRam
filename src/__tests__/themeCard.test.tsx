@@ -34,10 +34,10 @@ describe('choosing how the app looks', () => {
   });
 
   it('marks the stored choice, and only that one', async () => {
-    useStore.getState().updateSettings({ themeId: 'blueprint' });
+    useStore.getState().updateSettings({ themeId: 'mocha' });
     await renderScreen(<ThemeCard />);
 
-    expect(screen.getByTestId('theme-blueprint-on')).toBeTruthy();
+    expect(screen.getByTestId('theme-mocha-on')).toBeTruthy();
     expect(screen.queryByTestId('theme-carbon-on')).toBeNull();
   });
 

@@ -6,6 +6,52 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.6.0] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Added
+
+- **Three new themes.** **Mocha** — espresso, crema and a latte accent; the warm dark the
+  shortlist had been missing since it was pruned to eight cool palettes. **Lemon** — pale citrus
+  paper and rind green, the brightest thing here. **Canadian** — flag red on white, a novelty and
+  it knows it.
+
+  Two of them needed a real compromise to work, and both are recorded next to the palette. Mocha
+  cannot use a caramel accent, because caramel lands within twenty degrees of the warning colour
+  and "well done" cannot look like "your data is at risk"; the accent is the palest thing in the
+  set instead, separated by lightness. Canadian has the same problem in sharper form — its accent
+  *is* red, and so is danger — so danger drops to a much darker crimson.
+
+  Lemon's accent is not lemon yellow, and cannot be: a saturated yellow will not clear 3:1
+  against any ground pale enough to read as lemon. The citrus is in the paper, which is most of
+  the screen anyway.
+
+### Changed
+
+- **Midnight is the default again.** Carbon held it for one release on a battery argument — a
+  black pixel on OLED is a pixel switched off — which is true and turned out not to be the whole
+  question. Seen on a phone rather than reasoned about, the navy is the one that looks like this
+  app. Carbon is one tap away.
+- **Blueprint and Platinum are retired.** Blueprint's cyan accent was a close relative of the
+  cold end of the heat ramp, leaving the body map less room than any other palette to separate
+  "barely trained" from "untrained". Platinum was a second cool, neutral light theme sitting next
+  to Chalk — a variation rather than a choice. Both are in the git history.
+
+  Anyone who had one selected is moved to the default on next launch rather than left pointing at
+  a theme that no longer exists.
+- **The cover after a theme change carries the logo again.** A blank coloured screen for half a
+  second read as a glitch. What stays gone is the 1.8-second brand delay, so it is a blink rather
+  than a relaunch — and it still comes back to the same scroll position.
+
+### Fixed
+
+- **A write that could land before the store had loaded.** The version log — the one thing that
+  writes purely because the app opened — fired at root mount, before the persisted blob finished
+  loading, flushing the store's empty initial state over the real file. Hydration put it back a
+  few tens of milliseconds later, which is what made it invisible; an app killed inside that
+  window would have come back empty. It now waits for hydration.
+
 ## [1.5.2] — 2026-08-08
 
 Storage schema **v7** — unchanged.

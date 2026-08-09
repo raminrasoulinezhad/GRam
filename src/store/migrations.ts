@@ -1,4 +1,4 @@
-import { DEFAULT_THEME } from '@/ui/themes';
+import { DEFAULT_THEME, THEMES } from '@/ui/themes';
 import type { Plan, Profile, Session, Settings } from './types';
 
 /**
@@ -243,12 +243,30 @@ export function migratePersisted(persisted: unknown, fromVersion: number): Persi
  * a default; anything recognisable is kept. Losing a malformed *setting* is acceptable, losing
  * plans or sessions is not, so those are only ever replaced when they are not arrays at all.
  */
+/**
+ * Settings over the defaults, with the theme checked against the palettes that exist.
+ *
+ * Themes get retired - Blueprint and Platinum went at 1.6 - and the id of a retired one is
+ * still sitting in the settings of anyone who had it selected. Left alone it names nothing:
+ * the picker shows no selection, and the launch cache quietly falls back while the stored
+ * value stays wrong forever. Replacing it with the default is the honest repair, and it costs
+ * that user a colour rather than anything they recorded.
+ */
+function coerceSettings(stored: Record<string, unknown>): Settings {
+  const merged = { ...DEFAULT_SETTINGS, ...stored };
+  const themeId =
+    typeof merged.themeId === 'string' && merged.themeId in THEMES
+      ? (merged.themeId as Settings['themeId'])
+      : DEFAULT_THEME;
+  return { ...merged, themeId };
+}
+
 export function coerce(state: Record<string, unknown>): PersistedState {
   const activeSessionId = state.activeSessionId;
   return {
     plans: asArray<Plan>(state.plans),
     sessions: asArray<Session>(state.sessions),
-    settings: { ...DEFAULT_SETTINGS, ...(asRecord(state.settings) ?? {}) },
+    settings: coerceSettings(asRecord(state.settings) ?? {}),
     profile: { ...DEFAULT_PROFILE, ...(asRecord(state.profile) ?? {}) },
     activeSessionId: typeof activeSessionId === 'string' ? activeSessionId : null,
     celebratedMilestones: asArray<string>(state.celebratedMilestones).filter(

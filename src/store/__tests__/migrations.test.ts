@@ -1,4 +1,5 @@
 import { volumeInWindow } from '@/analytics/volume';
+import { DEFAULT_THEME } from '@/ui/themes';
 import {
   DEFAULT_PROFILE,
   DEFAULT_SETTINGS,
@@ -360,5 +361,39 @@ describe('a payload at the current version is still validated', () => {
     ]) {
       expect([key, result[key as keyof typeof result] !== undefined]).toEqual([key, true]);
     }
+  });
+});
+
+describe('a theme that no longer exists', () => {
+  /*
+   * Blueprint and Platinum were retired at 1.6, and their ids are still sitting in the settings
+   * of anyone who had one selected. An id that names nothing is not harmless: the picker shows
+   * no selection at all, and the launch cache quietly falls back while the stored value stays
+   * wrong on every subsequent launch.
+   */
+  const base = { plans: [], sessions: [], profile: {} };
+
+  it('falls back to the default', () => {
+    for (const gone of ['blueprint', 'platinum']) {
+      const result = coerce({ ...base, settings: { themeId: gone } });
+      expect([gone, result.settings.themeId]).toEqual([gone, DEFAULT_THEME]);
+    }
+  });
+
+  it('leaves a theme that does still exist alone', () => {
+    expect(coerce({ ...base, settings: { themeId: 'logbook' } }).settings.themeId).toBe('logbook');
+  });
+
+  it('shrugs off a themeId that is not even a string', () => {
+    expect(coerce({ ...base, settings: { themeId: 42 } }).settings.themeId).toBe(DEFAULT_THEME);
+  });
+
+  it('keeps everything else in the same settings object', () => {
+    // The repair costs a colour. It must not cost the unit or the rest timer alongside it.
+    const result = coerce({
+      ...base,
+      settings: { themeId: 'blueprint', unit: 'kg', defaultRestSec: 45 },
+    });
+    expect([result.settings.unit, result.settings.defaultRestSec]).toEqual(['kg', 45]);
   });
 });

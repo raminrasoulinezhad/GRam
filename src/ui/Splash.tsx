@@ -24,14 +24,14 @@ const FADE_MS = 320;
  * snaps to your real data. The splash holds until the store has actually loaded, then stays a
  * moment longer so it reads as intentional rather than as a flash.
  *
- * EXCEPT AFTER A THEME CHANGE
- * That restart is not a launch - the user tapped a colour two seconds ago and is still on the
- * page they tapped it from. Playing the logo there turns a setting into an event, and holding
- * it for the full MINIMUM_MS makes changing your mind about a colour cost two seconds a go.
+ * SHORTER AFTER A THEME CHANGE
+ * That restart is not a launch - the user tapped a colour a second ago and is still on the page
+ * they tapped it from - but the hydration gap is just as real, so something has to cover it.
  *
- * The cover still appears, because the hydration gap is just as real on that path; it is
- * simply the background colour with nothing on it, and it lifts the moment the store is ready
- * rather than waiting out the brand delay. The result reads as a repaint, not a relaunch.
+ * Since a cover is unavoidable, it is the logo rather than a bare rectangle: a blank coloured
+ * screen for half a second reads as a glitch, where the logo reads as the app doing something.
+ * What goes is the *brand delay*. It lifts the moment the store is ready instead of holding for
+ * MINIMUM_MS, so trying a second colour costs a blink rather than two seconds a go.
  */
 export function Splash({ children }: { children: ReactNode }) {
   const [done, setDone] = useState(false);
@@ -96,23 +96,17 @@ export function Splash({ children }: { children: ReactNode }) {
     <View style={s.root}>
       {children}
       {!done ? (
-        <Animated.View
-          style={[s.overlay, { opacity }]}
-          pointerEvents="none"
-          testID={quiet ? 'splash-quiet' : 'splash'}
-        >
-          {quiet ? null : (
-            <Image
-              source={
-                portrait
-                  ? require('../../assets/logo-portrait.jpg')
-                  : require('../../assets/logo.jpg')
-              }
-              style={s.image}
-              resizeMode="cover"
-              accessibilityLabel="GRam"
-            />
-          )}
+        <Animated.View style={[s.overlay, { opacity }]} pointerEvents="none" testID="splash">
+          <Image
+            source={
+              portrait
+                ? require('../../assets/logo-portrait.jpg')
+                : require('../../assets/logo.jpg')
+            }
+            style={s.image}
+            resizeMode="cover"
+            accessibilityLabel="GRam"
+          />
         </Animated.View>
       ) : null}
     </View>

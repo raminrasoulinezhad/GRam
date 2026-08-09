@@ -61,11 +61,12 @@ export type ThemeId =
   | 'midnight'
   | 'carbon'
   | 'graphite'
-  | 'blueprint'
   | 'neon'
+  | 'mocha'
+  | 'lemon'
   | 'chalk'
-  | 'platinum'
-  | 'logbook';
+  | 'logbook'
+  | 'canadian';
 
 export type ThemeMeta = {
   id: ThemeId;
@@ -181,39 +182,6 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
   },
 
   /*
-   * A CREATIVE ONE. Technical drawing: deep blue ground, fine cyan rule, everything laid out
-   * like a plan. It suits what the app actually is - a thing for measuring a body and drawing a
-   * schedule against it - and the cyan accent is unusual enough to be recognisably this app
-   * rather than a template.
-   *
-   * The risk, stated so it can be judged rather than discovered: cyan and the cold end of the
-   * heat ramp are close relatives, so the body map has less room to say "barely trained" versus
-   * "untrained" than it does in Midnight.
-   */
-  blueprint: {
-    id: 'blueprint',
-    name: 'Blueprint',
-    blurb: 'Technical drawing. Deep blue and electric cyan.',
-    light: false,
-    colors: {
-      bg: '#071A2B',
-      surface: '#0C2438',
-      surfaceAlt: '#123049',
-      border: '#1C4463',
-      text: '#E3F2FD',
-      textDim: '#8FB6D1',
-      textFaint: '#5B84A3',
-      accent: '#22D3EE',
-      accentDim: '#0E4F5C',
-      danger: '#FF6B81',
-      warn: '#FFC145',
-      onAccent: '#04161C',
-      onDanger: '#2A0A0A',
-      ramp: ['#16283A', '#194156', '#165869', '#22754B', '#A37409', '#F16C51'],
-    },
-  },
-
-  /*
    * The outlier, kept so it can be rejected knowingly rather than never considered.
    *
    * Dark slate with electric lime and magenta - the register of sports drinks and running
@@ -242,6 +210,73 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
       onAccent: '#141A00',
       onDanger: '#2A0011',
       ramp: ['#1E2632', '#12556B', '#0E8F9E', '#5FD68A', '#E8A317', '#FF2E88'],
+    },
+  },
+
+  /*
+   * A CREATIVE ONE, and the warm end of the set coming back.
+   *
+   * Espresso, crema and a cup of latte for the accent. The shortlist was cut to eight entirely
+   * cool palettes at 1.4.5 and that was noted at the time as deliberate but lopsided; this is
+   * the correction. It is the only theme here that feels like a room rather than a screen.
+   *
+   * The accent is the *lightest* thing in the palette rather than the most saturated. A caramel
+   * or amber accent - the obvious choice on this ground - lands within twenty degrees of the
+   * warning colour, and "well done" and "your data is at risk" cannot be the same colour. Going
+   * pale instead separates them by lightness, which no amount of hue-matching can undo.
+   */
+  mocha: {
+    id: 'mocha',
+    name: 'Mocha',
+    blurb: 'Espresso and cream. The warm one.',
+    light: false,
+    colors: {
+      bg: '#1C1410',
+      surface: '#261C16',
+      surfaceAlt: '#33261E',
+      border: '#4A382C',
+      text: '#F5EBE0',
+      textDim: '#C4AE9C',
+      textFaint: '#9A8574',
+      accent: '#F0D9B5',
+      accentDim: '#4A3320',
+      danger: '#E8837C',
+      warn: '#D9A441',
+      onAccent: '#241A12',
+      onDanger: '#2A0A0A',
+      ramp: ['#2A1F19', '#2F4F4F', '#3E7C6B', '#7FA05A', '#D99A2B', '#C4452D'],
+    },
+  },
+
+  /*
+   * A light one, and the brightest thing here. Pale lemon paper, ink, and rind for the accent.
+   *
+   * Worth saying plainly, because the name promises something the maths will not allow: the
+   * accent is NOT lemon yellow. A saturated yellow cannot clear 3:1 against any ground pale
+   * enough to read as lemon - it is the single least contrasty hue there is. So the citrus is
+   * carried by the paper, which is where most of the screen is anyway, and the accent is the
+   * dark olive-lime of the rind. The alternative was a yellow nobody could see.
+   */
+  lemon: {
+    id: 'lemon',
+    name: 'Lemon',
+    blurb: 'Pale citrus paper and rind green. The brightest one.',
+    light: true,
+    colors: {
+      bg: '#FFFDF0',
+      surface: '#FFFFFF',
+      surfaceAlt: '#FBF4D9',
+      border: '#E5DBB0',
+      text: '#262418',
+      textDim: '#5C5842',
+      textFaint: '#7A7458',
+      accent: '#4F7A00',
+      accentDim: '#DDEEB0',
+      danger: '#B91C1C',
+      warn: '#9A6A00',
+      onAccent: '#FFFFFF',
+      onDanger: '#FFFFFF',
+      ramp: ['#F2EFDC', '#8FBFDC', '#4E93BE', '#D4B02E', '#D9601F', '#B8261A'],
     },
   },
 
@@ -283,37 +318,6 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
   },
 
   /*
-   * A second light option, cooler and more clinical than Chalk. Neutral greys, a lot of white
-   * space, and a single deep blue accent - the register of a measuring instrument rather than
-   * a gym.
-   *
-   * The case for it: this app's actual job is measurement, and its voice everywhere else is
-   * plain and evidence-first. This is what that voice looks like as a colour scheme.
-   */
-  platinum: {
-    id: 'platinum',
-    name: 'Platinum',
-    blurb: 'Light, neutral and clinical. An instrument, not a gym.',
-    light: true,
-    colors: {
-      bg: '#FAFAFA',
-      surface: '#FFFFFF',
-      surfaceAlt: '#F0F1F3',
-      border: '#DADCE0',
-      text: '#1A1C1E',
-      textDim: '#4A4E54',
-      textFaint: '#6E727A',
-      accent: '#1A56DB',
-      accentDim: '#DBE5FB',
-      danger: '#B42318',
-      warn: '#8A5A00',
-      onAccent: '#FFFFFF',
-      onDanger: '#FFFFFF',
-      ramp: ['#EEEEF0', '#BFCFE7', '#8EB3DE', '#C68B23', '#D4581A', '#C33222'],
-    },
-  },
-
-  /*
    * A CREATIVE ONE. The paper training log this app replaces: warm off-white stock, graphite
    * writing, and a red pencil for the thing that matters. Distinctive, warmer than Chalk, and
    * it carries an idea - that a training diary is a personal document, not a dashboard - which
@@ -343,33 +347,74 @@ export const THEMES: Record<ThemeId, ThemeMeta> = {
       ramp: ['#E8E4DB', '#BAC7A2', '#98AD54', '#A8832A', '#AE581F', '#A52D1B'],
     },
   },
+
+  /*
+   * THE NOVELTY ONE, and it needed a real fix to work at all.
+   *
+   * The flag: white field, red bar. Which walks straight into a problem no other palette here
+   * has - the accent IS red, and red is what danger has to be. An accent that means "well done"
+   * and an alarm that means "your data is about to go" cannot be the same colour.
+   *
+   * Resolved by lightness rather than by hue: the accent is flag red and danger is a much
+   * darker crimson, far enough apart to be unmistakable side by side. The warning is pushed
+   * down to a dark amber for the same reason. That is the honest cost of the theme, and it is
+   * why this one is at the end of the list rather than presented as an equal.
+   */
+  canadian: {
+    id: 'canadian',
+    name: 'Canadian',
+    blurb: 'Flag red on white. A novelty, and it knows it.',
+    light: true,
+    colors: {
+      bg: '#FFFFFF',
+      surface: '#FFF7F6',
+      surfaceAlt: '#FDEBE9',
+      border: '#F0CFCB',
+      text: '#1A1A1A',
+      textDim: '#565656',
+      textFaint: '#6E6E6E',
+      accent: '#D52B1E',
+      accentDim: '#FBD5D1',
+      danger: '#7A0F0F',
+      warn: '#8A5A00',
+      onAccent: '#FFFFFF',
+      onDanger: '#FFFFFF',
+      ramp: ['#EFEFEF', '#B9CFE3', '#7FA8C9', '#C99A2B', '#D9601F', '#C0201A'],
+    },
+  },
 };
 
 /**
- * Carbon, not the navy the app shipped with.
+ * Midnight, the navy the app shipped with.
  *
- * A true-black ground is the one choice here with a measurable argument behind it rather than
- * only a visual one: on the OLED panel in almost every recent phone a black pixel is switched
- * off, and a workout screen is mostly background held awake for the length of a session.
+ * Carbon held this for one release on a battery argument - a black pixel on an OLED panel is a
+ * pixel switched off, and a workout screen is mostly background held awake for an hour. True,
+ * and not the whole question: seen on a phone rather than reasoned about, the navy is the one
+ * that looks like this app. The saving is real but small, and Carbon is one tap away for anyone
+ * who wants it.
  */
-export const DEFAULT_THEME: ThemeId = 'carbon';
+export const DEFAULT_THEME: ThemeId = 'midnight';
 
 /*
- * Picker order: the default first, then the other darks, then the lights.
+ * Picker order: the default first, then the other darks, then the lights, novelty last.
  *
- * Two candidates were cut after being seen side by side. **Iron** was the conventional
- * charcoal-and-safety-orange every lifting app converges on - dropped for sitting too close to
- * Carbon and Graphite to earn its own slot. **Ember** was the warm dark: chalk, leather and a
- * low fire. Dropping both leaves the shortlist entirely cool, which is a deliberate outcome
- * rather than an oversight; if the warm end is ever wanted back, they are in the git history.
+ * Four have been cut across the reviews. **Iron** and **Ember** went before 1.4.5 - the first
+ * for sitting too close to Carbon and Graphite, the second unseen. **Blueprint** went at 1.6:
+ * its cyan accent was a close relative of the cold end of the heat ramp, which left the body
+ * map less room to separate "barely trained" from "untrained" than any other palette.
+ * **Platinum** went with it, for the reason Iron did - a second cool, neutral light theme next
+ * to Chalk was a variation rather than a choice.
+ *
+ * All four are in the git history if the judgement ever changes.
  */
 export const THEME_ORDER: readonly ThemeId[] = [
-  'carbon',
   'midnight',
+  'carbon',
   'graphite',
-  'blueprint',
   'neon',
+  'mocha',
   'chalk',
-  'platinum',
+  'lemon',
   'logbook',
+  'canadian',
 ];

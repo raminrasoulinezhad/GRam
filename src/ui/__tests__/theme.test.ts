@@ -117,9 +117,9 @@ describe('caching a choice for the next launch', () => {
     const storage = fakeStorage();
     const mod = launch({ storage });
 
-    expect(mod.writeLaunchTheme('blueprint')).toBe(true);
-    expect(storage._data.get('gram-theme')).toBe('blueprint');
-    expect(mod.readLaunchTheme()).toBe('blueprint');
+    expect(mod.writeLaunchTheme('mocha')).toBe(true);
+    expect(storage._data.get('gram-theme')).toBe('mocha');
+    expect(mod.readLaunchTheme()).toBe('mocha');
   });
 
   it('reports failure when the write silently does not take', () => {
@@ -131,7 +131,7 @@ describe('caching a choice for the next launch', () => {
     const amnesiac = { getItem: () => null, setItem: () => undefined };
     const mod = launch({ storage: amnesiac });
 
-    expect(mod.writeLaunchTheme('blueprint')).toBe(false);
+    expect(mod.writeLaunchTheme('mocha')).toBe(false);
   });
 
   it('does not paint the new choice until the next launch', () => {

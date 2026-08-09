@@ -98,45 +98,25 @@ describe('splash screen', () => {
 
 describe('coming back from a theme change', () => {
   /*
-   * Not a launch. The user tapped a colour a second ago and is still on the page they tapped it
-   * from, so the logo would turn a setting into an event - and waiting out the brand moment
-   * would make trying a second colour cost two seconds.
+   * Not a launch: the user tapped a colour a second ago and is still on the page they tapped it
+   * from. But the hydration gap is real on this path too, so a cover is unavoidable - and since
+   * it is unavoidable it carries the logo, because a blank coloured screen reads as a glitch.
    *
-   * The cover stays, because the hydration gap is real on this path too; it is just the
-   * background with nothing on it, and it lifts as soon as the store is ready.
+   * What goes is the brand delay. These tests are about the timing, not the artwork.
    */
   beforeEach(() => {
     mockQuiet = true;
   });
 
-  it('shows no logo', async () => {
+  it('still covers the gap, logo and all', async () => {
     await render(
       <Splash>
         <Text>Plans</Text>
       </Splash>,
     );
 
-    expect(screen.queryByTestId('splash')).toBeNull();
-    expect(screen.getByTestId('splash-quiet')).toBeTruthy();
-  });
-
-  it('still covers the gap before the store has loaded', async () => {
-    // Without this the page paints defaults for a frame and then snaps to the real data - the
-    // same flash the logo screen exists to hide.
-    const hasHydrated = jest.spyOn(useStore.persist, 'hasHydrated').mockReturnValue(false);
-    const onFinish = jest
-      .spyOn(useStore.persist, 'onFinishHydration')
-      .mockImplementation(() => () => {});
-
-    await render(
-      <Splash>
-        <Text>Plans</Text>
-      </Splash>,
-    );
-    expect(screen.getByTestId('splash-quiet')).toBeTruthy();
-
-    hasHydrated.mockRestore();
-    onFinish.mockRestore();
+    expect(screen.getByTestId('splash')).toBeTruthy();
+    expect(screen.getByLabelText('GRam')).toBeTruthy();
   });
 
   it('lifts without waiting out the brand moment', async () => {
@@ -146,9 +126,9 @@ describe('coming back from a theme change', () => {
       </Splash>,
     );
 
-    // The logo path is still up at 1000ms; this one is long gone.
+    // The launch path is still showing at this point; see the 1000ms assertion above.
     await advance(600);
-    expect(screen.queryByTestId('splash-quiet')).toBeNull();
+    expect(screen.queryByTestId('splash')).toBeNull();
   });
 
   it('still cannot strand anyone if storage never resolves', async () => {
@@ -163,7 +143,7 @@ describe('coming back from a theme change', () => {
       </Splash>,
     );
     await advance(4000);
-    expect(screen.queryByTestId('splash-quiet')).toBeNull();
+    expect(screen.queryByTestId('splash')).toBeNull();
 
     hasHydrated.mockRestore();
     onFinish.mockRestore();

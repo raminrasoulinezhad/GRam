@@ -38,15 +38,18 @@ import { MUSCLES, type Muscle } from './generated';
  * where the evidence has moved, update the comment saying why, and set both constants below.
  */
 /*
- * 1.5: re-examined, nothing moved.
+ * 1.5 and 1.6: re-examined, nothing moved either time.
  *
  * Written down rather than passed over, because a stamp that advances without a reason is how
- * this check decays into a formality. The 1.4 review was the same day, the catalog gained no
- * exercises between the two releases, and none of the sources published anything in the
- * interval. Every pick below still carries the reasoning it was chosen with. That is a review
- * that concluded no change, not a review that was skipped.
+ * this check decays into a formality. Both fell on the same day as the substantive 1.4 review:
+ * the catalog gained no exercises in between, and none of the sources published anything in
+ * the interval. Every pick below still carries the reasoning it was chosen with.
+ *
+ * Worth being blunt about the limit of that. Three same-day reviews say nothing about whether
+ * the evidence has moved - they say only that it cannot have. The next release that lands on a
+ * different week from 1.4 owes this file a real reading, not another note like this one.
  */
-export const RECOMMENDED_REVIEWED_FOR = '1.5';
+export const RECOMMENDED_REVIEWED_FOR = '1.6';
 
 /** Calendar date of the last review, so staleness is visible even between version bumps. */
 export const RECOMMENDED_REVIEWED_ON = '2026-08-08';
