@@ -6,6 +6,22 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.5] — 2026-08-08
+
+Storage schema **v7** — unchanged.
+
+### Changed
+
+- **Height and weight are set with a scroll wheel.** They were typed fields with a stepper, and
+  both were wrong for a number you change twice a year: typing raises a keyboard over half the
+  screen, and stepping takes forty taps to get from 80 kg to 100. A wheel reaches anything in
+  one flick, opens on the value already stored, and cannot produce a number that is not on the
+  list. Arrow buttons sit alongside for nudging one row, and for mice.
+
+  The weight wheel is built in whichever unit is on screen and converted back to the kilograms
+  everything is stored in — switching units rebuilds it and the marker lands on the equivalent
+  row, not the same row number.
+
 ## [1.4.4] — 2026-08-08
 
 Storage schema **v7** — unchanged.

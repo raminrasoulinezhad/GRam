@@ -12,10 +12,12 @@ import {
 import { SCHEMA_VERSION } from '@/store/migrations';
 import { completedSessions, selectSessions, useStore } from '@/store/useStore';
 import { countLoggedSets } from '@/analytics/volume';
+import { range } from '@/lib/wheel';
 import { Button, Card, Chip, Dim, H2, NumberField, Screen } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
 import { BackupCard } from '@/ui/BackupCard';
 import { DateField } from '@/ui/DateField';
+import { WheelPicker } from '@/ui/WheelPicker';
 import { theme } from '@/ui/theme';
 const SEXES = ['male', 'female', 'unspecified'] as const;
 
@@ -25,6 +27,18 @@ const SEXES = ['male', 'female', 'unspecified'] as const;
  * the two long ones were rarely the answer.
  */
 const REST_PRESETS = [45, 60, 90] as const;
+
+/*
+ * What the body wheels offer.
+ *
+ * Wide enough to cover any adult without being a scroll marathon: heights from a very short
+ * adult to a very tall one, and weights well past either end of what a gym sees. The weight
+ * step is half a kilo, which is the smallest change worth recording, and a whole pound, which
+ * is the same resolution in the other unit rather than a spuriously finer one.
+ */
+const HEIGHTS_CM = range(120, 230, 1);
+const WEIGHTS_KG = range(30, 250, 0.5);
+const WEIGHTS_LB = range(66, 550, 1);
 
 export default function ProfileScreen() {
   const profile = useStore((s) => s.profile);
@@ -102,34 +116,40 @@ export default function ProfileScreen() {
             value={profile.birthDate}
             onChange={(birthDate) => updateProfile({ birthDate })}
           />
+          {/*
+            * Wheels rather than typed fields. These are two numbers a person changes maybe
+            * twice a year, and a keyboard covering half the screen to enter one of them is a
+            * poor trade - as was a stepper, which needed forty taps to go from 80 kg to 100.
+            */}
           <View style={s.measureRow}>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={s.label}>HEIGHT</Text>
-              <NumberField
+              <WheelPicker
                 testID="profile-height"
-                value={profile.heightCm ?? undefined}
+                values={HEIGHTS_CM}
+                value={profile.heightCm}
                 suffix="cm"
-                width={132}
-                step={1}
-                onChange={(n) => updateProfile({ heightCm: n ?? null })}
+                onChange={(heightCm) => updateProfile({ heightCm })}
               />
             </View>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={s.label}>WEIGHT</Text>
-              <NumberField
+              {/*
+                * The wheel is built in whichever unit is on screen and converted back to the
+                * kilograms everything is stored in. Switching units rebuilds it, and the marker
+                * lands on the equivalent row rather than on the same row number.
+                */}
+              <WheelPicker
                 testID="profile-weight"
+                values={settings.unit === 'lb' ? WEIGHTS_LB : WEIGHTS_KG}
                 value={
                   profile.weightKg === null
-                    ? undefined
+                    ? null
                     : toDisplayWeight(profile.weightKg, settings.unit)
                 }
                 suffix={settings.unit}
-                width={132}
-                step={0.5}
-                onChange={(n) =>
-                  updateProfile({
-                    weightKg: n === undefined ? null : fromDisplayWeight(n, settings.unit),
-                  })
+                onChange={(shown) =>
+                  updateProfile({ weightKg: fromDisplayWeight(shown, settings.unit) })
                 }
               />
             </View>
