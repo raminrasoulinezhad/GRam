@@ -195,19 +195,32 @@ forms by parsing the *deployed* HTML, so it has to be in the document rather tha
 `scripts/build-web.mjs` fails the build if an export stops carrying it, and
 `src/__tests__/feedback.test.tsx` fails if the field names drift from what the app posts.
 
-**The destination address lives in the Netlify dashboard, deliberately, and nowhere else:**
+**Netlify will not see the form until form detection is switched on.** This is the step that is
+easy to miss, because nothing anywhere reports it: the form is in the deployed HTML, the build
+passes, the app posts, and the dashboard simply has no form called `gram-feedback` to configure.
+Netlify turned detection **off by default for new sites in April 2023** to save build time, and
+a site that has never used Forms has never had it on.
 
-> Site configuration → Forms → Form notifications → *Add notification* → *Email notification*,
-> pick the `gram-feedback` form, enter the address.
+1. Netlify → this site → **Forms** in the left-hand nav → **Enable form detection**.
+2. **Redeploy.** Detection runs during a build, so enabling it changes nothing until the next
+   one. Deploys → *Trigger deploy* → *Deploy site*. No commit is needed; it rebuilds `main` as
+   it stands, and it does spend one of the metered builds.
+3. `gram-feedback` now appears under Forms with zero submissions. Until this point step 4 has
+   nothing to select, which is exactly what "I cannot find gram-feedback" looks like.
+4. **The destination address, which lives here and nowhere else:** Site configuration →
+   **Notifications** → **Form submission notifications** → *Add notification* → *Email
+   notification*, pick `gram-feedback`, enter the address.
 
-That is the whole reason this approach was chosen over a `mailto:` or an inbox API key. Anything
-compiled into the bundle is a file every visitor can download, so an address "hidden" in the
-JavaScript is a public address — base64, string splitting and the rest buy nothing but the
-feeling of having solved it. Keeping it server-side means the repository never learns the
-address, the bundle never carries it, and changing it later is a dashboard edit, not a release.
+Before step 2 a submission is answered with a 404 and the note is lost — the app reports that
+honestly as "it did not go through" and keeps the text. Between steps 2 and 4 submissions are
+kept and readable under Forms; they just do not email anyone.
 
-Until that notification is configured the submissions still arrive — they collect under the
-site's Forms tab — but nobody is emailed about them. The free tier covers 100 a month.
+Steps 1 to 3 are the whole price of this approach over a `mailto:` or an inbox API key, and it
+is worth paying once. Anything compiled into the bundle is a file every visitor can download, so
+an address "hidden" in the JavaScript is a public address — base64, string splitting and the
+rest buy nothing but the feeling of having solved it. Server-side means the repository never
+learns the address, the bundle never carries it, and changing it later is a dashboard edit
+rather than a release. The free tier covers 100 submissions a month.
 
 **Ship a JS-only change** (no native code touched):
 
