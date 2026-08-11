@@ -38,21 +38,27 @@ import { MUSCLES, type Muscle } from './generated';
  * where the evidence has moved, update the comment saying why, and set both constants below.
  */
 /*
- * 1.5 through 1.8: re-examined, nothing moved any time.
+ * 1.5 through 1.8: re-examined, nothing moved any time. All four fell within a day of the
+ * substantive 1.4 review, so they establish only that the evidence *could not* have moved, not
+ * that it did not - and the note left behind said so, and said the next release landing in a
+ * different week owed this file a real reading rather than another note like it.
  *
- * Written down rather than passed over, because a stamp that advances without a reason is how
- * this check decays into a formality. All of them fell within a day of the substantive 1.4
- * review: the catalog gained no exercises in between, and none of the sources published
- * anything in the interval. Every pick below still carries the reasoning it was chosen with.
+ * 1.9 is that reading, and it changed a pick: see `glutes` below, where the barbell hip thrust
+ * is out. Two other things were checked and left alone, which is worth recording so the next
+ * reviewer knows what has already been looked at.
  *
- * Worth being blunt about the limit of that. Same-day reviews say nothing about whether
- * the evidence has moved - they say only that it cannot have. The next release that lands on a
- * different week from 1.4 owes this file a real reading, not another note like this one.
+ *   - The 2026 systematic review and meta-analysis on partial repetitions at long versus short
+ *     muscle length found significantly greater hypertrophy at the longer length (ES 0.283,
+ *     p = 0.036). That is the criterion this file already weights above all others, so it
+ *     confirms picks rather than moving them - the incline curl, the overhead triceps
+ *     extension, the RDL and the seated leg curl are all here because of it.
+ *   - Nippard's overall ranking now opens with squat, pull-up, incline bench press, RDL and
+ *     chest-supported T-bar row. All five are already picks below.
  */
-export const RECOMMENDED_REVIEWED_FOR = '1.8';
+export const RECOMMENDED_REVIEWED_FOR = '1.9';
 
 /** Calendar date of the last review, so staleness is visible even between version bumps. */
-export const RECOMMENDED_REVIEWED_ON = '2026-08-08';
+export const RECOMMENDED_REVIEWED_ON = '2026-08-11';
 
 /** Exactly two exercise ids per muscle, best first. */
 export const RECOMMENDED: Record<Muscle, readonly [string, string]> = {
@@ -111,9 +117,31 @@ export const RECOMMENDED: Record<Muscle, readonly [string, string]> = {
    */
   abdominals: ['Cable_Crunch', 'FitRam_Ab_Wheel_Rollout'],
 
-  // Hip thrust puts peak tension at full hip extension; the RDL is Nippard's pick for the lower
-  // glute and loads the stretched position.
-  glutes: ['Barbell_Hip_Thrust', 'Romanian_Deadlift'],
+  /*
+   * Changed at the 1.9 review, and the first pick this file has ever demoted rather than
+   * refined. The barbell hip thrust was first here on the strength of peak tension at full hip
+   * extension and a large EMG advantage. Both of those held up; what did not is the conclusion
+   * drawn from them.
+   *
+   * Nippard's glute ranking now places the barbell hip thrust in B tier - it trains all three
+   * glute muscles but is awkward to load past a few plates and uncomfortable to set up - and
+   * names the walking dumbbell lunge the best glute exercise overall, S tier. Independently,
+   * the controlled trial comparing nine weeks of squatting against nine weeks of hip thrusting
+   * found similar glute hypertrophy from both despite the hip thrust's much higher activation.
+   * That is this file's stated rule doing exactly what it is for: EMG breaks ties, it does not
+   * settle them, and here the growth data declined to follow the electrode.
+   *
+   * The catalog has no walking dumbbell lunge, so the dumbbell reverse lunge takes the place.
+   * It was chosen over the catalog's plain Dumbbell Lunges for a reason that is about this app
+   * rather than about training: the FIRST pick for a muscle is what the week review offers when
+   * a group is untrained, so it has to list that muscle as primary or the suggested fix would
+   * not close the issue it was offered for (balance.test.ts enforces this). Dumbbell Lunges
+   * files quadriceps alone. The reverse lunge files quadriceps and glutes, and the longer step
+   * makes it the more hip-dominant of the two anyway.
+   *
+   * The RDL keeps second place for the reason it always had: the lengthened position at the hip.
+   */
+  glutes: ['FitRam_Reverse_Lunge', 'Romanian_Deadlift'],
 
   /*
    * Reviewed at 1.4 and left alone, but the reasoning was never written down. The squat loads

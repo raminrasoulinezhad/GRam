@@ -70,20 +70,29 @@ export function HoldTimer({
   // decided here rather than by a timer that could fire late.
   useEffect(() => {
     if (phase.at === 'leadIn' && now - phase.from >= LEAD_IN_SEC * 1000) {
+      /*
+       * The sound that matters most. By now the phone is on the floor and you are looking at
+       * the ceiling, so this is the only way to know the five seconds are up and the clock you
+       * will be measured against has started.
+       */
+      beep('go');
       setPhase({ at: 'running', from: phase.from + LEAD_IN_SEC * 1000 });
       return;
     }
     if (phase.at === 'running' && target > 0 && elapsed(phase.from) >= target && !beeped.current) {
       beeped.current = true;
-      beep();
+      beep('done');
       setPhase({ at: 'done', seconds: target });
       onDone(target);
     }
   });
 
   function start() {
-    // Inside the gesture, which is the only moment a browser will open the audio device.
+    // Inside the gesture, which is the only moment a browser will open the audio device. The
+    // press beep rides that same tap, so it doubles as proof the device actually opened - if
+    // you hear it, the two beeps that come later while the phone is face down will work too.
     primeBeep();
+    beep('press');
     // Cleared so a second run in the same sheet can beep again.
     beeped.current = false;
     setNow(Date.now());
@@ -93,7 +102,9 @@ export function HoldTimer({
   function stopEarly() {
     if (phase.at !== 'running') return onClose();
     const held = elapsed(phase.from);
+    // The same sound as running out of time, because it is the same event: the set is over.
     beeped.current = true;
+    beep('done');
     setPhase({ at: 'done', seconds: held });
     onDone(held);
   }

@@ -6,7 +6,7 @@ import { exerciseName } from '@/catalog';
 import { isPlanStale, weeksSince } from '@/analytics/planReview';
 import { relativeTime } from '@/lib/format';
 import { WEEKDAYS, WEEKDAY_LABEL, WEEKDAY_SHORT, type Weekday } from '@/store/types';
-import { useStore } from '@/store/useStore';
+import { resumableSession, useStore } from '@/store/useStore';
 import { Body, Button, Card, Chip, Dim, Empty, Screen } from '@/ui/components';
 import { WeekReview } from '@/ui/WeekReview';
 import { theme } from '@/ui/theme';
@@ -19,7 +19,11 @@ export default function PlansScreen() {
   const startSession = useStore((s) => s.startSession);
   const startEmptySession = useStore((s) => s.startEmptySession);
 
-  const activeSession = sessions.find((x) => x.id === activeSessionId);
+  /*
+   * Derived from the sessions rather than looked up by the pointer, so a workout outlives
+   * losing its bookmark - see resumableSession for the cases where that happens.
+   */
+  const activeSession = resumableSession(sessions, activeSessionId);
   const used = new Set(plans.map((p) => p.day));
   const free = WEEKDAYS.filter((d) => !used.has(d));
 

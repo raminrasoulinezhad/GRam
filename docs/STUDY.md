@@ -252,6 +252,18 @@ Training science:
 - [The Best Trap Exercises & Workouts for a Bigger Back — Barbell Medicine](https://www.barbellmedicine.com/blog/best-trap-exercises-for-a-bigger-stronger-back/)
 - [The 12 Best EMG Backed Exercises For Every Muscle Group](https://www.setforset.com/blogs/news/best-emg-backed-exercises-for-every-muscle-group)
 
+Added at the 1.9 review (2026-08-11):
+
+- [Muscle hypertrophy from partial repetition at long vs. short muscle length: a systematic
+  review and meta-analysis](https://pure.ulster.ac.uk/en/publications/muscle-hypertrophy-from-partial-repetition-at-long-vs-short-muscl/)
+  — 2026. Significantly greater hypertrophy at the longer length (ES 0.283, p = 0.036), which is
+  the criterion `recommended.ts` already weights above all others. Confirmed picks; moved none.
+- [Hip thrust and back squat training elicit similar gluteus muscle hypertrophy](https://mennohenselmans.com/new-study-hip-thrust-and-back-squat-training-elicit-similar-gluteus-muscle-hypertrophy-and-transfer-similarly-to-the-deadlift/)
+  — nine weeks, similar glute growth from both despite the hip thrust's much higher activation.
+  Half of why the barbell hip thrust lost first place among the glute picks at 1.9.
+- [Jeff Nippard ranks 25 glute exercises](https://generationiron.com/jeff-nippard-25-glute-exercises-best-worst/)
+  — the other half: barbell hip thrust in B tier, walking dumbbell lunge best overall.
+
 Data:
 
 - [yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db) — the exercise catalog, Unlicense / public domain

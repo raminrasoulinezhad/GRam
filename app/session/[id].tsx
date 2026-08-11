@@ -64,19 +64,28 @@ const SetRow = memo(function SetRow({
         onChange={(patch) => onChange(set.id, patch)}
       />
 
-      <View style={{ flex: 1 }} />
-
+      {/*
+        * Beside the seconds it is going to fill in, not over by the tick.
+        *
+        * It sat at the far right of the row, a thumb's width from Record, where the two most
+        * consequential buttons in the app - "measure this set" and "this set happened" - were
+        * neighbours with nothing between them. Here it reads as part of the field it writes to,
+        * and a mis-tap costs you a sheet you close rather than a set you did not do.
+        */}
       {kind === 'time' ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Time this set"
           testID={`time-${set.id}`}
-          hitSlop={6}
+          hitSlop={8}
           onPress={() => setTiming(true)}
+          style={s.timeBtn}
         >
           <Ionicons name="stopwatch-outline" size={19} color={theme.color.accent} />
         </Pressable>
       ) : null}
+
+      <View style={{ flex: 1 }} />
 
       {timing ? (
         <HoldTimer
@@ -485,6 +494,18 @@ const s = StyleSheet.create({
     borderRadius: theme.radius.sm,
   },
   setRowLogged: { backgroundColor: 'rgba(74,222,128,0.08)' },
+  // Boxed like the field it belongs to, so it reads as "measure this" rather than as one more
+  // icon in the row of actions at the other end.
+  timeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: theme.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.color.surfaceAlt,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+  },
   setNum: { color: theme.color.textFaint, fontSize: theme.font.small, fontWeight: '800', width: 16 },
   logBtn: {
     width: 34,

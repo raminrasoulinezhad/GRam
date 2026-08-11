@@ -4,8 +4,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { exerciseName } from '@/catalog';
 import { countLoggedSets, rankMuscles, sessionTonnage, volumeInWindow } from '@/analytics/volume';
-import { formatDate, formatDuration, formatTime, toDisplayWeight } from '@/lib/format';
-import { completedSessions, selectSessions, useStore } from '@/store/useStore';
+import { formatDate, formatDuration, formatTime, relativeTime, toDisplayWeight } from '@/lib/format';
+import { completedSessions, liveSessions, selectSessions, useStore } from '@/store/useStore';
 import { Card, Dim, Empty, H2, Screen } from '@/ui/components';
 import { MilestonesCard } from '@/ui/Milestones';
 import { theme } from '@/ui/theme';
@@ -15,6 +15,20 @@ export default function HistoryScreen() {
   const unit = useStore((s) => s.settings.unit);
 
   const sessions = useMemo(() => completedSessions(allSessions), [allSessions]);
+
+  /*
+   * A workout in progress belongs here from its first recorded set.
+   *
+   * It was already saved - every set writes to storage the instant you tick it - but nothing
+   * showed it. History listed finished workouts only, so someone who closed the app mid-session
+   * and came back to this tab saw no trace of the sets they had just done and reasonably
+   * concluded they were gone. The one before the first set is left out on purpose: a session
+   * with nothing in it is an intention, not a workout.
+   */
+  const live = useMemo(
+    () => liveSessions(allSessions).filter((x) => countLoggedSets(x) > 0),
+    [allSessions],
+  );
 
   const week = useMemo(() => {
     const now = Date.now();
@@ -28,11 +42,42 @@ export default function HistoryScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={s.content}>
+        {live.map((session) => (
+          <Pressable
+            key={session.id}
+            onPress={() => router.push(`/session/${session.id}`)}
+            testID={`resume-${session.id}`}
+          >
+            <Card style={s.live}>
+              <View style={s.header}>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.liveLabel}>IN PROGRESS</Text>
+                  <Text style={s.name}>{session.planName}</Text>
+                  <Dim>
+                    {countLoggedSets(session)} set{countLoggedSets(session) === 1 ? '' : 's'} saved
+                    · started {relativeTime(session.startedAt)}
+                  </Dim>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={theme.color.accent} />
+              </View>
+              {/*
+                * Said plainly, because the fear this answers is "did I lose it?". Anything
+                * hedgier - "unfinished workout" - leaves the question open.
+                */}
+              <Dim style={{ marginTop: theme.space(1) }}>
+                Already saved. Tap to carry on, or finish it to add it to the log below.
+              </Dim>
+            </Card>
+          </Pressable>
+        ))}
+
         {sessions.length === 0 ? (
-          <Empty
-            title="No workouts yet"
-            hint="Finish a workout and it lands here with everything you recorded."
-          />
+          live.length > 0 ? null : (
+            <Empty
+              title="No workouts yet"
+              hint="Finish a workout and it lands here with everything you recorded."
+            />
+          )
         ) : (
           <>
             {/* Where you are overall, before the workout-by-workout account below it. */}
@@ -111,6 +156,15 @@ const s = StyleSheet.create({
   content: { padding: theme.space(4), gap: theme.space(2), paddingBottom: theme.space(12) },
   header: { flexDirection: 'row', alignItems: 'center', gap: theme.space(2) },
   name: { color: theme.color.text, fontSize: theme.font.body, fontWeight: '700' },
+  // The same treatment the resume card gets on the plans screen, so the two read as one thing
+  // seen from two places rather than as two different kinds of workout.
+  live: { borderColor: theme.color.accent, backgroundColor: theme.color.accentDim },
+  liveLabel: {
+    color: theme.color.accent,
+    fontSize: theme.font.tiny,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
   statRow: { flexDirection: 'row', gap: theme.space(6), marginTop: theme.space(2) },
   statValue: { color: theme.color.text, fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
   statLabel: { color: theme.color.textFaint, fontSize: theme.font.tiny, fontWeight: '600' },

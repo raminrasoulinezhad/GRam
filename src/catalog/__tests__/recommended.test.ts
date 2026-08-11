@@ -88,10 +88,12 @@ describe('recommendedRanks', () => {
   });
 
   it('takes the best rank when several muscles are in play', () => {
-    // Romanian Deadlift is the second glute pick and the second hamstring pick.
+    // Romanian Deadlift is the second glute pick and the second hamstring pick. The first glute
+    // pick is read from the table rather than named, so a future review can change it without
+    // this test - which is about the rank arithmetic - having an opinion about which lift wins.
     const ranks = recommendedRanks(['glutes', 'hamstrings']);
     expect(ranks.get('Seated_Leg_Curl')).toBe(0);
-    expect(ranks.get('Barbell_Hip_Thrust')).toBe(0);
+    expect(ranks.get(RECOMMENDED.glutes[0])).toBe(0);
     expect(ranks.get('Romanian_Deadlift')).toBe(1);
   });
 

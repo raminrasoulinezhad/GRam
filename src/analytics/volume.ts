@@ -67,8 +67,12 @@ function addContribution(totals: MuscleTotals, exerciseId: string, weight: numbe
  * Built from calendar components rather than by subtracting milliseconds, so it lands on real
  * midnight through daylight saving. Subtracting 6 × 24h across a spring-forward boundary gives
  * 1am, which would silently drop anything logged in that first hour.
+ *
+ * Exported because the store needs the same notion of "today" to decide when a workout left
+ * open has stopped being today's - and two different midnights in one app is a bug waiting for
+ * the clocks to change.
  */
-function startOfDayBefore(now: number, daysBack: number): number {
+export function startOfDayBefore(now: number, daysBack: number): number {
   const d = new Date(now);
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() - daysBack);

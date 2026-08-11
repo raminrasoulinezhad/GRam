@@ -210,6 +210,33 @@ describe('active workout screen', () => {
     expect(store().sessions[0].entries[0].sets[0].timeSec).toBe(75);
   });
 
+  it('puts the stopwatch beside the seconds, not beside the record button', async () => {
+    /*
+     * It used to sit a thumb's width from Record, so the two most consequential buttons in the
+     * app - "measure this set" and "this set happened" - were neighbours with nothing between
+     * them. Position is checked as render order, which for this row is left to right: the
+     * stopwatch comes after the time field and before the tick.
+     */
+    startWorkout(PLANK);
+    const setId = setIds()[0];
+    await renderScreen(<SessionScreen />);
+
+    const tree = JSON.stringify(screen.toJSON());
+    const field = tree.indexOf(`"set-${setId}-time"`);
+    const stopwatch = tree.indexOf(`"time-${setId}"`);
+    const record = tree.indexOf(`"log-${setId}"`);
+
+    expect([field, stopwatch, record].every((i) => i >= 0)).toBe(true);
+    expect(field).toBeLessThan(stopwatch);
+    expect(stopwatch).toBeLessThan(record);
+  });
+
+  it('offers the stopwatch only where there is a duration to measure', async () => {
+    startWorkout(BENCH);
+    await renderScreen(<SessionScreen />);
+    expect(screen.queryByTestId(`time-${setIds()[0]}`)).toBeNull();
+  });
+
   it('starts a rest timer on record but not on un-record', async () => {
     startWorkout();
     await renderScreen(<SessionScreen />);

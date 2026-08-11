@@ -69,7 +69,15 @@ writeFileSync(
 );
 
 const html = readFileSync(resolve(OUT, 'index.html'), 'utf8');
-for (const required of ['manifest.json', 'apple-mobile-web-app-capable', 'serviceWorker']) {
+// 'gram-feedback' is the hidden form Netlify parses out of the DEPLOYED html. If an export ever
+// stops carrying it, every feedback submission 404s - invisibly from the user's side, and
+// discoverable only by someone noticing that nobody has written in for a month.
+for (const required of [
+  'manifest.json',
+  'apple-mobile-web-app-capable',
+  'serviceWorker',
+  'gram-feedback',
+]) {
   if (!html.includes(required)) {
     process.stderr.write(`index.html is missing "${required}" - the PWA template was not used.\n`);
     process.exit(1);

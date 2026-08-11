@@ -7,6 +7,7 @@ import {
   recommendedRanks,
   searchExercises,
   type Exercise,
+  type Muscle,
 } from '@/catalog';
 import { slopeFor } from '@/catalog/slope';
 import { titleCase } from '@/lib/format';
@@ -30,6 +31,12 @@ type Props = {
    * narrows the starting point without taking the choice away.
    */
   initialQuery?: string;
+  /**
+   * Locks the list to one muscle, as a primary. Used by the page a muscle tag opens, where the
+   * question has already been asked and answered - so the group chips come off rather than
+   * offering to contradict the heading.
+   */
+  pinnedMuscle?: Muscle;
   /** Rendered at the right edge of each row - e.g. a plus icon in the picker. */
   accessory?: (exercise: Exercise) => React.ReactNode;
   header?: React.ReactNode;
@@ -40,10 +47,16 @@ function setsLabel(count: number): string {
   return `${count} set${count === 1 ? '' : 's'}`;
 }
 
-export function ExerciseList({ onSelect, accessory, header, initialQuery = '' }: Props) {
+export function ExerciseList({
+  onSelect,
+  accessory,
+  header,
+  pinnedMuscle,
+  initialQuery = '',
+}: Props) {
   const [query, setQuery] = useState(initialQuery);
   const [group, setGroup] = useState<TrainingGroup | null>(null);
-  const muscle = group ? GROUP_MUSCLES[group] : null;
+  const muscle = pinnedMuscle ?? (group ? GROUP_MUSCLES[group] : null);
 
   const sessions = useStore(selectSessions);
   const history = useMemo(() => setCountsByExercise(sessions), [sessions]);
@@ -100,23 +113,25 @@ export function ExerciseList({ onSelect, accessory, header, initialQuery = '' }:
        * Equipment, category and difficulty had rows of their own behind a toggle once; they are
        * gone, because the text search reads all three anyway.
        */}
-      <View style={s.filters}>
-        <Chip
-          label="All"
-          active={group === null}
-          onPress={() => setGroup(null)}
-          testID="muscle-all"
-        />
-        {TRAINING_GROUPS.map((g) => (
+      {pinnedMuscle === undefined ? (
+        <View style={s.filters}>
           <Chip
-            key={g}
-            label={GROUP_LABEL[g]}
-            active={group === g}
-            onPress={() => setGroup(group === g ? null : g)}
-            testID={`muscle-${GROUP_LABEL[g]}`}
+            label="All"
+            active={group === null}
+            onPress={() => setGroup(null)}
+            testID="muscle-all"
           />
-        ))}
-      </View>
+          {TRAINING_GROUPS.map((g) => (
+            <Chip
+              key={g}
+              label={GROUP_LABEL[g]}
+              active={group === g}
+              onPress={() => setGroup(group === g ? null : g)}
+              testID={`muscle-${GROUP_LABEL[g]}`}
+            />
+          ))}
+        </View>
+      ) : null}
 
       <Text style={s.count}>
         {results.length} exercise{results.length === 1 ? '' : 's'}

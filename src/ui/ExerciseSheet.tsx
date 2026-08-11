@@ -41,7 +41,8 @@ export function ExerciseSheetProvider({ children }: { children: ReactNode }) {
                   <Ionicons name="close" size={22} color={theme.color.text} />
                 </Pressable>
               </View>
-              <ExerciseDetail exerciseId={exerciseId} />
+              {/* Gets out of the way before the detail navigates - see ExerciseDetail's onLeave. */}
+              <ExerciseDetail exerciseId={exerciseId} onLeave={() => setExerciseId(null)} />
             </View>
           </View>
         </Modal>

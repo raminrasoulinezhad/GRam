@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { getExercise, type SetKind } from '@/catalog';
+// Types only flow the other way, so this is not a cycle - see the note on the export itself.
+import { startOfDayBefore } from '@/analytics/volume';
 import { uid } from '@/lib/id';
 import {
   DEFAULT_PROFILE,
@@ -94,6 +96,15 @@ type Actions = {
   toggleSetLogged: (sessionId: string, entryId: string, setId: string) => void;
   endSession: (sessionId: string) => void;
   discardSession: (sessionId: string) => void;
+  /**
+   * Settles workouts left open on an earlier day. Run once per launch.
+   *
+   * A workout is yours to come back to all day - close the app between exercises, take a call,
+   * let the phone die - but not forever. Left alone, a session nobody finished sits at the top
+   * of the plans screen saying IN PROGRESS next week, and the sets in it never reach the log
+   * that counts them.
+   */
+  closeStaleSessions: (now?: number) => void;
   /** Retitles a workout in the log. Blank falls back to "Workout" rather than an empty row. */
   renameSession: (sessionId: string, planName: string) => void;
   /** Moves a workout to another date and time, carrying everything inside it along. */
@@ -558,6 +569,45 @@ export const useStore = create<State & Actions>()(
           activeSessionId: s.activeSessionId === sessionId ? null : s.activeSessionId,
         })),
 
+      /**
+       * Finishes yesterday's unfinished workouts, and drops the ones that never began.
+       *
+       * "Earlier day" is measured from the last set recorded, not from when the workout started,
+       * so a session that runs past midnight is still today's until the day after. Its end time
+       * is that same last set: a workout you did at 7pm and forgot to finish belongs in the log
+       * at 7pm, not at whatever hour you next happened to open the app.
+       *
+       * WHAT IT WILL AND WILL NOT THROW AWAY
+       * A stale session with recorded sets is kept and closed. A stale session with none is
+       * dropped, and everything in it is by definition a target rather than a result - the same
+       * line endSession already draws when it strips unrecorded sets out of a finished workout.
+       * No recorded set is ever removed by this, on any path; sessionRecovery.test.ts exists to
+       * keep it that way.
+       */
+      closeStaleSessions: (now = Date.now()) => {
+        const today = startOfDayBefore(now, 0);
+        const s = get();
+        const kept: Session[] = [];
+        let changed = false;
+
+        for (const session of s.sessions) {
+          if (session.endedAt !== null || lastActivityAt(session) >= today) {
+            kept.push(session);
+            continue;
+          }
+          changed = true;
+          const recorded = session.entries
+            .map((e) => ({ ...e, sets: e.sets.filter((x) => x.loggedAt !== null) }))
+            .filter((e) => e.sets.length > 0);
+          if (recorded.length === 0) continue;
+          kept.push({ ...session, endedAt: lastActivityAt(session), entries: recorded });
+        }
+
+        if (!changed) return;
+        const stillLive = kept.some((x) => x.id === s.activeSessionId && x.endedAt === null);
+        set({ sessions: kept, activeSessionId: stillLive ? s.activeSessionId : null });
+      },
+
       /*
        * The empty name is stored as typed and only defaulted on commit. Substituting a
        * fallback mid-edit would push text back into a field someone is halfway through
@@ -779,6 +829,48 @@ export const useStore = create<State & Actions>()(
 /** Finished sessions, newest first - what the History tab and the body map read. */
 export function completedSessions(sessions: Session[]): Session[] {
   return sessions.filter((x) => x.endedAt !== null).sort((a, b) => b.startedAt - a.startedAt);
+}
+
+/**
+ * When the last thing happened in a workout: its newest recorded set, or its start if nothing
+ * has been recorded yet.
+ *
+ * Not `endedAt`, which is null for exactly the workouts this is asked about, and not
+ * `startedAt`, which would make a session that ran from 11pm to 1am look like it stopped two
+ * hours before it did.
+ */
+export function lastActivityAt(session: Session): number {
+  let at = session.startedAt;
+  for (const entry of session.entries) {
+    for (const set of entry.sets) {
+      if (set.loggedAt !== null && set.loggedAt > at) at = set.loggedAt;
+    }
+  }
+  return at;
+}
+
+/** Workouts still running, newest first. Normally none or one. */
+export function liveSessions(sessions: Session[]): Session[] {
+  return sessions.filter((x) => x.endedAt === null).sort((a, b) => b.startedAt - a.startedAt);
+}
+
+/**
+ * The workout to offer to resume, if there is one.
+ *
+ * `activeSessionId` is a convenience, NOT the record of what is running - the sessions
+ * themselves are, and `endedAt === null` is what makes one live. Reading the pointer first and
+ * falling back to the newest live session is what makes a workout survive losing it: a crash
+ * between the two writes, a restored backup from a phone that was mid-session, an import that
+ * brought sessions without the pointer. In every one of those the training is on disk and only
+ * the bookmark is gone, and this hands it back rather than showing a plans screen that quietly
+ * pretends nothing was in progress.
+ */
+export function resumableSession(
+  sessions: Session[],
+  activeSessionId: string | null,
+): Session | null {
+  const live = liveSessions(sessions);
+  return live.find((x) => x.id === activeSessionId) ?? live[0] ?? null;
 }
 
 /** Only the numbers that are actually set, so a spread can never blank out what it lands on. */

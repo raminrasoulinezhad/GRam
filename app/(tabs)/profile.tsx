@@ -17,6 +17,7 @@ import { Button, Card, Chip, Dim, H2, NumberField, Screen } from '@/ui/component
 import { useConfirm } from '@/ui/confirm';
 import { BackupCard } from '@/ui/BackupCard';
 import { DateField } from '@/ui/DateField';
+import { FeedbackCard } from '@/ui/FeedbackCard';
 import { ThemeCard } from '@/ui/ThemeCard';
 import { WheelField } from '@/ui/WheelField';
 import { theme } from '@/ui/theme';
@@ -266,6 +267,11 @@ export default function ProfileScreen() {
         </Card>
         <ThemeCard />
         <BackupCard />
+        {/*
+          * Below the settings and above About: it is not a setting, and the version number
+          * someone is about to quote in a bug report is right underneath it.
+          */}
+        <FeedbackCard />
         {/*
           * About: which build this is, and what it holds.
           *

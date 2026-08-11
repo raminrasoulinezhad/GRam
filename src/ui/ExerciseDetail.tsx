@@ -8,8 +8,10 @@ import {
   isPerSideLoad,
   regressionLadder,
   SET_KIND_LABEL,
+  type Muscle,
 } from '@/catalog';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { slopeFor } from '@/catalog/slope';
 import { MUSCLE_LABEL } from '@/analytics/muscleMap';
 import { formatDate, formatSet, relativeTime, titleCase } from '@/lib/format';
@@ -26,7 +28,21 @@ import { theme } from './theme';
  * Shared by the full-page route and the sheet that opens from tapping a thumbnail, so both
  * always show the same thing.
  */
-export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
+export function ExerciseDetail({
+  exerciseId,
+  onLeave,
+}: {
+  exerciseId: string;
+  /**
+   * Called just before this component navigates somewhere. The sheet renders above the
+   * navigator, so without it a muscle tag tapped inside the sheet would open a page behind a
+   * sheet still covering the whole screen. The full-page route has nothing to do here.
+   *
+   * A prop rather than a hook on the sheet's context: ExerciseSheet imports this file, and
+   * importing back would make a cycle out of two modules that are otherwise a clean layer.
+   */
+  onLeave?: () => void;
+}) {
   const exercise = getExercise(exerciseId);
   const unit = useStore((s) => s.settings.unit);
   const sessions = useStore(selectSessions);
@@ -53,6 +69,19 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
   );
 
   const slope = slopeFor(exerciseId);
+
+  /*
+   * A muscle tag is the shortest question in the app - "what else works this?" - and until now
+   * it was a label you could only read. Both rows lead to the same place: the exercises that
+   * muscle is the TARGET of. Asking from the secondary row is still asking what trains it, not
+   * what happens to involve it, and answering with two hundred movements would be answering a
+   * different question.
+   */
+  function openMuscle(muscle: Muscle) {
+    onLeave?.();
+    // Two of the seventeen have a space in them, and a raw space in a path is not a path.
+    router.push(`/muscle/${encodeURIComponent(muscle)}`);
+  }
 
   if (!exercise) return <Empty title="Exercise not found" />;
 
@@ -129,10 +158,18 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
 
         <Card>
           <H2>Breakdown</H2>
-          <Dim style={{ marginTop: theme.space(1) }}>Primary</Dim>
+          <Dim style={{ marginTop: theme.space(1) }}>
+            Primary — tap one to see every exercise that targets it
+          </Dim>
           <View style={s.muscleRow}>
             {exercise.primaryMuscles.map((m) => (
-              <Chip key={m} label={MUSCLE_LABEL[m]} tone="primary" />
+              <Chip
+                key={m}
+                label={MUSCLE_LABEL[m]}
+                tone="primary"
+                onPress={() => openMuscle(m)}
+                testID={`muscle-link-${m}`}
+              />
             ))}
           </View>
           {exercise.secondaryMuscles.length > 0 ? (
@@ -140,7 +177,13 @@ export function ExerciseDetail({ exerciseId }: { exerciseId: string }) {
               <Dim style={{ marginTop: theme.space(3) }}>Secondary</Dim>
               <View style={s.muscleRow}>
                 {exercise.secondaryMuscles.map((m) => (
-                  <Chip key={m} label={MUSCLE_LABEL[m]} tone="secondary" />
+                  <Chip
+                    key={m}
+                    label={MUSCLE_LABEL[m]}
+                    tone="secondary"
+                    onPress={() => openMuscle(m)}
+                    testID={`muscle-link-${m}`}
+                  />
                 ))}
               </View>
             </>

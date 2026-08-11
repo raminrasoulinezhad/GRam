@@ -9,6 +9,7 @@ import { ExerciseSheetProvider } from '@/ui/ExerciseSheet';
 import { MilestoneCelebration } from '@/ui/Milestones';
 import { Splash } from '@/ui/Splash';
 import { useAutoBackup } from '@/ui/useAutoBackup';
+import { useSessionRecovery } from '@/ui/useSessionRecovery';
 import { useVersionLog } from '@/ui/useVersionLog';
 import { useViewportHeight } from '@/ui/useViewportHeight';
 import { useThemeSync } from '@/ui/useThemeSync';
@@ -21,6 +22,8 @@ export default function RootLayout() {
   useViewportHeight();
   // Records which builds this device has run, for Profile > About.
   useVersionLog();
+  // Closes workouts left open on an earlier day, so none is stranded as "in progress".
+  useSessionRecovery();
   // Catches the painted palette up with the stored one - see the hook for when they diverge.
   useThemeSync();
 
@@ -48,6 +51,8 @@ export default function RootLayout() {
             <Stack.Screen name="plan/[id]" options={{ title: 'Edit plan' }} />
             <Stack.Screen name="session/[id]" options={{ title: 'Workout' }} />
             <Stack.Screen name="exercise/[id]" options={{ title: 'Exercise' }} />
+            {/* Title is set by the screen itself - it is the muscle's name. */}
+            <Stack.Screen name="muscle/[muscle]" options={{ title: 'Muscle' }} />
             <Stack.Screen name="picker" options={{ presentation: 'modal', title: 'Add exercise' }} />
             <Stack.Screen name="history/[id]" options={{ title: 'Workout' }} />
             <Stack.Screen name="replan/[id]" options={{ title: 'Review plan' }} />

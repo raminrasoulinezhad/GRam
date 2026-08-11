@@ -90,6 +90,30 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+
+    <!--
+      The feedback form, declared here and never shown.
+
+      Netlify discovers forms by parsing the DEPLOYED HTML at build time, so a form that only
+      ever exists as React components is a form it has never heard of and every submission comes
+      back 404. This is the declaration: the field names here are the contract, and they must
+      match the body built in src/lib/feedback.ts.
+
+      The destination address is NOT here, and that is the whole reason this approach was
+      chosen. It lives in the Netlify dashboard under Forms > Form notifications, which is
+      server-side configuration - so it is in neither this repository nor the JavaScript bundle
+      that every visitor downloads. See src/lib/feedback.ts for why no amount of encoding would
+      have made an embedded address private.
+
+      `netlify-honeypot` names a field humans leave empty and bots fill in; submissions with
+      anything in it are dropped silently rather than bounced, which is what stops a public
+      endpoint from becoming a spam funnel.
+    -->
+    <form name="gram-feedback" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="text" name="bot-field" />
+      <textarea name="message"></textarea>
+      <input type="text" name="version" />
+    </form>
     <script>
       // Registered after load so it never competes with the first paint. Only meaningful over
       // HTTPS (or localhost); on plain HTTP the browser declines and the app still works online.

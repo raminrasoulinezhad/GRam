@@ -187,6 +187,28 @@ Bumping to a new minor or major version therefore means:
 If the research turns up nothing new, re-stamp and move on — the point is that the decision is
 conscious, not that the file must change.
 
+### The feedback box needs one setting that is not in this repo
+
+Profile has a note box that posts to Netlify Forms. The form itself is declared as a hidden
+`<form name="gram-feedback">` in [`public/index.html`](../public/index.html) — Netlify finds
+forms by parsing the *deployed* HTML, so it has to be in the document rather than only in React.
+`scripts/build-web.mjs` fails the build if an export stops carrying it, and
+`src/__tests__/feedback.test.tsx` fails if the field names drift from what the app posts.
+
+**The destination address lives in the Netlify dashboard, deliberately, and nowhere else:**
+
+> Site configuration → Forms → Form notifications → *Add notification* → *Email notification*,
+> pick the `gram-feedback` form, enter the address.
+
+That is the whole reason this approach was chosen over a `mailto:` or an inbox API key. Anything
+compiled into the bundle is a file every visitor can download, so an address "hidden" in the
+JavaScript is a public address — base64, string splitting and the rest buy nothing but the
+feeling of having solved it. Keeping it server-side means the repository never learns the
+address, the bundle never carries it, and changing it later is a dashboard edit, not a release.
+
+Until that notification is configured the submissions still arrive — they collect under the
+site's Forms tab — but nobody is emailed about them. The free tier covers 100 a month.
+
 **Ship a JS-only change** (no native code touched):
 
 ```bash

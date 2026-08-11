@@ -4,9 +4,12 @@ import { HoldTimer, LEAD_IN_SEC } from '@/ui/HoldTimer';
 const mockBeep = jest.fn();
 const mockPrime = jest.fn();
 jest.mock('@/lib/beep', () => ({
-  beep: () => mockBeep(),
+  beep: (kind: string) => mockBeep(kind),
   primeBeep: () => mockPrime(),
 }));
+
+/** Which sounds have fired, in order. Which one is as much the point as how many. */
+const sounded = (): string[] => mockBeep.mock.calls.map(([kind]) => kind);
 
 /*
  * Timing a plank.
@@ -113,6 +116,59 @@ describe('the lead-in', () => {
   });
 });
 
+describe('the sounds', () => {
+  /*
+   * Three moments, three different sounds, and the middle one is the one that has to work: the
+   * phone is on the floor by then and "the clock has started" cannot be conveyed any other way.
+   * Testing the KIND rather than the count is what stops a refactor from quietly reducing all
+   * three to the same tone, which would still pass a count.
+   */
+  it('sounds when Start is pressed', async () => {
+    await show(60);
+    await fireEvent.press(screen.getByTestId('hold-start'));
+    expect(sounded()).toEqual(['press']);
+  });
+
+  it('sounds when the lead-in expires and the set begins', async () => {
+    await show(60);
+    await fireEvent.press(screen.getByTestId('hold-start'));
+    expect(sounded()).not.toContain('go');
+
+    await passSeconds(LEAD_IN_SEC);
+    expect(sounded()).toEqual(['press', 'go']);
+  });
+
+  it('sounds once at the handover, not on every repaint of the set', async () => {
+    await show(120);
+    await fireEvent.press(screen.getByTestId('hold-start'));
+    await passSeconds(LEAD_IN_SEC + 20);
+    expect(sounded().filter((k) => k === 'go')).toHaveLength(1);
+  });
+
+  it('gives starting and finishing different sounds', async () => {
+    // If they were the same, a beep heard from the floor would not say which one it was.
+    await show(60);
+    await fireEvent.press(screen.getByTestId('hold-start'));
+    await passSeconds(LEAD_IN_SEC + 5);
+    await fireEvent.press(screen.getByTestId('hold-finish'));
+
+    const [first] = sounded();
+    const last = sounded()[sounded().length - 1];
+    expect(first).not.toBe(last);
+  });
+
+  it('stays quiet when the lead-in is cancelled', async () => {
+    // Nothing was held and nothing was recorded, so there is nothing to announce.
+    await show(60);
+    await fireEvent.press(screen.getByTestId('hold-start'));
+    await passSeconds(2);
+    await fireEvent.press(screen.getByTestId('hold-finish'));
+
+    expect(sounded()).toEqual(['press']);
+    expect(onDone).not.toHaveBeenCalled();
+  });
+});
+
 describe('the set itself', () => {
   /** Starts and clears the lead-in, leaving the timer running from zero. */
   async function begin(target = 60) {
@@ -139,14 +195,14 @@ describe('the set itself', () => {
     await begin(30);
     await passSeconds(30);
 
-    expect(mockBeep).toHaveBeenCalledTimes(1);
+    expect(sounded()).toEqual(['press', 'go', 'done']);
     expect(onDone).toHaveBeenCalledWith(30);
   });
 
-  it('beeps once, not on every tick afterwards', async () => {
+  it('sounds the end once, not on every tick afterwards', async () => {
     await begin(30);
     await passSeconds(45);
-    expect(mockBeep).toHaveBeenCalledTimes(1);
+    expect(sounded().filter((k) => k === 'done')).toHaveLength(1);
   });
 
   it('records what was actually held when stopped early', async () => {
@@ -155,7 +211,8 @@ describe('the set itself', () => {
     await fireEvent.press(screen.getByTestId('hold-finish'));
 
     expect(onDone).toHaveBeenCalledWith(22);
-    expect(mockBeep).not.toHaveBeenCalled();
+    // Finishing by hand is the same event as running out of time, and sounds the same.
+    expect(sounded()).toEqual(['press', 'go', 'done']);
   });
 
   it('still says it was stopped early after the set has been rewritten', async () => {
