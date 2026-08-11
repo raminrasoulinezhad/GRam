@@ -48,7 +48,7 @@ export function FeedbackCard() {
       {state === 'sent' ? (
         <View style={s.sent} testID="feedback-sent">
           <Ionicons name="checkmark-circle" size={18} color={theme.color.accent} />
-          <Text style={s.sentText}>Sent. Thank you — write another any time.</Text>
+          <Text style={s.sentText}>Sent. Thank you, write another any time.</Text>
         </View>
       ) : null}
 
@@ -72,7 +72,7 @@ export function FeedbackCard() {
 
       {state === 'failed' ? (
         <Dim style={s.failed} testID="feedback-failed">
-          It did not go through — probably no signal. Your note is still here; try again when you
+          It did not go through, probably no signal. Your note is still here; try again when you
           are back online.
         </Dim>
       ) : null}
@@ -84,7 +84,7 @@ export function FeedbackCard() {
           * stated where the exception is made.
           */}
         <Dim style={s.privacy}>
-          Sends your message and the app version ({version}). Nothing else — not your name, not a
+          Sends your message and the app version ({version}). Nothing else: not your name, not a
           single logged set.
         </Dim>
         <Button

@@ -6,9 +6,9 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
-## [1.9.0] — 2026-08-11
+## [1.9.0] - 2026-08-11
 
-Storage schema **v7** — unchanged.
+Storage schema **v7**, unchanged.
 
 ### Added
 
@@ -21,7 +21,7 @@ Storage schema **v7** — unchanged.
   Three changes. History lists a live workout from its first recorded set, marked IN PROGRESS,
   saying how many sets are already safe, and tapping it goes back to the workout. The offer to
   resume is now derived from the workouts themselves rather than from the separate pointer that
-  named the live one — that pointer can go missing on its own, through a crash between two
+  named the live one. That pointer can go missing on its own, through a crash between two
   writes or a backup restored from a phone that was mid-session, and losing the bookmark used to
   mean losing the way back to training that was sitting on disk intact. And a workout left open
   on an earlier day is closed on the next launch, dated to the last set actually recorded in it,
@@ -32,7 +32,7 @@ Storage schema **v7** — unchanged.
   removed on any of these paths.
 
 - **A feedback box in Profile.** There is no account here, no crash reporting and no analytics,
-  which is the point — and it also means a bug on your phone is invisible unless you say so.
+  which is the point, and it also means a bug on your phone is invisible unless you say so.
   Write a note and it reaches the maintainer.
 
   It sends the message and the app version. Not your name, not one logged set, not a device id,
@@ -41,13 +41,13 @@ Storage schema **v7** — unchanged.
   is a file anybody can download and no amount of encoding changes that.
 
 - **Muscle tags open that muscle.** Tapping Chest or Triceps on an exercise now lists every
-  exercise that muscle is the *target* of, best first — the narrow question the tag asks. The
+  exercise that muscle is the *target* of, best first: the narrow question the tag asks. The
   wider "everything that involves the chest somewhere" is still what typing "chest" gives you.
 
 ### Changed
 
 - **The exercise picker is a switch, not a tally.** Tapping a row twice used to add the exercise
-  twice, and a third tap made three — so an uncertain double-tap, which is what anyone does when
+  twice, and a third tap made three, so an uncertain double-tap, which is what anyone does when
   they are not sure the first one registered, quietly put the same lift in the plan twice. The
   tick is now read from the plan itself, and tapping a chosen row removes it. An exercise you
   have already recorded a set of shows a padlock instead and stays: that is the one place a
@@ -55,18 +55,18 @@ Storage schema **v7** — unchanged.
   actually happened.
 
 - **The stopwatch moved away from the record button.** It sat a thumb's width from the tick, so
-  the two most consequential buttons in the app — "measure this set" and "this set happened" —
+  the two most consequential buttons in the app, "measure this set" and "this set happened",
   were neighbours with nothing between them. It now sits beside the seconds field it writes to.
 
 - **The timer beeps three times, with three different sounds:** pressing Start, the five-second
-  lead-in expiring, and the set ending. The middle one is the one that matters — by then the
+  lead-in expiring, and the set ending. The middle one is the one that matters: by then the
   phone is on the floor and there is no other way to know the clock has started. Rising means
   started and falling means finished, so a beep heard face-down says which one it was.
 
 - **Glutes: the barbell hip thrust is no longer the first recommendation.** Found by the 1.9
   review of `src/catalog/recommended.ts`, and the first pick this app has demoted rather than
   refined. It was first on the strength of peak tension at full hip extension and a large EMG
-  advantage — both still true, but the conclusion drawn from them was not. Nippard's glute
+  advantage, both still true, but the conclusion drawn from them was not. Nippard's glute
   ranking now places the barbell hip thrust in B tier and names the walking dumbbell lunge best
   overall, and the controlled trial comparing nine weeks of squatting against nine weeks of hip
   thrusting found similar glute growth from both despite the activation gap. The dumbbell

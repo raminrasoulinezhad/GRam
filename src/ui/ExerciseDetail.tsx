@@ -159,7 +159,7 @@ export function ExerciseDetail({
         <Card>
           <H2>Breakdown</H2>
           <Dim style={{ marginTop: theme.space(1) }}>
-            Primary — tap one to see every exercise that targets it
+            Primary. Tap one to see every exercise that targets it
           </Dim>
           <View style={s.muscleRow}>
             {exercise.primaryMuscles.map((m) => (

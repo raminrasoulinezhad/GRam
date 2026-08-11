@@ -190,7 +190,7 @@ conscious, not that the file must change.
 ### The feedback box needs one setting that is not in this repo
 
 Profile has a note box that posts to Netlify Forms. The form itself is declared as a hidden
-`<form name="gram-feedback">` in [`public/index.html`](../public/index.html) — Netlify finds
+`<form name="gram-feedback">` in [`public/index.html`](../public/index.html). Netlify finds
 forms by parsing the *deployed* HTML, so it has to be in the document rather than only in React.
 `scripts/build-web.mjs` fails the build if an export stops carrying it, and
 `src/__tests__/feedback.test.tsx` fails if the field names drift from what the app posts.
@@ -211,13 +211,13 @@ a site that has never used Forms has never had it on.
    **Notifications** → **Form submission notifications** → *Add notification* → *Email
    notification*, pick `gram-feedback`, enter the address.
 
-Before step 2 a submission is answered with a 404 and the note is lost — the app reports that
+Before step 2 a submission is answered with a 404 and the note is lost. The app reports that
 honestly as "it did not go through" and keeps the text. Between steps 2 and 4 submissions are
 kept and readable under Forms; they just do not email anyone.
 
 Steps 1 to 3 are the whole price of this approach over a `mailto:` or an inbox API key, and it
 is worth paying once. Anything compiled into the bundle is a file every visitor can download, so
-an address "hidden" in the JavaScript is a public address — base64, string splitting and the
+an address "hidden" in the JavaScript is a public address: base64, string splitting and the
 rest buy nothing but the feeling of having solved it. Server-side means the repository never
 learns the address, the bundle never carries it, and changing it later is a dashboard edit
 rather than a release. The free tier covers 100 submissions a month.

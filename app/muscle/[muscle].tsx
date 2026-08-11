@@ -56,7 +56,7 @@ export default function MuscleScreen() {
             <Text style={s.title}>{MUSCLE_LABEL[muscle]}</Text>
             <Dim style={s.hint}>
               Exercises this is the target of, best first. Movements that only assist with it are
-              not here — search the name instead.
+              not here. Search the name instead.
             </Dim>
           </View>
         }
