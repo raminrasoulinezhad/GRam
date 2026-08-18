@@ -156,36 +156,43 @@ npm run licenses                  # if dependencies changed
 - [ ] If the stored shape changed: `SCHEMA_VERSION` bumped, migration step added, fixture added,
       test asserts the old data survives.
 - [ ] Version bumped in **both** `app.json` and `package.json`.
-- [ ] **Exercise recommendations re-reviewed** — see below. The suite will not go green until
-      this is done.
 - [ ] `CHANGELOG.md` updated.
 - [ ] Tagged: `git tag -a v0.2.0 -m "..."` — and pushed with
       `git push origin main --follow-tags` only if this is a minor or major bump.
 
-### Re-reviewing the exercise recommendations
+### Re-reviewing the exercise recommendations, which is optional
 
 [`src/catalog/recommended.ts`](../src/catalog/recommended.ts) names the two best exercises per
-muscle, and they decide what a search by muscle puts at the top. The evidence behind them moves,
-and a list nobody revisits turns into folklore, so **every minor bump forces a review**:
-`RECOMMENDED_REVIEWED_FOR` holds a minor *series* — `"1.2"`, not `"1.2.0"` — and must equal the
-major.minor of `package.json`, or `src/catalog/__tests__/recommended.test.ts` fails.
+muscle, and they decide what a search by muscle puts at the top.
 
-Patch releases are exempt on purpose. With a patch bump on every commit, demanding a re-review
-each time would turn the check into noise, and noise gets stamped past without thinking.
+**This is not a release step.** Until 1.9.4 a test failed the build unless
+`RECOMMENDED_REVIEWED_FOR` matched the minor series in `package.json`, so every feature release
+had to carry a review. That gate is gone: releases no longer wait on it, and the suite no longer
+cares how old the stamp is.
 
-Bumping to a new minor or major version therefore means:
+It went because of what it produced rather than what it intended. Four releases in a row were
+re-stamped within a day of each other, which established that the evidence could not have moved,
+not that anybody had looked. A check that fires more often than the thing it checks changes
+teaches people to clear it without reading, and a re-stamp made that way is worse than an honest
+old date.
+
+`RECOMMENDED_REVIEWED_FOR` and `RECOMMENDED_REVIEWED_ON` stay as a record, so anyone reading the
+picks can see how old the judgement behind them is. Two things are still enforced, because both
+are cheap and catch real mistakes: the stamp has to be a well-formed minor series and date, and
+it may not name a release that has not happened yet.
+
+When you do want to redo it:
 
 1. Redo the research. The sources and the criteria used last time are in
    [STUDY.md §6](STUDY.md#6-which-exercise-should-the-app-put-first). Look for newer per-muscle
    rankings from the same coaches and any new trials.
 2. Change the picks where the evidence has moved, and update the comment saying why. The comment
-   is the audit trail — a pick with no stated reason is indistinguishable from a guess.
-3. Set `RECOMMENDED_REVIEWED_FOR` to the new version and `RECOMMENDED_REVIEWED_ON` to today.
+   is the audit trail: a pick with no stated reason is indistinguishable from a guess.
+3. Set `RECOMMENDED_REVIEWED_FOR` to the current minor series and `RECOMMENDED_REVIEWED_ON` to
+   today.
 4. Run the suite. It checks that every id exists, that each pick actually trains the muscle it
-   is filed under, and that no stretch was recommended as training.
-
-If the research turns up nothing new, re-stamp and move on — the point is that the decision is
-conscious, not that the file must change.
+   is filed under, and that no stretch was recommended as training. Those checks never went
+   away, and they are the ones that catch a bad edit.
 
 ### The feedback box needs one setting that is not in this repo
 

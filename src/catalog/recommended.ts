@@ -28,12 +28,17 @@ import { MUSCLES, type Muscle } from './generated';
  * Sources are listed in docs/STUDY.md.
  *
  * WHEN TO REDO THIS
- * The stamp below is a MINOR series - "1.2", not "1.2.0" - and a test requires it to match the
- * major.minor of package.json. So every minor release fails the build until someone has
- * revisited these picks, and the patch releases in between do not, which is what keeps the
- * check meaningful: a prompt on every commit is a prompt nobody reads. The evidence moves, and
- * a list frozen in 2026 would quietly become folklore.
+ * Whenever someone wants to, and not on any schedule. Up to 1.9.4 a test failed the build
+ * unless the stamp below matched the minor series in package.json, so no feature release could
+ * ship without a review. That gate is gone by decision.
  *
+ * It was removed because of what it actually produced. Four releases in a row were re-stamped
+ * within a day of each other - see the 1.5-to-1.8 note below - which established that the
+ * evidence could not have moved rather than that anyone had looked. A check that fires more
+ * often than the thing it is checking changes teaches people to clear it without thinking, and
+ * a re-stamp made that way is worse than an honest old date.
+ *
+ * The stamp stays as a record, so anyone reading these picks can see how old the judgement is.
  * To redo it: repeat the research (sources and criteria in docs/STUDY.md §6), change the picks
  * where the evidence has moved, update the comment saying why, and set both constants below.
  */

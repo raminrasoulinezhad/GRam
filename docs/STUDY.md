@@ -156,10 +156,14 @@ a coach's opinion.
 
 ### Keeping it from becoming folklore
 
-`RECOMMENDED_REVIEWED_FOR` must equal the version in `package.json`, and a test enforces it. A
-version bump therefore fails the build until someone has revisited the picks. A date-based check
-was rejected: a clock-driven test starts failing at a moment nobody chose, which teaches people
-to ignore it.
+`RECOMMENDED_REVIEWED_FOR` and `RECOMMENDED_REVIEWED_ON` record when these picks were last read
+through, so their age is visible to whoever reads them next.
+
+This used to be enforced: the stamp had to match the version in `package.json` or the build
+failed, which made a review the price of every feature release. That is optional as of 1.9.4.
+Four consecutive releases were re-stamped within a day of one another, proving only that the
+evidence could not have moved, and a check that fires faster than its subject changes gets
+cleared without being read. See [RELEASING.md](RELEASING.md) for what is still enforced.
 
 Sources are consolidated at the bottom of this document.
 

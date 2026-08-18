@@ -52,31 +52,41 @@ describe('the recommendation list is real', () => {
   });
 });
 
-describe('the review trigger', () => {
+describe('the review stamp', () => {
   /*
-   * This is the mechanism the whole file hangs on. The evidence behind these picks moves, and a
-   * list nobody revisits becomes folklore. Tying the stamp to the minor series means you cannot
-   * ship a feature release without either redoing the research or consciously re-stamping it -
-   * the build fails until you do. A date alone would not work: a clock-based test starts failing
-   * on its own, at a moment nobody chose, which teaches people to ignore it.
+   * A record, not a gate.
+   *
+   * This used to fail the build unless RECOMMENDED_REVIEWED_FOR matched the minor series in
+   * package.json, so no feature release could ship without redoing the research or consciously
+   * re-stamping it. That is off by decision: the review is optional from 1.9.4 on.
+   *
+   * The stamp stays because it is the only thing that says how old this judgement is, and
+   * anyone opening the file deserves to know whether they are reading 2026 or 2031. What is
+   * gone is the release-blocking, which had started producing re-stamps a day apart that
+   * established nothing - see the 1.5-to-1.8 note in recommended.ts.
    */
-  it('was reviewed for the minor series being shipped', () => {
-    // Minor, not patch: with a patch bump on every commit, requiring a re-review each time
-    // would make the check noise, and noise gets stamped past without thinking.
-    const series = pkg.version.split('.').slice(0, 2).join('.');
-    expect(RECOMMENDED_REVIEWED_FOR).toBe(series);
-  });
-
   it('is stamped as a minor series rather than a full version', () => {
     expect(RECOMMENDED_REVIEWED_FOR).toMatch(/^\d+\.\d+$/);
   });
 
-  it('is stamped with the same version the app reports', () => {
-    expect(appJson.expo.version).toBe(pkg.version);
-  });
-
   it('records when the review happened', () => {
     expect(RECOMMENDED_REVIEWED_ON).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('is not stamped for a release that has not happened yet', () => {
+    // The one direction still worth catching. Behind is fine and expected; ahead means a typo,
+    // and a stamp claiming a future review is worse than an old one.
+    const [major, minor] = pkg.version.split('.').map(Number);
+    const [sMajor, sMinor] = RECOMMENDED_REVIEWED_FOR.split('.').map(Number);
+    expect(sMajor * 1000 + sMinor).toBeLessThanOrEqual(major * 1000 + minor);
+  });
+});
+
+describe('the two version files', () => {
+  it('agree, so the app reports the build it actually is', () => {
+    // Nothing to do with the recommendations; it lives here because this is the only test with
+    // both files already in scope, and a mismatch makes every bug report ambiguous.
+    expect(appJson.expo.version).toBe(pkg.version);
   });
 });
 
