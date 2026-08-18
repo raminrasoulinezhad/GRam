@@ -151,12 +151,39 @@ export default function ProfileScreen() {
                 active={profile.sex === value}
                 onPress={() => {
                   updateProfile({ sex: value });
-                  // The figure only ships two body models, so anything unspecified draws male.
-                  updateSettings({ bodyGender: value === 'female' ? 'female' : 'male' });
+                  /*
+                   * Only a stated sex moves the body figure. Unspecified leaves it alone, which
+                   * is the whole point of the option: it used to be coerced to male here, so
+                   * the one choice a person makes in order not to be assumed about produced
+                   * exactly that assumption, silently. Exercise pages split the figure evenly
+                   * instead - see src/lib/figure.ts - and the figure below stays yours to set.
+                   */
+                  if (value !== 'unspecified') updateSettings({ bodyGender: value });
                 }}
               />
             ))}
           </View>
+          {/*
+            * Separate from sex on purpose. This is which of the two drawings the Body tab uses,
+            * which is a rendering preference, not a statement about the person. Someone who
+            * declined to give a sex still gets to choose what the app draws.
+            */}
+          <Text style={[s.label, s.spaced]}>BODY FIGURE</Text>
+          <View style={s.row}>
+            {(['male', 'female'] as const).map((g) => (
+              <Chip
+                key={g}
+                label={titleCase(g)}
+                testID={`body-figure-${g}`}
+                active={settings.bodyGender === g}
+                onPress={() => updateSettings({ bodyGender: g })}
+              />
+            ))}
+          </View>
+          <Dim style={s.hint}>
+            Which figure the Body tab draws. Exercise pages use both, so the catalog is not all
+            one or the other.
+          </Dim>
           <Text style={[s.label, s.spaced]}>DATE OF BIRTH</Text>
           <DateField
             testID="profile-birthdate"

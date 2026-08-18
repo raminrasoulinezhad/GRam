@@ -6,6 +6,28 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.10.0] - 2026-08-18
+
+Storage schema **v7**, unchanged.
+
+### Changed
+
+- **"Unspecified" no longer means male.** Sex is optional in the profile and Unspecified is a
+  real answer, but it was handled as a missing one: choosing it set the body figure to male. So
+  the single option a person picks in order not to be assumed about produced exactly that
+  assumption, and did it silently.
+
+  Exercise pages now split the figure evenly across the catalog, 457 female and 439 male,
+  assigned from the exercise id. The bench press is always drawn the same way, and half the
+  catalog is a woman. It is a pure function of the id, so it survives a reinstall, a new phone
+  and a restored backup with nothing stored to remember it.
+
+### Added
+
+- **A body figure control in Profile**, separate from sex. Which of the two figures the Body tab
+  draws is a rendering preference, not a statement about the person, and someone who declined to
+  give a sex still gets to choose it. It used to be inferred and overwritten.
+
 ## [1.9.4] - 2026-08-18
 
 Storage schema **v7**, unchanged. An audit release: no new features, six defects found by

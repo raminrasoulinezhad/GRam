@@ -173,6 +173,23 @@ const PROVIDERS = {
  * Describes a NEUTRAL studio. No named athlete, no brand, and no reproduction of any particular
  * photograph's framing or lighting.
  */
+/**
+ * Which athlete the frame depicts.
+ *
+ * Half the catalog is drawn female and half male, assigned deterministically from the exercise
+ * id, so an app whose owner declined to state a sex is not shown 896 men. Mirrors
+ * src/lib/figure.ts exactly, including the hash, so the generated photograph and the drawn
+ * fallback glyph never disagree about the same exercise.
+ */
+function figureFor(id) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0) % 2 === 0 ? 'female' : 'male';
+}
+
 const STYLE = [
   'Semi-realistic 3D-rendered instructional illustration of a single anonymous athlete.',
   'Neutral matte mid-grey seamless studio background, no room, no windows, and no equipment',
@@ -273,9 +290,10 @@ async function writeSpec(e) {
 
 // ---------------------------------------------------------------------------- stage 2: render
 
-function framePrompt(spec, frame, critique) {
+function framePrompt(spec, frame, critique, figure = 'male') {
   return [
     STYLE,
+    `The athlete is ${figure}.`,
     `Camera: ${spec.view} view.`,
     `Equipment that must be present: ${spec.equipment}.`,
     `Depict this exact position: ${frame === 'start' ? spec.start : spec.end}`,
@@ -324,11 +342,11 @@ Reply with JSON only:
 
 // ---------------------------------------------------------------------------- the loop
 
-async function buildFrame(provider, spec, frame) {
+async function buildFrame(provider, spec, frame, figure) {
   let critique = '';
   const attempts = [];
   for (let n = 1; n <= MAX_ATTEMPTS; n++) {
-    const image = await render(provider, framePrompt(spec, frame, critique));
+    const image = await render(provider, framePrompt(spec, frame, critique, figure));
     const verdict = await score(image, spec, frame);
     attempts.push({ attempt: n, ok: verdict.ok, issues: verdict.issues ?? [] });
     if (verdict.ok) return { image, attempts, accepted: true };
@@ -472,9 +490,10 @@ async function main() {
       mkdirSync(dir, { recursive: true });
       writeFileSync(resolve(dir, 'spec.json'), JSON.stringify(spec, null, 2));
 
-      const record = { provider: PROVIDER, spec, frames: {}, complete: false };
+      const figure = figureFor(e.id);
+      const record = { provider: PROVIDER, spec, figure, frames: {}, complete: false };
       for (const frame of ['start', 'end']) {
-        const { image, attempts, accepted } = await buildFrame(PROVIDER, spec, frame);
+        const { image, attempts, accepted } = await buildFrame(PROVIDER, spec, frame, figure);
         if (image) writeFileSync(resolve(dir, `${frame}.png`), Buffer.from(image.data, 'base64'));
         record.frames[frame] = { accepted, attempts };
         console.log(`      ${frame}: ${accepted ? 'accepted' : 'FELL BACK'} after ${attempts.length}`);

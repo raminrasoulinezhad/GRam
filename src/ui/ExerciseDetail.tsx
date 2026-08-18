@@ -19,6 +19,7 @@ import { exerciseHistory, selectSessions, useStore } from '@/store/useStore';
 import { Body, Card, Chip, Dim, Empty, H2 } from './components';
 import { BodyMap, exerciseMuscleValues } from './BodyMap';
 import { ImageViewer } from './ImageViewer';
+import { figureFor } from '@/lib/figure';
 import { theme } from './theme';
 
 /**
@@ -46,7 +47,15 @@ export function ExerciseDetail({
   const exercise = getExercise(exerciseId);
   const unit = useStore((s) => s.settings.unit);
   const sessions = useStore(selectSessions);
-  const bodyGender = useStore((s) => s.settings.bodyGender);
+  /*
+   * The figure here illustrates the EXERCISE, so it follows the profile's sex when one is
+   * stated and is split evenly across the catalog when it is not. See src/lib/figure.ts:
+   * 'Unspecified' used to be quietly rendered as male, which is the assumption the option
+   * exists to avoid. The Body tab is different and still reads settings.bodyGender, because
+   * that one draws you.
+   */
+  const sex = useStore((s) => s.profile.sex);
+  const figure = figureFor(sex, exerciseId);
   const showPhotos = useStore((s) => s.settings.showExercisePhotos);
   const history = useMemo(() => exerciseHistory(sessions, exerciseId), [sessions, exerciseId]);
   /** Which photo is open full screen, if any. */
@@ -152,7 +161,7 @@ export function ExerciseDetail({
             cooler shades are the ones assisting it.
           </Dim>
           <View style={{ marginTop: theme.space(3) }}>
-            <BodyMap values={muscleValues} max={1} scale={0.72} gender={bodyGender} />
+            <BodyMap values={muscleValues} max={1} scale={0.72} gender={figure} />
           </View>
         </Card>
 

@@ -185,6 +185,78 @@ weights, and this machine has about 5GB free.
 
 ---
 
+
+---
+
+## 6. Progress log
+
+Kept here so the effort has a record rather than living in a chat window. Newest first.
+
+### 2026-08-18: first generation trial, and a correction worth having
+
+**A correction to section 3.** "FLUX.1-dev is non-commercial" is true of the *weights you
+download* and not of every route to the model. Hosted providers including **Replicate and
+fal.ai license dev commercially and pass those rights to the outputs you generate**. So dev is
+usable for this project after all, via a paid host, and it is the quality ceiling. Schnell
+remains the right default because it is free and Apache 2.0 either way; dev via a licensed host
+becomes the paid fallback in place of Gemini if its anatomy proves better.
+
+**The trial itself ran without any provider key**, on a keyless endpoint, purely to see whether
+the spec-then-generate approach produces anything usable. It is not one of the three planned
+providers, so it says nothing about them. It did produce two findings.
+
+**Finding 1: long prompts get dropped.** Three exercises, both frames, using the full `STYLE`
+paragraph plus a hand-written spec. Six requests, six identical portraits, and not one barbell,
+bench or plank anywhere:
+
+![Six identical portraits, no exercise depicted](trials/trial-long-prompt.jpg)
+
+**Finding 2: the same idea works when the prompt is short.** Same service, same seed discipline,
+a one-line description instead of a paragraph:
+
+![Two recognisable barbell squats](trials/trial-short-prompt.jpg)
+
+Recognisably barbell squats. Also visibly imperfect: a mangled face on the left, a bar that is
+not convincingly racked on the shoulders, and a gym background that contradicts the neutral
+studio the style asks for.
+
+**What this changes.**
+
+- The spec-driven approach is sound: describing the movement in facts and generating from that
+  does produce the right exercise.
+- **Prompt length is a real variable.** The `STYLE` paragraph is currently 60-odd words before
+  the spec is even appended. Cloudflare accepts 2,048 characters on schnell so this is unlikely
+  to bite there, but it is now a thing to check per provider rather than assume.
+- Faces and hands are the weak point, as expected. Worth trying a style that keeps the face away
+  from the camera, since no exercise illustration needs a recognisable face and every generator
+  is bad at them.
+- Nothing here is a verdict on Cloudflare, Hugging Face or local schnell. Those need keys.
+
+**Still needed to proceed:** `GEMINI_API_KEY` (free) plus `CLOUDFLARE_ACCOUNT_ID` and
+`CLOUDFLARE_API_TOKEN` (free). See section 4.
+
+> The two images above are evaluation artefacts, not app assets. Nothing generated in a trial
+> ships; the shipped set comes from the reviewed pipeline.
+
+### 2026-08-18: half the figures are female now
+
+Unrelated to licensing, found while working on it. Sex is optional in the profile and
+"Unspecified" is a real answer, but it was handled as a missing one: choosing it set the body
+figure to male, so the single option a person picks in order not to be assumed about produced
+exactly that assumption, silently.
+
+- Exercise pages now split the figure evenly across the catalog, assigned deterministically from
+  the exercise id: **457 female, 439 male**. Stable across reinstalls and restored backups,
+  because it is a pure function of the id rather than anything stored.
+- The Body tab still draws whichever figure you choose, since that one is you rather than an
+  exercise, and it now has its own control instead of being inferred from your sex.
+- The generation pipeline uses the identical hash, so a generated photograph and the drawn glyph
+  underneath can never disagree about the same exercise.
+
+See [`src/lib/figure.ts`](../src/lib/figure.ts).
+
+---
+
 *Not legal advice. This is an engineering assessment of where the material came from and what it
 would take to replace it. For a project that will take money, a short conversation with a
 solicitor about the linking question is cheap insurance.*
