@@ -32,10 +32,20 @@ derivations are GRam's own and fall under Apache 2.0 with the rest of the projec
 
 ---
 
-## 2. Exercise photographs — removed, deliberately
+## 2. Exercise photographs: referenced, never redistributed
 
-The upstream dataset references two demonstration photographs per exercise. **GRam does not
-use them.** They are not bundled, not linked, and not fetched at runtime.
+The upstream dataset names two demonstration photographs per exercise. GRam **shows them, and
+does not carry them.** The distinction is the whole of this section.
+
+- The image files are **not in this repository** and not in any build of it. What
+  `assets/data/exercises.json` holds is their *paths*, such as `Barbell_Curl/0.jpg`.
+- At runtime the app resolves a path against
+  `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/` and the device
+  requests it directly from that server. See `imageUrl()` in `src/catalog/index.ts`.
+- So this project never copies, hosts or redistributes a photograph. It points at one, the same
+  way a link does.
+
+### Why that distinction is being leaned on
 
 Their copyright status was never established. The repository's Unlicense declaration covers what
 its maintainer had the right to dedicate, and the photographs appear to have been collected from
@@ -45,20 +55,39 @@ directly and neither question was answered:
 - [Issue #2 — "License of Images?"](https://github.com/yuhonas/free-exercise-db/issues/2) (June 2023) — no maintainer response.
 - [Issue #12 — "Enquiry regarding the license status of the images"](https://github.com/yuhonas/free-exercise-db/issues/12) (March 2024) — closed without a licensing answer.
 
-Rather than carry an unresolved right, the app draws its own artwork: `src/ui/MuscleGlyph.tsx`
-renders a body silhouette with the exercise's primary muscle highlighted. It is original work
-under this project's Apache-2.0 licence, needs no network, and works offline.
+Referencing rather than copying is what makes that tolerable: an unresolved right is not being
+exercised by this repository, and nothing here needs a licence it cannot show. It is a narrower
+position than "we have permission", and it is stated plainly rather than dressed up.
 
-Three things enforce this rather than merely documenting it:
+### What the app does about it
 
-- `scripts/build-catalog.mjs` strips the `images` field and **throws** if it reappears.
-- A test asserts the bundled catalog contains no `images` property, no `githubusercontent`
-  reference and no `.jpg` path.
-- A test asserts the rendered thumbnail contains no `http` reference at all.
+- **Every exercise has original artwork underneath.** `src/ui/MuscleGlyph.tsx` draws a body
+  silhouette with the exercise's primary muscle highlighted. It is this project's own work under
+  Apache 2.0, needs no network, and renders offline. The photograph, when it loads, sits *on top
+  of* the glyph rather than instead of it, so a failed request degrades to the drawing rather
+  than to a blank square.
+- **A user can switch the photographs off**, in Profile → Exercise photos → Drawings only. Off,
+  the app makes no third-party image request at all and shows only artwork it owns. The setting
+  defaults to on, because the photographs are genuinely useful for learning a movement.
+- **23 exercises that are this project's own additions have no photograph at all**, because
+  there is none that would be ours to use. They carry written instructions instead.
 
-The written `instructions` text is retained. It sits inside the JSON the maintainer explicitly
-dedicated to the public domain, and consists of functional descriptions of how to perform a
-physical movement.
+### If you are reusing this code
+
+You are responsible for satisfying yourself about the photographs, and your situation may not be
+this one. Two ways to remove the question entirely:
+
+- Ship with `showExercisePhotos` defaulting to `false` in `DEFAULT_SETTINGS`
+  (`src/store/migrations.ts`), which leaves the app fully functional on artwork alone; or
+- Drop the field in `scripts/build-catalog.mjs`, where `images: e.images ?? []` becomes
+  `images: []`. The catalog test at `src/catalog/__tests__/catalog.test.ts` asserts the current
+  behaviour and would need to change with it.
+
+### The instructions text is a different matter
+
+The written `instructions` are retained without reservation. They sit inside the JSON the
+maintainer explicitly dedicated to the public domain, and consist of functional descriptions of
+how to perform a physical movement.
 
 ## 3. Bundled software dependencies
 

@@ -73,11 +73,12 @@ including the ones the upstream dataset was missing.
 
 ## Later
 
-- **Own exercise media.** The current photographs have unresolved provenance — see
-  [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md). This blocks any public release, and it is
-  a content problem rather than an engineering one.
+- **Own exercise media.** The photographs are referenced from the upstream repository at runtime
+  rather than carried here, and their provenance is unresolved. See
+  [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md) §2. Shooting or commissioning artwork this
+  project owns would close the question outright. A content problem rather than an engineering
+  one, which is why it has stayed here.
 - **Custom exercises** the user defines themselves.
-- **Export and import** — a user should be able to get their training log out.
 - **Backend and sync**, only if the app needs to leave one device. Everything today is local,
   which is a feature: no account, no server, nothing transmitted.
 - **SQLite** if the JSON blob ever becomes a bottleneck. All reads already go through selectors
