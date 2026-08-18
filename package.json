@@ -1,6 +1,6 @@
 {
   "name": "gram",
-  "version": "1.9.7",
+  "version": "1.9.8",
   "private": true,
   "license": "Apache-2.0",
   "description": "A strength-training tracker that plans your sets and maps which muscles you have actually trained.",
@@ -19,7 +19,8 @@
     "build:qr": "node scripts/build-qr.mjs",
     "art": "node scripts/build-exercise-art.mjs",
     "art:probe": "node scripts/build-exercise-art.mjs --probe",
-    "art:models": "node scripts/build-exercise-art.mjs --models"
+    "art:models": "node scripts/build-exercise-art.mjs --models",
+    "art:sheet": "node scripts/build-exercise-art.mjs --sheet"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.8",
