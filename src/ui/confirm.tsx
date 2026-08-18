@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { theme } from './theme';
 
 /**
@@ -18,7 +18,30 @@ export type ConfirmOptions = {
   /** Pass null for a single-button notice with nothing to cancel. */
   cancelLabel?: string | null;
   destructive?: boolean;
+  /**
+   * Holds the affirmative button shut until this word is typed.
+   *
+   * For the one or two actions where a mistap is unrecoverable. Two buttons stop an accident;
+   * they do not stop a decision made in three seconds, and a dialog answered a hundred times
+   * stops being read at all. Typing something is the smallest thing that cannot be done by
+   * muscle memory.
+   *
+   * Reserve it. On anything reversible it is theatre, and theatre is what teaches people to
+   * click through the real one.
+   */
+  requireText?: { value: string; prompt: string; placeholder?: string };
 };
+
+/**
+ * Whether what was typed counts.
+ *
+ * Trimmed and case-insensitive. The point is to prove the action is deliberate, and a person
+ * who typed their own name with a trailing space or the wrong capital has proved that. Being
+ * stricter would only teach them to copy and paste it, which proves nothing.
+ */
+export function matchesRequired(typed: string, required: string): boolean {
+  return typed.trim().toLocaleLowerCase() === required.trim().toLocaleLowerCase();
+}
 
 type Pending = ConfirmOptions & { resolve: (ok: boolean) => void };
 
@@ -26,18 +49,22 @@ const ConfirmContext = createContext<((options: ConfirmOptions) => Promise<boole
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<Pending | null>(null);
+  const [typed, setTyped] = useState('');
   // Guards against a second confirm() opening while one is on screen.
   const busy = useRef(false);
 
   const confirm = useCallback((options: ConfirmOptions) => {
     if (busy.current) return Promise.resolve(false);
     busy.current = true;
+    // Cleared on the way in as well as out, so a dialog never opens holding the last answer.
+    setTyped('');
     return new Promise<boolean>((resolve) => {
       setPending({
         ...options,
         resolve: (ok) => {
           busy.current = false;
           setPending(null);
+          setTyped('');
           resolve(ok);
         },
       });
@@ -46,6 +73,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => confirm, [confirm]);
   const cancelLabel = pending?.cancelLabel === undefined ? 'Cancel' : pending.cancelLabel;
+  const required = pending?.requireText ?? null;
+  const armed = required === null || matchesRequired(typed, required.value);
 
   return (
     <ConfirmContext.Provider value={value}>
@@ -63,6 +92,28 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <Pressable style={s.card} onPress={() => {}}>
               <Text style={s.title}>{pending.title}</Text>
               {pending.message ? <Text style={s.message}>{pending.message}</Text> : null}
+              {required !== null ? (
+                <>
+                  <Text style={s.prompt}>{required.prompt}</Text>
+                  <TextInput
+                    testID="confirm-text"
+                    value={typed}
+                    onChangeText={setTyped}
+                    placeholder={required.placeholder}
+                    placeholderTextColor={theme.color.textFaint}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    // Nothing here should be offered from a saved form or a password manager.
+                    autoComplete="off"
+                    style={s.input}
+                    // Enter finishes it, but only once the word is right. A dialog that fires
+                    // on Enter regardless is worse than one with no gate at all.
+                    onSubmitEditing={() => {
+                      if (armed) pending.resolve(true);
+                    }}
+                  />
+                </>
+              ) : null}
               <View style={s.actions}>
                 {cancelLabel !== null ? (
                   <Pressable
@@ -76,8 +127,16 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 ) : null}
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityState={{ disabled: !armed }}
                   testID="confirm-ok"
-                  style={[s.btn, pending.destructive ? s.btnDanger : s.btnPrimary]}
+                  disabled={!armed}
+                  style={[
+                    s.btn,
+                    pending.destructive ? s.btnDanger : s.btnPrimary,
+                    // Shown rather than hidden while it is shut: the button is where the eye
+                    // already is, and a greyed one beside the box explains the box.
+                    !armed && s.btnShut,
+                  ]}
                   onPress={() => pending.resolve(true)}
                 >
                   <Text style={[s.btnLabel, pending.destructive && { color: theme.color.onDanger }]}>
@@ -123,6 +182,23 @@ const s = StyleSheet.create({
     lineHeight: 21,
     marginTop: theme.space(2),
   },
+  prompt: {
+    color: theme.color.text,
+    fontSize: theme.font.small,
+    fontWeight: '700',
+    marginTop: theme.space(4),
+    marginBottom: theme.space(2),
+  },
+  input: {
+    backgroundColor: theme.color.surfaceAlt,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.space(3),
+    paddingVertical: theme.space(2.5),
+    color: theme.color.text,
+    fontSize: theme.font.body,
+  },
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -139,6 +215,7 @@ const s = StyleSheet.create({
   btnPrimary: { backgroundColor: theme.color.accent },
   btnDanger: { backgroundColor: theme.color.danger },
   btnGhost: { backgroundColor: theme.color.surfaceAlt, borderWidth: 1, borderColor: theme.color.border },
+  btnShut: { opacity: 0.4 },
   btnLabel: { color: theme.color.onAccent, fontWeight: '700', fontSize: theme.font.body },
   btnGhostLabel: { color: theme.color.textDim, fontWeight: '700', fontSize: theme.font.body },
 });

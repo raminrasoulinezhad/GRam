@@ -20,6 +20,11 @@ export async function cancelDialog() {
   await fireEvent.press(screen.getByTestId('confirm-cancel'));
 }
 
+/** Types into the box the dialog shows when its affirmative button is gated behind a word. */
+export async function typeConfirmation(text: string) {
+  await fireEvent.changeText(screen.getByTestId('confirm-text'), text);
+}
+
 /** True when a confirmation dialog is currently on screen. */
 export function dialogOpen() {
   return screen.queryByTestId('confirm-ok') !== null;

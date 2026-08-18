@@ -6,6 +6,19 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.9.2] - 2026-08-18
+
+Storage schema **v7**, unchanged.
+
+### Changed
+
+- **Erase all data now asks you to type your name.** It already asked yes or no, and two buttons
+  are enough for a mistap. They are not enough for a decision made in three seconds, and this is
+  the only thing in the app with no undo: no server copy, no bin, nothing but whatever backup you
+  last exported. So the dialog now holds Erase shut until you type the name from your profile.
+  Case and stray spaces are forgiven, because the point is to prove the act was deliberate, not
+  to set a spelling test. If you never entered a name, the word is ERASE.
+
 ## [1.9.1] - 2026-08-18
 
 Storage schema **v7**, unchanged.

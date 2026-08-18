@@ -1,5 +1,11 @@
 import { fireEvent, screen, within } from '@testing-library/react-native';
-import { cancelDialog, confirmDialog, dialogOpen, renderScreen } from '@/test-utils';
+import {
+  cancelDialog,
+  confirmDialog,
+  dialogOpen,
+  renderScreen,
+  typeConfirmation,
+} from '@/test-utils';
 import { EXERCISES } from '@/catalog';
 import { SCHEMA_VERSION } from '@/store/migrations';
 import { useStore } from '@/store/useStore';
@@ -176,12 +182,56 @@ describe('erasing everything', () => {
     expect(store().sessions).toHaveLength(1);
   });
 
+  it('will not erase until the name is typed', async () => {
+    /*
+     * Two buttons stop a mistap; they do not stop three careless seconds, and there is no undo.
+     * Pressing Erase with the box empty has to do nothing at all.
+     */
+    someHistory();
+    store().updateProfile({ displayName: 'Sam' });
+    await renderScreen(<ProfileScreen />);
+
+    await fireEvent.press(screen.getByTestId('erase'));
+    await confirmDialog();
+
+    expect(dialogOpen()).toBe(true);
+    expect(store().sessions).toHaveLength(1);
+  });
+
+  it('will not erase on a name that is not yours', async () => {
+    someHistory();
+    store().updateProfile({ displayName: 'Sam' });
+    await renderScreen(<ProfileScreen />);
+
+    await fireEvent.press(screen.getByTestId('erase'));
+    await typeConfirmation('Sammy');
+    await confirmDialog();
+
+    expect(store().sessions).toHaveLength(1);
+  });
+
+  it('asks for ERASE when no name has been entered', async () => {
+    // The name is optional above. A gate that vanishes when a field is blank is not a gate.
+    someHistory();
+    await renderScreen(<ProfileScreen />);
+
+    await fireEvent.press(screen.getByTestId('erase'));
+    expect(screen.getByText('Type ERASE to confirm')).toBeTruthy();
+
+    await typeConfirmation('erase');
+    await confirmDialog();
+
+    expect(store().sessions).toHaveLength(0);
+  });
+
   it('erases plans, workouts and the profile on confirmation', async () => {
     someHistory();
     store().updateProfile({ displayName: 'Sam', birthDate: '1990-06-14' });
     await renderScreen(<ProfileScreen />);
 
     await fireEvent.press(screen.getByTestId('erase'));
+    // Case and stray spaces do not matter. Proving it was deliberate does.
+    await typeConfirmation('  sam ');
     await confirmDialog();
 
     expect(store().plans).toHaveLength(0);

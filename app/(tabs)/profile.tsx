@@ -66,12 +66,33 @@ export default function ProfileScreen() {
   }, [allSessions]);
   const age = ageFrom(profile.birthDate);
   const index = bmi(profile.heightCm, profile.weightKg);
+  /*
+   * The only irreversible thing in the app, and the only one that asks you to type.
+   *
+   * Two buttons stop a mistap. They do not stop a decision made in three seconds, and there is
+   * no undo, no server copy and no bin to fish it back out of - only whatever backup you
+   * happened to export. So the second step is your own name, which is the one word that cannot
+   * be produced by muscle memory and that nobody but you can be expected to know.
+   *
+   * The name is optional in the profile above, so when it is blank the word is ERASE. A gate
+   * that disappears when a field is empty is not a gate.
+   */
+  const eraseWord = profile.displayName.trim();
   async function handleReset() {
     const ok = await confirm({
       title: 'Erase everything?',
-      message: 'Your profile, plans and every logged workout will be deleted from this device.',
+      message:
+        'Your profile, plans and every logged workout will be deleted from this device. This cannot be undone.',
       confirmLabel: 'Erase',
       destructive: true,
+      requireText: {
+        value: eraseWord === '' ? 'ERASE' : eraseWord,
+        prompt:
+          eraseWord === ''
+            ? 'Type ERASE to confirm'
+            : `Type your name, ${eraseWord}, to confirm`,
+        placeholder: eraseWord === '' ? 'ERASE' : eraseWord,
+      },
     });
     if (ok) resetAll();
   }
