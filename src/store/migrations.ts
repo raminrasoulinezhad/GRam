@@ -1,5 +1,16 @@
+import type { SetKind } from '@/catalog';
 import { DEFAULT_THEME, THEMES } from '@/ui/themes';
-import type { Plan, Profile, Session, Settings } from './types';
+import type {
+  Plan,
+  PlanItem,
+  Profile,
+  Session,
+  SessionEntry,
+  SessionSet,
+  SetTemplate,
+  Settings,
+  Weekday,
+} from './types';
 
 /**
  * Schema version of the persisted blob.
@@ -218,6 +229,184 @@ function asArray<T>(value: unknown): T[] {
 }
 
 /**
+ * A number that can be used in arithmetic, or undefined.
+ *
+ * `Number.isFinite` and not `typeof === 'number'`, because NaN is a number and one NaN is all
+ * it takes. A NaN weight makes a workout's tonnage NaN; a NaN timestamp makes an entire muscle
+ * group NaN on the body map, which paints nothing and reports no error. JSON cannot carry
+ * either, but a hand-edited file, a half-written export or a third-party tool can.
+ */
+function finite(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function text(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+const SET_KINDS = new Set<string>(['weight_reps', 'reps', 'time', 'distance_time']);
+
+function asKind(value: unknown): SetKind {
+  return SET_KINDS.has(value as string) ? (value as SetKind) : 'weight_reps';
+}
+
+function asWeekday(value: unknown): Weekday {
+  return (WEEKDAY_VALUES as readonly string[]).includes(value as string)
+    ? (value as Weekday)
+    : 'monday';
+}
+
+/** The four numbers a set or template can carry, keeping only the ones that are usable. */
+function coerceValues(raw: Record<string, unknown>): {
+  weightKg?: number;
+  reps?: number;
+  timeSec?: number;
+  distanceM?: number;
+} {
+  const out: ReturnType<typeof coerceValues> = {};
+  const weightKg = finite(raw.weightKg);
+  const reps = finite(raw.reps);
+  const timeSec = finite(raw.timeSec);
+  const distanceM = finite(raw.distanceM);
+  if (weightKg !== undefined) out.weightKg = weightKg;
+  if (reps !== undefined) out.reps = reps;
+  if (timeSec !== undefined) out.timeSec = timeSec;
+  if (distanceM !== undefined) out.distanceM = distanceM;
+  return out;
+}
+
+/**
+ * One recorded or planned set.
+ *
+ * `fallbackLoggedAt` is what a set gets when it claims to be recorded at a moment that is not a
+ * moment. Inside a finished workout that is the workout's own end time, which keeps the set
+ * counted and puts it on the right day; inside a live one there is no honest answer, so it
+ * becomes a planned set and the user can record it again.
+ */
+function coerceSet(raw: unknown, id: string, fallbackLoggedAt: number | null): SessionSet | null {
+  const r = asRecord(raw);
+  if (r === null) return null;
+  const loggedAt =
+    r.loggedAt === null || r.loggedAt === undefined
+      ? null
+      : (finite(r.loggedAt) ?? fallbackLoggedAt);
+  return { ...coerceValues(r), id: text(r.id, id), loggedAt };
+}
+
+/**
+ * One exercise within a workout.
+ *
+ * Dropped outright when it has no exercise id, and that is the one place this function throws
+ * anything away. A set that cannot say which movement it belongs to cannot be shown, counted
+ * or attributed to a muscle; there is nothing in it to preserve, and keeping it would only put
+ * an unnameable row in the history editor forever.
+ */
+function coerceEntry(
+  raw: unknown,
+  id: string,
+  fallbackLoggedAt: number | null,
+): SessionEntry | null {
+  const r = asRecord(raw);
+  if (r === null || typeof r.exerciseId !== 'string') return null;
+  return {
+    id: text(r.id, id),
+    exerciseId: r.exerciseId,
+    kind: asKind(r.kind),
+    restSec: finite(r.restSec) ?? DEFAULT_SETTINGS.defaultRestSec,
+    sets: asArray<unknown>(r.sets)
+      .map((s, i) => coerceSet(s, `${id}_s${i}`, fallbackLoggedAt))
+      .filter((s): s is SessionSet => s !== null),
+  };
+}
+
+/**
+ * One workout.
+ *
+ * A garbled `endedAt` becomes null, which makes the workout live again rather than finished at
+ * an unknown time. That is deliberate: `closeStaleSessions` already knows how to settle a live
+ * workout from an earlier day, closing it at its last recorded set or dropping it if it has
+ * none, and reusing that path beats inventing a second answer here.
+ */
+function coerceSession(raw: unknown, id: string): Session | null {
+  const r = asRecord(raw);
+  if (r === null) return null;
+
+  const endedAt = r.endedAt === null || r.endedAt === undefined ? null : (finite(r.endedAt) ?? null);
+  const entries = asArray<unknown>(r.entries)
+    .map((e, i) => coerceEntry(e, `${id}_e${i}`, endedAt))
+    .filter((e): e is SessionEntry => e !== null);
+
+  // A workout with no start time is dated from its own earliest recorded set, which is the only
+  // evidence left of when it happened. Reduced rather than spread: ten years of training is
+  // tens of thousands of sets, and Math.min(...) on that overflows the call stack.
+  let earliest: number | null = null;
+  for (const entry of entries) {
+    for (const set of entry.sets) {
+      if (set.loggedAt !== null && (earliest === null || set.loggedAt < earliest)) {
+        earliest = set.loggedAt;
+      }
+    }
+  }
+
+  return {
+    id: text(r.id, id),
+    planId: typeof r.planId === 'string' ? r.planId : null,
+    planName: text(r.planName, 'Workout'),
+    startedAt: finite(r.startedAt) ?? earliest ?? 0,
+    endedAt,
+    entries,
+  };
+}
+
+function coercePlanItem(raw: unknown, id: string): PlanItem | null {
+  const r = asRecord(raw);
+  if (r === null || typeof r.exerciseId !== 'string') return null;
+  const kind = asKind(r.kind);
+  return {
+    id: text(r.id, id),
+    exerciseId: r.exerciseId,
+    kind,
+    restSec: finite(r.restSec) ?? DEFAULT_SETTINGS.defaultRestSec,
+    ...(typeof r.note === 'string' ? { note: r.note } : {}),
+    templates: asArray<unknown>(r.templates)
+      .map((t, i): SetTemplate | null => {
+        const tr = asRecord(t);
+        return tr === null ? null : { ...coerceValues(tr), id: text(tr.id, `${id}_t${i}`) };
+      })
+      .filter((t): t is SetTemplate => t !== null),
+  };
+}
+
+function coercePlan(raw: unknown, id: string): Plan | null {
+  const r = asRecord(raw);
+  if (r === null) return null;
+  const createdAt = finite(r.createdAt) ?? finite(r.updatedAt) ?? 0;
+  return {
+    id: text(r.id, id),
+    day: asWeekday(r.day),
+    ...(typeof r.name === 'string' ? { name: r.name } : {}),
+    ...(typeof r.note === 'string' ? { note: r.note } : {}),
+    items: asArray<unknown>(r.items)
+      .map((i, n) => coercePlanItem(i, `${id}_i${n}`))
+      .filter((i): i is PlanItem => i !== null),
+    createdAt,
+    updatedAt: finite(r.updatedAt) ?? createdAt,
+  };
+}
+
+function coerceProfile(stored: Record<string, unknown>): Profile {
+  const merged = { ...DEFAULT_PROFILE, ...stored };
+  return {
+    ...merged,
+    displayName: text(merged.displayName, ''),
+    birthDate: typeof merged.birthDate === 'string' ? merged.birthDate : null,
+    heightCm: finite(merged.heightCm) ?? null,
+    weightKg: finite(merged.weightKg) ?? null,
+    equipment: asArray<string>(merged.equipment).filter((x) => typeof x === 'string'),
+  };
+}
+
+/**
  * Brings a persisted blob of any prior version up to SCHEMA_VERSION.
  *
  * Deliberately synchronous: zustand's persist middleware does not await an async migrate,
@@ -237,11 +426,24 @@ export function migratePersisted(persisted: unknown, fromVersion: number): Persi
 /**
  * Last line of defence before the blob becomes live state.
  *
- * zustand casts whatever it read straight to the state type without checking it, so a
- * truncated write, a hand-edited backup or a payload from a future version would otherwise
- * surface as a crash on a screen that assumed an array. Anything unrecognisable falls back to
- * a default; anything recognisable is kept. Losing a malformed *setting* is acceptable, losing
- * plans or sessions is not, so those are only ever replaced when they are not arrays at all.
+ * zustand casts whatever it read straight to the state type without checking it, so a truncated
+ * write, a hand-edited backup or a payload from a future version would otherwise surface as a
+ * crash on a screen that assumed an array. Not a caught error either: the store is read on
+ * launch, so a bad row is a white screen on open with no way back short of clearing storage,
+ * which is the data loss this whole file exists to prevent.
+ *
+ * WHY THIS GOES ALL THE WAY DOWN
+ * It used to check only that `plans` and `sessions` were arrays, and trust everything inside
+ * them. That is not enough by a long way. One session whose `entries` is missing takes out
+ * History, the body map, the milestone strip and the backup summary, because every one of them
+ * loops over every session on load. Same for an entry with no `sets`, or a null in either list.
+ *
+ * WHAT IT WILL AND WILL NOT DISCARD
+ * The rule is that a set with a readable exercise, and a moment it happened, always survives.
+ * Everything else is repaired towards a default rather than dropped. Exactly two things are
+ * discarded, and only because there is provably nothing in them to keep: a row that is not an
+ * object at all, and an entry with no exercise id, whose sets could never be shown, counted or
+ * attributed to a muscle.
  */
 /**
  * Settings over the defaults, with the theme checked against the palettes that exist.
@@ -264,10 +466,14 @@ function coerceSettings(stored: Record<string, unknown>): Settings {
 export function coerce(state: Record<string, unknown>): PersistedState {
   const activeSessionId = state.activeSessionId;
   return {
-    plans: asArray<Plan>(state.plans),
-    sessions: asArray<Session>(state.sessions),
+    plans: asArray<unknown>(state.plans)
+      .map((p, i) => coercePlan(p, `p_fixed${i}`))
+      .filter((p): p is Plan => p !== null),
+    sessions: asArray<unknown>(state.sessions)
+      .map((s, i) => coerceSession(s, `s_fixed${i}`))
+      .filter((s): s is Session => s !== null),
     settings: coerceSettings(asRecord(state.settings) ?? {}),
-    profile: { ...DEFAULT_PROFILE, ...(asRecord(state.profile) ?? {}) },
+    profile: coerceProfile(asRecord(state.profile) ?? {}),
     activeSessionId: typeof activeSessionId === 'string' ? activeSessionId : null,
     celebratedMilestones: asArray<string>(state.celebratedMilestones).filter(
       (x) => typeof x === 'string',

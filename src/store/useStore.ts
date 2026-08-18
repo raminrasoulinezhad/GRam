@@ -15,7 +15,7 @@ import {
   type PersistedState,
   type VersionSeen,
 } from './migrations';
-import { STORAGE_KEY, createBackingStorage } from './storage';
+import { STORAGE_KEY, clearPreMigrationBackups, createBackingStorage } from './storage';
 import { WEEKDAYS, WEEKDAY_LABEL } from './types';
 import type {
   Plan,
@@ -550,18 +550,41 @@ export const useStore = create<State & Actions>()(
           ),
         })),
 
+      /**
+       * Closes a workout and puts it in the log.
+       *
+       * Unrecorded sets are stripped, so history reflects work done rather than work planned.
+       * If that leaves nothing at all the workout is discarded instead of saved: a row in the
+       * log reading "0 sets" claims you trained on a day you did not, and the log is the one
+       * list in this app that has to be true. It is also what closeStaleSessions already does
+       * with a workout nobody recorded anything in, and two paths that disagree about the same
+       * question are a bug waiting to be found by whoever hits the other one.
+       *
+       * The finish button asks before reaching this, so a user sees the question rather than a
+       * silent deletion. This is the floor under that, for the stale screen and the second tab.
+       */
       endSession: (sessionId) =>
-        set((s) => ({
-          sessions: withSession(s.sessions, sessionId, (session) => ({
-            ...session,
-            endedAt: Date.now(),
-            // Drop sets that were never recorded so history reflects work done, not work planned.
-            entries: session.entries
-              .map((e) => ({ ...e, sets: e.sets.filter((x) => x.loggedAt !== null) }))
-              .filter((e) => e.sets.length > 0),
-          })),
-          activeSessionId: s.activeSessionId === sessionId ? null : s.activeSessionId,
-        })),
+        set((s) => {
+          const target = s.sessions.find((x) => x.id === sessionId);
+          if (!target || target.endedAt !== null) return s;
+          const entries = target.entries
+            .map((e) => ({ ...e, sets: e.sets.filter((x) => x.loggedAt !== null) }))
+            .filter((e) => e.sets.length > 0);
+          const activeSessionId =
+            s.activeSessionId === sessionId ? null : s.activeSessionId;
+
+          if (entries.length === 0) {
+            return { sessions: s.sessions.filter((x) => x.id !== sessionId), activeSessionId };
+          }
+          return {
+            sessions: withSession(s.sessions, sessionId, (session) => ({
+              ...session,
+              endedAt: Date.now(),
+              entries,
+            })),
+            activeSessionId,
+          };
+        }),
 
       discardSession: (sessionId) =>
         set((s) => ({
@@ -660,18 +683,36 @@ export const useStore = create<State & Actions>()(
         })),
 
       /**
-       * Drops exercises left with no sets.
+       * Settles a finished workout after it has been edited.
        *
-       * Deliberately not done by removeSet: while an edit is in progress an exercise you have
-       * just emptied has to stay on screen, or there is nowhere to add the corrected sets back
-       * to. This runs when the edit finishes, which is the same rule endSession applies.
+       * Two jobs, and both are the same rule endSession applies: a set in the log is a set that
+       * happened, and an exercise in the log has at least one of them.
+       *
+       * The un-recorded set is the one that is easy to miss. Tapping the tick in the history
+       * editor is how you take back a set you logged by accident, and it leaves `loggedAt` null
+       * inside a workout that has already ended. Nothing counts such a set - not the body map,
+       * not the volume, not the per-exercise history, not the set count on its own History card
+       * - but it stays in the editor forever, and the next Add set copies its null stamp and
+       * makes another one. So on the way out they go, along with any exercise left empty.
+       *
+       * Deliberately not done by removeSet, and deliberately not done to a live workout: while
+       * an edit is in progress an exercise you have just emptied has to stay on screen or there
+       * is nowhere to put the corrected sets, and in a live workout an unrecorded set is the
+       * whole point - it is the set you are about to do.
        */
       tidySession: (sessionId) =>
         set((s) => ({
-          sessions: withSession(s.sessions, sessionId, (session) => ({
-            ...session,
-            entries: session.entries.filter((e) => e.sets.length > 0),
-          })),
+          sessions: withSession(s.sessions, sessionId, (session) => {
+            const entries = (
+              session.endedAt === null
+                ? session.entries
+                : session.entries.map((e) => ({
+                    ...e,
+                    sets: e.sets.filter((x) => x.loggedAt !== null),
+                  }))
+            ).filter((e) => e.sets.length > 0);
+            return { ...session, entries };
+          }),
         })),
 
       // ------------------------------------------------------ profile & settings
@@ -770,7 +811,20 @@ export const useStore = create<State & Actions>()(
           versionHistory: get().versionHistory,
         }),
 
-      resetAll: () =>
+      /**
+       * Erase all data, and mean it.
+       *
+       * Clearing the live state is only most of the job. Every upgrade that changed the schema
+       * stashed a verbatim copy of the old blob under its own key, as insurance against a bad
+       * migration, and those copies hold the same plans, workouts, name and body weight. Left
+       * behind they make the button a lie.
+       *
+       * Fired and not awaited, because the action is synchronous by necessity - it is called
+       * from a render-driven handler and the UI has to reflect the erase immediately - and
+       * because the live data is gone regardless of how the storage call goes.
+       */
+      resetAll: () => {
+        void clearPreMigrationBackups(SCHEMA_VERSION);
         set({
           plans: [],
           sessions: [],
@@ -781,7 +835,8 @@ export const useStore = create<State & Actions>()(
           ignoredBalanceGroups: [],
           backup: DEFAULT_BACKUP,
           versionHistory: [],
-        }),
+        });
+      },
     }),
     {
       name: STORAGE_KEY,

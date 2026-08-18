@@ -250,7 +250,13 @@ export default function HistoryDetailScreen() {
      * title at all is an unreadable row in the log. Finishing the edit is the reliable moment.
      */
     if (session.planName.trim() === '') renameSession(session.id, 'Workout');
-    const emptied = session.entries.every((e) => e.sets.length === 0);
+    /*
+     * Counted the way tidySession counts, not by how many rows are on screen. There are two
+     * ways to empty a workout in here - deleting every set, and un-ticking every set - and the
+     * second leaves rows in place that tidySession has just thrown away. Asking about row count
+     * would skip the question on that path and leave a workout in the log with nothing in it.
+     */
+    const emptied = countLoggedSets(session) === 0;
     if (emptied) {
       const ok = await confirm({
         title: 'Nothing left in this workout',

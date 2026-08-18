@@ -195,13 +195,25 @@ describe('correcting a workout that is already finished', () => {
    * recorded on the spot - there is no workout left to record it during - so the padlock would
    * otherwise snap shut on the tap just made.
    */
+  /*
+   * A real finished workout, with one exercise recorded in it. Not an empty one: a workout
+   * that recorded nothing is discarded rather than saved, so the empty-but-finished shape this
+   * used to build cannot arise from finishing anything. See endSession.
+   */
   function openOnFinished() {
     const planId = store().createPlan('monday');
     const sessionId = store().startEmptySession();
+    store().addSessionExercise(sessionId, SQUAT);
+    const seeded = store().sessions.find((x) => x.id === sessionId)!.entries[0];
+    store().toggleSetLogged(sessionId, seeded.id, seeded.sets[0].id);
     store().endSession(sessionId);
     mockParams = { sessionId };
     return { planId, sessionId };
   }
+
+  /** The entries other than the squat the fixture seeded, which is the one under test. */
+  const added = (sessionId: string) =>
+    entries(sessionId).filter((e) => e.exerciseId !== SQUAT);
 
   const entries = (sessionId: string) =>
     store().sessions.find((x) => x.id === sessionId)!.entries;
@@ -211,11 +223,13 @@ describe('correcting a workout that is already finished', () => {
     await renderScreen(<PickerScreen />);
 
     await tap(BENCH);
-    expect(entries(sessionId)).toHaveLength(1);
-    expect(entries(sessionId)[0].sets[0].loggedAt).not.toBeNull();
+    expect(added(sessionId)).toHaveLength(1);
+    expect(added(sessionId)[0].sets[0].loggedAt).not.toBeNull();
 
     await tap(BENCH);
-    expect(entries(sessionId)).toEqual([]);
+    expect(added(sessionId)).toEqual([]);
+    // The workout the mistake was made inside is untouched.
+    expect(entries(sessionId)).toHaveLength(1);
   });
 
   it('locks an exercise that was already in the workout when the screen opened', async () => {
@@ -226,14 +240,14 @@ describe('correcting a workout that is already finished', () => {
      */
     const { sessionId } = openOnFinished();
     store().addSessionExercise(sessionId, BENCH);
-    expect(entries(sessionId)[0].sets[0].loggedAt).not.toBeNull();
+    expect(added(sessionId)[0].sets[0].loggedAt).not.toBeNull();
 
     await renderScreen(<PickerScreen />);
     await reveal(BENCH);
     expect(screen.getByTestId(`locked-${BENCH}`)).toBeTruthy();
 
     await tap(BENCH);
-    expect(entries(sessionId)).toHaveLength(1);
+    expect(added(sessionId)).toHaveLength(1);
   });
 });
 
