@@ -50,6 +50,15 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CATALOG = resolve(ROOT, 'assets/data/exercises.json');
 const OUT_DIR = resolve(ROOT, 'assets/generated');
 
+/** Both dev hosts reply with a URL rather than the bytes, so fetch it and inline it. */
+async function fetchImage(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`fetching generated image: ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  const mime = res.headers.get('content-type') ?? 'image/jpeg';
+  return { data: buf.toString('base64'), mime };
+}
+
 // ---------------------------------------------------------------------------- providers
 
 /**
@@ -143,6 +152,69 @@ const PROVIDERS = {
       const body = await res.json();
       if (!body.image) throw new Error('local: reply had no image field');
       return { data: body.image, mime: body.mime ?? 'image/png' };
+    },
+  },
+
+  /*
+   * FLUX.1-dev through a host that has licensed it. The quality ceiling.
+   *
+   * READ THIS BEFORE ASSUMING dev IS OFF LIMITS. The Apache-2.0 model is schnell; dev ships
+   * under a NON-COMMERCIAL licence, which is true of the weights you download and NOT of every
+   * route to the model. fal.ai and Replicate hold commercial licences from Black Forest Labs
+   * and pass those rights to the outputs you generate through them. So dev is usable here, via
+   * these hosts and only via these hosts. Downloading the dev weights and running them locally
+   * for this project would not be.
+   */
+  fal: {
+    label: 'fal.ai, FLUX.1-dev (commercially licensed by the host)',
+    env: ['FAL_KEY'],
+    // $0.025 per megapixel, rounded up. 768x768 is 0.59MP, so one megapixel's worth.
+    usdPerImage: 0.025,
+    async render(prompt) {
+      const res = await fetch(process.env.FAL_MODEL_URL ?? 'https://fal.run/fal-ai/flux/dev', {
+        method: 'POST',
+        headers: { authorization: `Key ${process.env.FAL_KEY}`, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          image_size: { width: 768, height: 768 },
+          num_images: 1,
+          // dev is a guidance-distilled model; 28 steps is its usual sweet spot.
+          num_inference_steps: 28,
+        }),
+      });
+      if (!res.ok) throw new Error(`fal ${res.status}: ${(await res.text()).slice(0, 400)}`);
+      const body = await res.json();
+      const url = body?.images?.[0]?.url;
+      if (!url) throw new Error(`fal: no image url: ${JSON.stringify(body).slice(0, 300)}`);
+      return fetchImage(url);
+    },
+  },
+
+  replicate: {
+    label: 'Replicate, FLUX.1-dev (commercially licensed by the host)',
+    env: ['REPLICATE_API_TOKEN'],
+    usdPerImage: 0.03,
+    async render(prompt) {
+      const model = process.env.REPLICATE_MODEL ?? 'black-forest-labs/flux-dev';
+      const res = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+          'content-type': 'application/json',
+          // Blocks until the prediction finishes, so there is no polling loop to get wrong.
+          prefer: 'wait',
+        },
+        body: JSON.stringify({
+          input: { prompt, aspect_ratio: '1:1', output_format: 'jpg', num_outputs: 1 },
+        }),
+      });
+      if (!res.ok) throw new Error(`replicate ${res.status}: ${(await res.text()).slice(0, 400)}`);
+      const body = await res.json();
+      const url = Array.isArray(body?.output) ? body.output[0] : body?.output;
+      if (typeof url !== 'string') {
+        throw new Error(`replicate: no output url (status ${body?.status}): ${JSON.stringify(body).slice(0, 300)}`);
+      }
+      return fetchImage(url);
     },
   },
 

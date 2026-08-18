@@ -95,19 +95,39 @@ picture"*. Same convergence behaviour; the target was the only thing that was ev
 
 ### The model licence matters as much as the provider
 
-**FLUX.1-schnell is Apache 2.0** and explicitly permits commercial use. **FLUX.1-dev is
-non-commercial**, is the better-looking model, and is the default in half the tutorials online.
-Reaching for it would recreate the exact problem being solved. Every provider below is pinned to
-schnell for that reason.
+There are two FLUX models and the difference is the whole of this section.
 
-### Three providers, in the order to try them
+**FLUX.1-schnell is Apache 2.0.** Commercial use of the weights and of the outputs, no
+conditions. Every free provider below serves schnell.
 
-| Order | Provider | Free allowance | Notes |
-|---|---|---|---|
-| 1 | **Cloudflare Workers AI** | 10,000 neurons/day; schnell is 4.8 per 512x512 tile, so roughly **2,000 images a day** | The whole catalog fits in one day's allowance. Confirm the service terms for commercial use yourself. |
-| 2 | **Hugging Face Inference** | ~1,000 requests/day | Same model, same licence position. Good spillover. |
-| 3 | **Local, on the RTX 3050** | unlimited | Free retries, ~1 to 2 min/image. 6GB VRAM needs a quantised build. Best home for the stubborn tail. |
-| fallback | Gemini image | none, $0.039/image | Best prompt adherence. Only for what the free three cannot get right. |
+**FLUX.1-dev ships under a non-commercial licence, and that governs the weights you download.**
+It does not describe every route to the model. **fal.ai and Replicate hold commercial licences
+from Black Forest Labs and pass those rights to the outputs you generate through them.** So dev
+is usable for this project through a licensed host, and only through one. Downloading the dev
+weights and running them on the RTX 3050 for this project would not be.
+
+The trap is still real and worth stating plainly: dev is the better-looking model and the
+default in half the tutorials online, so it is easy to end up self-hosting it by accident. The
+local provider is pinned to schnell for exactly that reason.
+
+### The providers, in the order to try them
+
+| Order | Provider | Model | Cost | Full catalog, 1,792 frames |
+|---|---|---|---|---|
+| 1 | **Cloudflare Workers AI** | schnell, Apache 2.0 | free, 10,000 neurons/day, about **2,000 images/day** | **free**, one day |
+| 2 | **Hugging Face Inference** | schnell, Apache 2.0 | free, ~1,000 requests/day | **free**, two days |
+| 3 | **Local, RTX 3050** | schnell, Apache 2.0 | free, unlimited retries | **free**, ~45 h of compute |
+| 4 | **fal.ai** | **dev**, licensed by the host | $0.025/megapixel, and 768px is one | **~$45** a pass |
+| 5 | **Replicate** | **dev**, licensed by the host | about $0.03 an image | **~$54** a pass |
+| - | Gemini image | Google | $0.039 an image | ~$70 a pass |
+
+Two things fall out of that table that were not obvious before pricing it.
+
+**dev is cheaper than Gemini**, not dearer, and it is the better model for this job. If the free
+schnell passes come out weak, fal.ai is the next stop rather than Gemini.
+
+**None of this needs a real budget.** The worst case, the whole catalog twice on the dearest
+option, is under $150. Cost was never going to decide this. Quality is.
 
 **Spec writing and scoring always run on Gemini's free text and vision tier**, whichever provider
 renders the image. Only Gemini's *image* generation costs money. So Cloudflare plus Gemini
@@ -134,10 +154,24 @@ and nobody has noticed.
 
 ## 4. Running it
 
+### The keys
+
+| Variable | For | Cost | Where |
+|---|---|---|---|
+| `GEMINI_API_KEY` | **Always needed**, whichever provider renders. Spec writing and scoring run on Gemini text and vision. | free tier | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| `CLOUDFLARE_ACCOUNT_ID` | provider 1 | free | dash.cloudflare.com, right-hand sidebar |
+| `CLOUDFLARE_API_TOKEN` | provider 1 | free | Profile > API tokens, "Workers AI" template |
+| `HF_TOKEN` | provider 2 | free | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens), read scope |
+| `LOCAL_IMAGE_URL` | provider 3 | free | not a key; the address of your own server |
+| `FAL_KEY` | provider 4, dev | paid | [fal.ai/dashboard/keys](https://fal.ai/dashboard/keys) |
+| `REPLICATE_API_TOKEN` | provider 5, dev | paid | [replicate.com/account/api-tokens](https://replicate.com/account/api-tokens) |
+
+**Two free ones start everything.** Add `FAL_KEY` only when you want dev beside them.
+
 ```bash
 export GEMINI_API_KEY=...          # free tier; spec writing and scoring
 export CLOUDFLARE_ACCOUNT_ID=...   # dash.cloudflare.com, right-hand sidebar
-export CLOUDFLARE_API_TOKEN=...    # profile > API tokens, with Workers AI read
+export CLOUDFLARE_API_TOKEN=...    # profile > API tokens, Workers AI template
 
 npm run art -- --provider cloudflare --probe    # one image, see the house style
 npm run art -- --provider cloudflare --limit 10 # the trial
@@ -147,8 +181,9 @@ npm run art:sheet                               # side-by-side review page
 Then open `assets/generated/review.html`. It puts every exercise in a row and every provider in a
 column, start frame beside end frame, so the comparison is the point rather than an afterthought.
 
-Repeat with `--provider huggingface` (needs `HF_TOKEN`) and the same ten exercises. The review
-page picks up each new provider automatically.
+Repeat with `--provider huggingface`, `--provider local` and `--provider fal`, on the same ten
+exercises. The review page picks up each provider automatically and puts them side by side,
+which is the only way to judge this.
 
 **Judge the style before generating anything at scale.** If it does not hold across a squat, a
 cable fly and a plank, the fix is the `STYLE` paragraph in
