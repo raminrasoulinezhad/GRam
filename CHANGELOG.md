@@ -6,6 +6,28 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.9.3] - 2026-08-18
+
+Storage schema **v7**, unchanged.
+
+### Added
+
+- **A bar telling you to switch browser, when the one you are in cannot install the app.**
+  Installing GRam means Add to Home Screen, and that menu item exists in exactly two places:
+  Safari on iOS and Chrome on Android. Open the link in Firefox, Samsung Internet, or the
+  webview inside Instagram or LinkedIn, which is how a shared link usually gets opened, and the
+  item is simply absent. The page works, it tells you to add it to your home screen, and nothing
+  you tap does that.
+
+  On Android the bar has a button that opens Chrome outright, via an `intent://` URL naming the
+  package, with a fallback for a phone that has no Chrome installed. On iOS it can only say the
+  words, because **no link can open Safari**: every iOS browser is Safari's engine in a different
+  coat and Apple ships no public scheme for it. So it says tap Share, then Open in Safari, and
+  puts the address on screen and on the clipboard.
+
+  This is also why the QR code holds a plain `https://` URL and not the Android intent: that
+  string is unreadable rubbish to an iPhone, and one code has to serve both.
+
 ## [1.9.2] - 2026-08-18
 
 Storage schema **v7**, unchanged.

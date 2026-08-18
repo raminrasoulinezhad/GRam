@@ -7,6 +7,7 @@ import { BirthdayGreeting } from '@/ui/BirthdayGreeting';
 import { ConfirmProvider } from '@/ui/confirm';
 import { ExerciseSheetProvider } from '@/ui/ExerciseSheet';
 import { MilestoneCelebration } from '@/ui/Milestones';
+import { OpenInBrowser } from '@/ui/OpenInBrowser';
 import { Splash } from '@/ui/Splash';
 import { useAutoBackup } from '@/ui/useAutoBackup';
 import { useSessionRecovery } from '@/ui/useSessionRecovery';
@@ -36,6 +37,11 @@ export default function RootLayout() {
           <ConfirmProvider>
             <ExerciseSheetProvider>
           {/* Above the navigator so they are visible on every screen, not just the tabs. */}
+          {/*
+            First of the three, and above the rest on purpose: it is the only one that says the
+            app cannot be installed from here, which is worth knowing before anything else.
+          */}
+          <OpenInBrowser />
           <BirthdayGreeting />
           <BackupReminder />
           <Stack
