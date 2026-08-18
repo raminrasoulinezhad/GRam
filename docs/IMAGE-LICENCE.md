@@ -154,17 +154,46 @@ and nobody has noticed.
 
 ## 4. Running it
 
-### The keys
+### The keys, and where they go
 
-| Variable | For | Cost | Where |
-|---|---|---|---|
-| `GEMINI_API_KEY` | **Always needed**, whichever provider renders. Spec writing and scoring run on Gemini text and vision. | free tier | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
-| `CLOUDFLARE_ACCOUNT_ID` | provider 1 | free | dash.cloudflare.com, right-hand sidebar |
-| `CLOUDFLARE_API_TOKEN` | provider 1 | free | Profile > API tokens, "Workers AI" template |
-| `HF_TOKEN` | provider 2 | free | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens), read scope |
-| `LOCAL_IMAGE_URL` | provider 3 | free | not a key; the address of your own server |
-| `FAL_KEY` | provider 4, dev | paid | [fal.ai/dashboard/keys](https://fal.ai/dashboard/keys) |
-| `REPLICATE_API_TOKEN` | provider 5, dev | paid | [replicate.com/account/api-tokens](https://replicate.com/account/api-tokens) |
+**Where:** a `.env` file in the repository root. Copy the template and fill in only the path you
+are running:
+
+```bash
+cp .env.example .env
+```
+
+`.env` is already in `.gitignore`, alongside `.env.*`, with `!.env.example` so the template
+itself stays tracked. The npm scripts load it automatically through Node's
+`--env-file-if-exists`, so nothing needs exporting by hand and nothing lands in your shell
+history. **No key ever goes in the repository**, which is the same rule that kept the feedback
+address out of the bundle.
+
+**Which keys, per path.** Only the row you are running matters, plus the first line, which every
+path needs:
+
+| Path | Keys | Cost |
+|---|---|---|
+| **Every path** | `GEMINI_API_KEY` | free. Spec writing and scoring run on Gemini's text and vision tier whichever provider renders the pixels. |
+| **1. Cloudflare** | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | free |
+| **2. Hugging Face** | `HF_TOKEN` | free |
+| **3. Local** | `LOCAL_IMAGE_URL` | free, and not a key: the address of your own server |
+| **4. fal.ai (dev)** | `FAL_KEY` | paid, about $45 for the catalog |
+| **5. Replicate (dev)** | `REPLICATE_API_TOKEN` | paid, about $54 for the catalog |
+
+**Where each comes from**
+
+| Variable | Where to get it |
+|---|---|
+| `GEMINI_API_KEY` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| `CLOUDFLARE_ACCOUNT_ID` | dash.cloudflare.com, right-hand sidebar |
+| `CLOUDFLARE_API_TOKEN` | Profile > API tokens > Create, "Workers AI" template |
+| `HF_TOKEN` | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens), read scope |
+| `FAL_KEY` | [fal.ai/dashboard/keys](https://fal.ai/dashboard/keys) |
+| `REPLICATE_API_TOKEN` | [replicate.com/account/api-tokens](https://replicate.com/account/api-tokens) |
+
+The script names exactly what is missing for the path you asked for, so you can also just run it
+and let it tell you.
 
 **Two free ones start everything.** Add `FAL_KEY` only when you want dev beside them.
 
