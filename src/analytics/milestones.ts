@@ -1,3 +1,4 @@
+import { toDisplayWeight } from '@/lib/format';
 import type { Profile, Session } from '@/store/types';
 import { countLoggedSets, sessionTonnage } from './volume';
 
@@ -157,14 +158,31 @@ export function reachedMilestones(
   return out;
 }
 
-/** Compact display, e.g. 1.2M / 250K / 850. */
-export function formatMilestoneValue(category: MilestoneCategory, value: number): string {
-  const n = Math.round(value);
-  const unit = category === 'weight' ? ' kg' : category === 'calories' ? ' kcal' : '';
-  if (category === 'workouts') return `${n}`;
-  if (n >= 1_000_000) return `${trim(n / 1_000_000)}M${unit}`;
-  if (n >= 1_000) return `${trim(n / 1_000)}K${unit}`;
-  return `${n}${unit}`;
+/**
+ * Compact display, e.g. 1.2M / 250K / 850.
+ *
+ * WHY THE LADDER STAYS IN KILOGRAMS AND ONLY THE LABEL CONVERTS
+ * Every threshold in TIERS is a weight in kilograms and has to stay that way. A separate pound
+ * ladder would make the level depend on a display setting: switching to lb would promote
+ * someone for changing a preference, and switching back would demote them. A milestone has to
+ * mean the same amount of work however it is written down.
+ *
+ * What was wrong before is the other half of that. The label said kg regardless of the setting,
+ * so someone using pounds read "480 kg" in the milestone strip and "1,058 lb moved" on the
+ * workout card directly beneath it. Same number, two units, one screen.
+ */
+export function formatMilestoneValue(
+  category: MilestoneCategory,
+  value: number,
+  unit: 'kg' | 'lb' = 'kg',
+): string {
+  if (category === 'workouts') return `${Math.round(value)}`;
+
+  const n = Math.round(category === 'weight' ? toDisplayWeight(value, unit) : value);
+  const suffix = category === 'weight' ? ` ${unit}` : ' kcal';
+  if (n >= 1_000_000) return `${trim(n / 1_000_000)}M${suffix}`;
+  if (n >= 1_000) return `${trim(n / 1_000)}K${suffix}`;
+  return `${n}${suffix}`;
 }
 
 function trim(n: number): string {

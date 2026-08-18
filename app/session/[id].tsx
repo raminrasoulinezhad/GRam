@@ -211,8 +211,11 @@ const EntryCard = memo(function EntryCard({
                 testID={`easier-name-${entry.id}`}
               >
                 {exerciseName(easier.easier)}
-              </Text>{' '}
-              — {easier.why}
+              </Text>
+              {/* A colon, because the name and the reason are two clauses and without a mark
+                  between them the sentence reads as one run-on phrase. */}
+              {': '}
+              {easier.why}
             </Dim>
           </View>
           <Button
@@ -226,7 +229,7 @@ const EntryCard = memo(function EntryCard({
 
       {perSide ? (
         <Dim style={s.perSide} testID={`per-side-${entry.id}`}>
-          Weight is per {implementWord(exercise!)} — one in each hand. Your total lifted counts
+          Weight is per {implementWord(exercise!)}, one in each hand. Your total lifted counts
           both.
         </Dim>
       ) : null}

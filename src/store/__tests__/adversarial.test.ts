@@ -1,5 +1,7 @@
 import { getExercise } from '@/catalog';
 import { countLoggedSets, recovery, sessionTonnage, volumeInWindow } from '@/analytics/volume';
+import { toDisplayWeight } from '@/lib/format';
+import { WEIGHT_WHEELS } from '@/ui/SetFields';
 import { coerce } from '../migrations';
 import { parseBackup, summarise, toLiveState } from '../backup';
 import {
@@ -417,6 +419,39 @@ describe('actions aimed at things that are not there', () => {
     const before = JSON.stringify(store().exportState());
     expect(act).not.toThrow();
     expect(JSON.stringify(store().exportState())).toBe(before);
+  });
+});
+
+describe('the weight a new exercise starts on', () => {
+  /*
+   * The first number a new user ever sees. Stored in kilograms like everything else, but the
+   * round number it is chosen to be depends on the unit on screen: a flat 20 kg reads as
+   * "44.1 lb" to everyone on pounds, which is this app's default unit, is not a weight any gym
+   * produces, and is not even a row on the pound wheel.
+   */
+  function firstSeed(unit: 'kg' | 'lb'): number {
+    store().updateSettings({ unit });
+    const plan = store().createPlan('monday');
+    store().addPlanItem(plan, BENCH);
+    return store().plans[0].items[0].templates[0].weightKg!;
+  }
+
+  it('is a round 20 kg for someone using kilograms', () => {
+    expect(toDisplayWeight(firstSeed('kg'), 'kg')).toBe(20);
+  });
+
+  it('is a round 45 lb, the bar, for someone using pounds', () => {
+    expect(Math.round(toDisplayWeight(firstSeed('lb'), 'lb'))).toBe(45);
+  });
+
+  it('lands on a row the wheel actually offers, in both units', () => {
+    // Otherwise opening the wheel and pressing Done without touching it silently changes the
+    // number, which is the worst kind of change: invisible and unasked for.
+    for (const unit of ['kg', 'lb'] as const) {
+      const shown = Math.round(toDisplayWeight(firstSeed(unit), unit) * 10) / 10;
+      expect(WEIGHT_WHEELS[unit]).toContain(shown);
+      store().resetAll();
+    }
   });
 });
 

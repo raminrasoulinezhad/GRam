@@ -154,7 +154,7 @@ export function BackupCard() {
       if (folder !== null) {
         const written = await exportToFolder(now);
         if (written !== null) {
-          setNote(`Saved to ${folder} — ${written} updated.`);
+          setNote(`Saved to ${folder}. ${written} updated.`);
           return;
         }
         await forgetArchiveDirectory();
@@ -190,7 +190,7 @@ export function BackupCard() {
         : outcome === 'downloaded'
           ? `Saved as ${filename}.`
           : outcome === 'copied'
-            ? 'Copied to the clipboard — paste it somewhere safe.'
+            ? 'Copied to the clipboard. Paste it somewhere safe.'
             : 'Could not save automatically. Try again, or use a different folder.',
     );
   }
@@ -304,7 +304,7 @@ export function BackupCard() {
       <Card testID="backup-card">
         <H2>Backup and transfer</H2>
         <Dim style={{ marginTop: theme.space(1) }}>
-          Your training lives on this device only. A backup is one file — {BACKUP_FILENAME} —
+          Your training lives on this device only. A backup is one file, {BACKUP_FILENAME},
           holding every plan, workout and setting. Export goes back to wherever you put it last.
         </Dim>
 
@@ -331,7 +331,7 @@ export function BackupCard() {
         </View>
         {current.from !== null && current.to !== null ? (
           <Dim>
-            {formatDate(current.from)} — {formatDate(current.to)}
+            {formatDate(current.from)} to {formatDate(current.to)}
           </Dim>
         ) : null}
 
@@ -479,9 +479,9 @@ export function describeImport(current: BackupSummary, backup: ParsedBackup): st
   }
 
   return (
-    `${incoming}\n\nThis replaces what is here now — ${current.plans} plan` +
+    `${incoming}\n\nThis replaces what is here now, ${current.plans} plan` +
     `${current.plans === 1 ? '' : 's'} and ${current.loggedSets} logged set` +
-    `${current.loggedSets === 1 ? '' : 's'} — rather than merging with it. Export first if you ` +
+    `${current.loggedSets === 1 ? '' : 's'}, rather than merging with it. Export first if you ` +
     `have not.${future}`
   );
 }

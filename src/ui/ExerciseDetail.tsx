@@ -200,7 +200,7 @@ export function ExerciseDetail({
             <H2>Not there yet?</H2>
             <Dim style={{ marginTop: theme.space(1) }}>
               Work down this list until you find one you can do for three sets, then climb back
-              up. Nothing here trains the movement as well as the movement — it gets you to it.
+              up. Nothing here trains the movement as well as the movement itself; this gets you to it.
             </Dim>
             {ladder.map((step, i) => (
               <View key={step.easier} style={s.rung}>

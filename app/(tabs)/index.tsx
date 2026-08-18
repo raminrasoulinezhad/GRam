@@ -108,7 +108,7 @@ export default function PlansScreen() {
               >
                 <Ionicons name="sparkles-outline" size={16} color={theme.color.warn} />
                 <Text style={s.staleLabel}>
-                  Unchanged for {weeksSince(plan.updatedAt, Date.now())} weeks — see what to change
+                  Unchanged for {weeksSince(plan.updatedAt, Date.now())} weeks. See what to change
                 </Text>
                 <Ionicons name="chevron-forward" size={14} color={theme.color.warn} />
               </Pressable>

@@ -67,7 +67,7 @@ export default function ReplanScreen() {
           </H2>
           <Body style={s.lead}>
             {WEEKDAY_LABEL[plan.day]} has not changed in {review.weeks} weeks. That is not a
-            problem by itself — what matters is whether it is still producing. Here is what your
+            problem by itself. What matters is whether it is still producing. Here is what your
             logged sets say.
           </Body>
         </Card>
@@ -81,7 +81,7 @@ export default function ReplanScreen() {
           <Card>
             <View style={s.headRow}>
               <Ionicons name="trending-up" size={18} color={theme.color.accent} />
-              <Text style={s.headText}>Still working — leave these alone</Text>
+              <Text style={s.headText}>Still working, leave these alone</Text>
             </View>
             {climbing.map((t) => (
               <TrendRow key={t.exerciseId} trend={t} unit={unit} tone={theme.color.accent} />
@@ -93,7 +93,7 @@ export default function ReplanScreen() {
           <Card>
             <View style={s.headRow}>
               <Ionicons name="remove-outline" size={18} color={theme.color.warn} />
-              <Text style={s.headText}>Not moving — worth changing</Text>
+              <Text style={s.headText}>Not moving, worth changing</Text>
             </View>
             <Dim style={s.hint}>
               Same weight across every session since this plan was written. A different movement
@@ -122,7 +122,7 @@ export default function ReplanScreen() {
             </View>
             <Dim style={s.hint}>
               Lighter now than when this plan was written. Before changing the exercise, look at
-              sleep, food and how much else the week is asking of you — a lift that is falling is
+              sleep, food and how much else the week is asking of you. A lift that is falling is
               usually a recovery problem, and a new movement would only hide it.
             </Dim>
             {slipping.map((t) => (
@@ -159,7 +159,7 @@ export default function ReplanScreen() {
         {!nothingToShow && review.stalled.length === 0 && slipping.length === 0 ? (
           <Card>
             <Body>
-              Nothing here is stuck. The age of a plan is not on its own a reason to change it —
+              Nothing here is stuck. The age of a plan is not on its own a reason to change it:
               come back when something stops moving.
             </Body>
           </Card>
@@ -190,7 +190,7 @@ function TrendRow({
   tone: string;
 }) {
   const show = (kg: number | null) =>
-    kg === null ? '—' : `${Math.round(toDisplayWeight(kg, unit))}${unit}`;
+    kg === null ? '-' : `${Math.round(toDisplayWeight(kg, unit))}${unit}`;
 
   return (
     <View style={s.trendRow}>

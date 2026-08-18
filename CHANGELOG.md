@@ -6,6 +6,53 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.9.4] - 2026-08-18
+
+Storage schema **v7**, unchanged. An audit release: no new features, six defects found by
+attacking the app rather than using it, and 108 new tests so none of them comes back.
+
+### Fixed
+
+- **A single malformed row could make the app open blank.** The load-time check confirmed that
+  plans and sessions were arrays and trusted everything inside them. One session with no
+  `entries` key takes out History, the body map, the milestone strip and the backup summary at
+  once, because each walks every session on launch, so the failure is an empty app with the
+  training sitting intact on disk behind it. Validation now goes all the way down and repairs
+  towards a default rather than dropping. A set with a readable exercise and a moment it
+  happened always survives. Only two things are ever discarded, because there is provably
+  nothing in them to keep: a row that is not an object, and an exercise entry with no id.
+
+- **A device with no storage left could not load, and could lose a workout silently.** Before a
+  migration the app stashes a verbatim copy of the old data as insurance. If that write failed
+  the error escaped, rehydration was abandoned, and the app started empty. It is now
+  best-effort. In the other direction, a failed save of the live data now deletes those copies
+  and tries again, which is the right order of sacrifice: the copies insure against a bad
+  migration, and the live blob is this week's training.
+
+- **Erase all data left a copy behind.** Those same pre-migration copies held the plans, the
+  workouts, the name and the body weight. The button says the data is deleted from this device,
+  so it now is.
+
+- **The milestone strip ignored the unit setting.** Someone using pounds, which is the default,
+  read "480 kg" at the top of History and "1,058 lb moved" on the workout card underneath it.
+  Same number, two units, one screen. The thresholds are still counted in kilograms so that
+  switching units can never promote or demote anyone; only the label converts.
+
+- **A new exercise started at 44.1 lb.** The seeded set was a flat 20 kg, which is a round
+  number in one unit and a conversion artefact in the other. It is not a weight any gym
+  produces, and it was not even a row on the pound wheel, so opening that wheel and pressing
+  Done changed it. A pounds user now gets 45 lb, the bar, and a kilograms user still gets 20 kg.
+
+- **Two ways to end up with a workout that claims nothing.** Finishing a session in which
+  nothing was recorded saved a row reading "0 sets"; un-ticking a set in the history editor left
+  a row that counted for nothing, stayed in the editor forever, and got copied by the next
+  Add set. Both now follow the same rule the rest of the app does: a set in the log is a set
+  that happened.
+
+### Changed
+
+- The em dash is gone from every string in the app.
+
 ## [1.9.3] - 2026-08-18
 
 Storage schema **v7**, unchanged.

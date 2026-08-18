@@ -77,16 +77,16 @@ describe('the plan review page', () => {
     planWithHistory(9, [[60], [70], [80]]);
     await renderScreen(<ReplanScreen />);
 
-    expect(screen.getByText('Still working — leave these alone')).toBeTruthy();
+    expect(screen.getByText('Still working, leave these alone')).toBeTruthy();
     expect(screen.getByText('+20kg')).toBeTruthy();
-    expect(screen.queryByText('Not moving — worth changing')).toBeNull();
+    expect(screen.queryByText('Not moving, worth changing')).toBeNull();
   });
 
   it('flags a lift stuck at the same weight and offers other work for that muscle', async () => {
     planWithHistory(9, [[60], [60], [60]]);
     await renderScreen(<ReplanScreen />);
 
-    expect(screen.getByText('Not moving — worth changing')).toBeTruthy();
+    expect(screen.getByText('Not moving, worth changing')).toBeTruthy();
     expect(screen.getByText('OTHER CHEST WORK')).toBeTruthy();
   });
 
@@ -137,7 +137,7 @@ describe('the plan review page', () => {
     await renderScreen(<ReplanScreen />);
 
     expect(screen.getByText('Not enough recorded to say')).toBeTruthy();
-    expect(screen.queryByText('Not moving — worth changing')).toBeNull();
+    expect(screen.queryByText('Not moving, worth changing')).toBeNull();
   });
 
   it('says so plainly when a long-running plan is working', async () => {

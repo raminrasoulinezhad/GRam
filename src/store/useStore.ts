@@ -33,11 +33,26 @@ import type {
 /** Ten minutes. Longer than any strength protocol asks for, and it stops a typo becoming a hang. */
 export const MAX_REST_SEC = 600;
 
-/** Sensible starting numbers so a freshly added exercise is editable rather than blank. */
-function seedTemplate(kind: SetKind): SetTemplate {
+/**
+ * An empty bar, in whichever unit is on screen.
+ *
+ * WHY THE UNIT MATTERS FOR A DEFAULT
+ * Weight is stored in kilograms and only converted for display, which is right for anything a
+ * user typed and wrong for a number the app invented. A flat 20 kg seed reads as "44.1 lb" to
+ * everyone on pounds, which is the app's own default unit: three rows of 44.1 lb is the first
+ * thing a new user sees, it is not a weight any gym produces, and it is not even on the pound
+ * wheel, so opening that wheel and pressing Done silently changes it to 44.
+ *
+ * 20 kg and 45 lb are both "the bar", which is what a seeded set means. Seeding in the unit
+ * being displayed makes the first screen read as a round number instead of a conversion
+ * artefact. Anything the user then records is their number, converted as always.
+ */
+function seedTemplate(kind: SetKind, unit: 'kg' | 'lb' = 'kg'): SetTemplate {
   switch (kind) {
     case 'weight_reps':
-      return { id: uid('t'), weightKg: 20, reps: 8 };
+      // 45 lb is 20.41 kg. Stored in kg like everything else; only the choice of round number
+      // depends on the unit.
+      return { id: uid('t'), weightKg: unit === 'lb' ? 20.41 : 20, reps: 8 };
     case 'reps':
       return { id: uid('t'), reps: 10 };
     case 'time':
@@ -262,13 +277,13 @@ export const useStore = create<State & Actions>()(
       addPlanItem: (planId, exerciseId) => {
         const exercise = getExercise(exerciseId);
         if (!exercise) return;
-        const { defaultRestSec, defaultSetCount } = get().settings;
+        const { defaultRestSec, defaultSetCount, unit } = get().settings;
         const item: PlanItem = {
           id: uid('pi'),
           exerciseId,
           kind: exercise.kind,
           restSec: defaultRestSec,
-          templates: Array.from({ length: defaultSetCount }, () => seedTemplate(exercise.kind)),
+          templates: Array.from({ length: defaultSetCount }, () => seedTemplate(exercise.kind, unit)),
         };
         set((s) => ({
           plans: withPlan(s.plans, planId, (p) => ({ ...p, items: [...p.items, item] })),
@@ -296,17 +311,19 @@ export const useStore = create<State & Actions>()(
           }),
         })),
 
-      setPlanItemKind: (planId, itemId, kind) =>
+      setPlanItemKind: (planId, itemId, kind) => {
+        const { unit } = get().settings;
         set((s) => ({
           plans: withPlan(s.plans, planId, (p) =>
             withItem(p, itemId, (i) => ({
               ...i,
               kind,
               // The old numbers are meaningless under a different kind, so reseed.
-              templates: i.templates.map(() => seedTemplate(kind)),
+              templates: i.templates.map(() => seedTemplate(kind, unit)),
             })),
           ),
-        })),
+        }));
+      },
 
       setPlanItemRest: (planId, itemId, restSec) =>
         set((s) => ({
@@ -315,7 +332,8 @@ export const useStore = create<State & Actions>()(
           ),
         })),
 
-      addPlanTemplate: (planId, itemId) =>
+      addPlanTemplate: (planId, itemId) => {
+        const { unit } = get().settings;
         set((s) => ({
           plans: withPlan(s.plans, planId, (p) =>
             withItem(p, itemId, (i) => ({
@@ -325,11 +343,12 @@ export const useStore = create<State & Actions>()(
                 ...i.templates,
                 i.templates.length > 0
                   ? { ...i.templates[i.templates.length - 1], id: uid('t') }
-                  : seedTemplate(i.kind),
+                  : seedTemplate(i.kind, unit),
               ],
             })),
           ),
-        })),
+        }));
+      },
 
       removePlanTemplate: (planId, itemId, templateId) =>
         set((s) => ({
@@ -405,7 +424,7 @@ export const useStore = create<State & Actions>()(
       addSessionExercise: (sessionId, exerciseId) => {
         const exercise = getExercise(exerciseId);
         if (!exercise) return;
-        const { defaultRestSec, defaultSetCount } = get().settings;
+        const { defaultRestSec, defaultSetCount, unit } = get().settings;
         const finished = get().sessions.find((x) => x.id === sessionId)?.endedAt ?? null;
         /*
          * A live workout is pre-filled with the usual number of sets to work through. A
@@ -424,7 +443,7 @@ export const useStore = create<State & Actions>()(
           restSec: defaultRestSec,
           sets: Array.from({ length: count }, (_, i) => ({
             id: uid('ss'),
-            ...seedFromLast(seedTemplate(exercise.kind), previous, i),
+            ...seedFromLast(seedTemplate(exercise.kind, unit), previous, i),
             loggedAt: finished,
           })),
         };
@@ -460,6 +479,7 @@ export const useStore = create<State & Actions>()(
         const exercise = getExercise(exerciseId);
         if (!exercise) return;
         const sessions = get().sessions;
+        const { unit } = get().settings;
         const previous = lastPerformance(sessions, exerciseId);
         set((s) => ({
           sessions: withSession(s.sessions, sessionId, (session) =>
@@ -471,7 +491,7 @@ export const useStore = create<State & Actions>()(
                 kind: exercise.kind,
                 sets: entry.sets.map((set, i) => ({
                   id: set.id,
-                  ...seedFromLast(seedTemplate(exercise.kind), previous, i),
+                  ...seedFromLast(seedTemplate(exercise.kind, unit), previous, i),
                   loggedAt: null,
                 })),
               };
@@ -480,7 +500,8 @@ export const useStore = create<State & Actions>()(
         }));
       },
 
-      addSet: (sessionId, entryId) =>
+      addSet: (sessionId, entryId) => {
+        const { unit } = get().settings;
         set((s) => ({
           sessions: withSession(s.sessions, sessionId, (session) =>
             withEntry(session, entryId, (entry) => {
@@ -492,11 +513,12 @@ export const useStore = create<State & Actions>()(
                 session.endedAt === null ? null : (last?.loggedAt ?? session.endedAt);
               const next: SessionSet = last
                 ? { ...last, id: uid('ss'), loggedAt }
-                : { ...seedTemplate(entry.kind), id: uid('ss'), loggedAt };
+                : { ...seedTemplate(entry.kind, unit), id: uid('ss'), loggedAt };
               return { ...entry, sets: [...entry.sets, next] };
             }),
           ),
-        })),
+        }));
+      },
 
       removeSet: (sessionId, entryId, setId) =>
         set((s) => ({

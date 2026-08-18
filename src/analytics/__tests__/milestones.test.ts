@@ -188,4 +188,38 @@ describe('formatMilestoneValue', () => {
   ] as const)('formats %s %s as %s', (category, value, expected) => {
     expect(formatMilestoneValue(category, value)).toBe(expected);
   });
+
+  /**
+   * The unit setting reaches here too.
+   *
+   * It did not, and the result was the History screen showing "480 kg" in the milestone strip
+   * directly above "1,058 lb moved" on the workout card. Same number, two units, one screen,
+   * for the default unit this app ships with.
+   */
+  describe('in pounds', () => {
+    it.each([
+      [950, '2.1K lb'],
+      [100_000, '220K lb'],
+      [1_500_000, '3.3M lb'],
+    ])('converts %s kg for display', (kg, expected) => {
+      expect(formatMilestoneValue('weight', kg, 'lb')).toBe(expected);
+    });
+
+    it('leaves calories and days alone, which have no unit to convert', () => {
+      expect(formatMilestoneValue('calories', 2_000, 'lb')).toBe('2K kcal');
+      expect(formatMilestoneValue('workouts', 250, 'lb')).toBe('250');
+    });
+
+    it('does not move anyone up a level for changing a display setting', () => {
+      /*
+       * The reason the ladder stays denominated in kilograms. If the thresholds converted too,
+       * 100,000 kg of work would clear a 100,000 lb tier the moment someone switched units, and
+       * switching back would take the level away again.
+       */
+      const inKg = progressFor('weight', 99_000);
+      const asPounds = progressFor('weight', 99_000);
+      expect(asPounds.level).toBe(inKg.level);
+      expect(inKg.level).toBe(0);
+    });
+  });
 });

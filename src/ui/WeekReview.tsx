@@ -111,7 +111,7 @@ export function WeekReview() {
             <Ionicons name="checkmark-circle" size={18} color={theme.color.accent} />
             <Body style={{ flex: 1, color: theme.color.accent }}>
               {review.dismissed.length > 0
-                ? 'Nothing outstanding. Some advice is dismissed — tap refresh to bring it back.'
+                ? 'Nothing outstanding. Some advice is dismissed; tap refresh to bring it back.'
                 : 'Every muscle group is trained at least twice a week, on different days.'}
             </Body>
           </View>
@@ -134,7 +134,7 @@ export function WeekReview() {
 
         <Dim style={{ marginTop: theme.space(3) }}>
           Balanced means each group is the <Text style={s.em}>primary</Text> muscle of an exercise
-          in at least {DAYS_PER_WEEK_TARGET} different plans. Assistance work does not count — a
+          in at least {DAYS_PER_WEEK_TARGET} different plans. Assistance work does not count: a
           week whose only triceps work is bench press is not a week that trains triceps.
         </Dim>
       </Card>

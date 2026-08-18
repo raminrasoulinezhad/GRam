@@ -15,7 +15,7 @@ import { MilestoneBadge, bandName } from './MilestoneBadge';
 import { theme } from './theme';
 
 const HINT: Record<MilestoneCategory, string> = {
-  weight: 'Every kilogram you have moved, added up.',
+  weight: 'Every set you have recorded, weight times reps, added up.',
   workouts: 'Distinct days with something recorded.',
   calories: 'Estimated from session length and your body weight.',
 };
@@ -31,6 +31,7 @@ const HINT: Record<MilestoneCategory, string> = {
 export function MilestonesCard() {
   const allSessions = useStore(selectSessions);
   const profile = useStore((s) => s.profile);
+  const unit = useStore((s) => s.settings.unit);
   const [open, setOpen] = useState<MilestoneProgress | null>(null);
 
   const progress = useMemo(
@@ -62,9 +63,9 @@ export function MilestonesCard() {
             </View>
 
             <Text style={s.progressText}>
-              {formatMilestoneValue(p.category, p.value)}
+              {formatMilestoneValue(p.category, p.value, unit)}
               {p.next !== null
-                ? ` · ${formatMilestoneValue(p.category, p.next - p.value)} to level ${p.level + 1}`
+                ? ` · ${formatMilestoneValue(p.category, p.next - p.value, unit)} to level ${p.level + 1}`
                 : ' · every level earned'}
             </Text>
           </View>
@@ -73,7 +74,9 @@ export function MilestonesCard() {
         </Pressable>
       ))}
 
-      <MilestoneHistory progress={open} onClose={() => setOpen(null)} />
+      {/* The unit is passed down rather than read again, so the sheet can never disagree with
+          the row that opened it. */}
+      <MilestoneHistory progress={open} unit={unit} onClose={() => setOpen(null)} />
     </Card>
   );
 }
@@ -81,9 +84,11 @@ export function MilestonesCard() {
 /** Every level in one ladder: what has been earned, and what is still ahead. */
 function MilestoneHistory({
   progress,
+  unit,
   onClose,
 }: {
   progress: MilestoneProgress | null;
+  unit: 'kg' | 'lb';
   onClose: () => void;
 }) {
   if (!progress) return null;
@@ -98,7 +103,7 @@ function MilestoneHistory({
             <View style={{ flex: 1 }}>
               <Text style={s.sheetTitle}>{CATEGORY_LABEL[category]}</Text>
               <Dim>
-                {formatMilestoneValue(category, value)} · {HINT[category]}
+                {formatMilestoneValue(category, value, unit)} · {HINT[category]}
               </Dim>
             </View>
             <Pressable
@@ -126,13 +131,13 @@ function MilestoneHistory({
                     <Text style={[s.tierName, !earned && { color: theme.color.textFaint }]}>
                       Level {i + 1} · {bandName(i + 1)}
                     </Text>
-                    <Dim>{formatMilestoneValue(category, tier)}</Dim>
+                    <Dim>{formatMilestoneValue(category, tier, unit)}</Dim>
                   </View>
                   {earned ? (
                     <Ionicons name="checkmark-circle" size={20} color={theme.color.accent} />
                   ) : isNext ? (
                     <Text style={s.tierRemaining}>
-                      {formatMilestoneValue(category, tier - value)} to go
+                      {formatMilestoneValue(category, tier - value, unit)} to go
                     </Text>
                   ) : null}
                 </View>
@@ -155,6 +160,7 @@ function MilestoneHistory({
 export function MilestoneCelebration() {
   const allSessions = useStore(selectSessions);
   const profile = useStore((s) => s.profile);
+  const unit = useStore((s) => s.settings.unit);
   const seen = useStore((s) => s.celebratedMilestones);
   const markSeen = useStore((s) => s.markMilestonesSeen);
 
@@ -189,7 +195,7 @@ export function MilestoneCelebration() {
             {bandName(top.level)} · Level {top.level}
           </Text>
           <Text style={s.celebrateValue}>
-            {formatMilestoneValue(top.category, top.tier)}
+            {formatMilestoneValue(top.category, top.tier, unit)}
           </Text>
           <Dim style={{ textAlign: 'center' }}>
             {CATEGORY_LABEL[top.category]}

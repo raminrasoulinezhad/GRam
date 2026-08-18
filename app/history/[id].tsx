@@ -116,7 +116,7 @@ const EntryCard = memo(function EntryCard({
       {/* Only while editing: reading back a workout, the number means what it meant on the day. */}
       {editing && perSide ? (
         <Dim style={s.perSide} testID={`history-per-side-${entry.id}`}>
-          Weight is per {implementWord(exercise!)} — one in each hand.
+          Weight is per {implementWord(exercise!)}, one in each hand.
         </Dim>
       ) : null}
 

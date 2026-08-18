@@ -280,12 +280,15 @@ describe('the workout loop', () => {
   it('never rewrites a set that has been recorded', () => {
     const { sessionId, entryId } = setup();
     const sets = store().sessions[0].entries[0].sets;
+    // Read rather than hard-coded: the seeded weight is a round number in whichever unit is
+    // set, so it is 20 kg or the 20.41 kg that is 45 lb. What matters is that it does not move.
+    const seeded = sets[1].weightKg;
     store().toggleSetLogged(sessionId, entryId, sets[1].id);
 
     store().updateSet(sessionId, entryId, sets[0].id, { weightKg: 70 });
 
     const after = store().sessions[0].entries[0].sets;
-    expect(after[1].weightKg).toBe(20); // recorded: what was actually lifted, untouched
+    expect(after[1].weightKg).toBe(seeded); // recorded: what was actually lifted, untouched
     expect(after[2].weightKg).toBe(70); // still only a target, so it follows
   });
 
@@ -293,9 +296,11 @@ describe('the workout loop', () => {
     const { sessionId, entryId } = setup();
     const sets = store().sessions[0].entries[0].sets;
 
+    const seeded = sets[0].weightKg;
+
     store().updateSet(sessionId, entryId, sets[1].id, { weightKg: 70 });
 
-    expect(store().sessions[0].entries[0].sets.map((x) => x.weightKg)).toEqual([20, 70, 70]);
+    expect(store().sessions[0].entries[0].sets.map((x) => x.weightKg)).toEqual([seeded, 70, 70]);
   });
 
   it('removes a set, before or after recording it', () => {
