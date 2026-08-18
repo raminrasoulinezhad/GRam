@@ -80,9 +80,9 @@ describe('a past workout reads as a record until you ask to edit it', () => {
 describe('correcting what was recorded', () => {
   it('corrects the weight of a logged set through the wheel', async () => {
     /*
-     * Kilograms, so the row on the wheel is the number stored. Seeded at 92.4 - between two
-     * rows, since the wheel counts in whole numbers - so opening and confirming visibly snaps
-     * it to 92 and proves the write went all the way through.
+     * Kilograms, so the row on the wheel is the number stored. Seeded at 92.4 - between the 90
+     * and 95 rows, since the wheel counts in fives above 40 kg - so opening and confirming
+     * visibly snaps it to 90 and proves the write went all the way through.
      */
     store().updateSettings({ unit: 'kg' });
     pastWorkout();
@@ -93,7 +93,7 @@ describe('correcting what was recorded', () => {
     await fireEvent.press(screen.getByTestId(`edit-set-${setId}-weight`));
     await fireEvent.press(screen.getByTestId(`edit-set-${setId}-weight-done`));
 
-    expect(sets()[0].weightKg).toBe(92);
+    expect(sets()[0].weightKg).toBe(90);
     // The correction does not un-record the set.
     expect(sets()[0].loggedAt).not.toBeNull();
   });

@@ -91,9 +91,10 @@ describe('active workout screen', () => {
 
   it('edits weight and reps through the set wheels', async () => {
     /*
-     * The wheels count in whole numbers, so seeding a value between two rows makes the whole
-     * path observable: the sheet has to open on the nearest row, and Done has to write that
-     * row back. A value already on the wheel would leave the store untouched and prove nothing.
+     * The weight wheel skips rows - ones to 40 kg, fives above it - so seeding a value between
+     * two rows makes the whole path observable: the sheet has to open on the nearest row, and
+     * Done has to write that row back. A value already on the wheel would leave the store
+     * untouched and prove nothing.
      *
      * The library's own scrolling cannot be driven from here - it is a real scroll container,
      * and there isn't one - so choosing a *different* row is verified in a browser. What these
@@ -111,7 +112,8 @@ describe('active workout screen', () => {
     await fireEvent.press(screen.getByTestId(`set-${setId}-weight`));
     await fireEvent.press(screen.getByTestId(`set-${setId}-weight-done`));
 
-    expect(store().sessions[0].entries[0].sets[0].weightKg).toBe(82);
+    // 82.4 sits between the 80 and 85 rows, and 80 is the nearer one.
+    expect(store().sessions[0].entries[0].sets[0].weightKg).toBe(80);
   });
 
   it('shows the stored value on the row, without opening anything', async () => {
@@ -132,7 +134,7 @@ describe('active workout screen', () => {
 
   it('converts through the wheel in the default pounds', async () => {
     // Stored in kg whatever the wheel shows, so switching units never rewrites history. 102.5 kg
-    // is 226.0 lb, which is the 226 row, and that comes back as 102.51 kg.
+    // is 226.0 lb, the nearest pound row is 225, and that comes back as 102.06 kg.
     startWorkout();
     store().updateSet(store().sessions[0].id, entryId(), setIds()[0], { weightKg: 102.5 });
     await renderScreen(<SessionScreen />);
@@ -141,7 +143,7 @@ describe('active workout screen', () => {
     await fireEvent.press(screen.getByTestId(`set-${setId}-weight`));
     await fireEvent.press(screen.getByTestId(`set-${setId}-weight-done`));
 
-    expect(store().sessions[0].entries[0].sets[0].weightKg).toBeCloseTo(102.51, 1);
+    expect(store().sessions[0].entries[0].sets[0].weightKg).toBeCloseTo(102.06, 2);
   });
 
   it('says nothing rather than zero for a set with no numbers yet', async () => {

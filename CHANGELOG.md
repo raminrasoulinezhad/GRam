@@ -6,6 +6,37 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.9.1] - 2026-08-18
+
+Storage schema **v7**, unchanged.
+
+### Added
+
+- **A QR code at the bottom of Profile.** There is no store listing to point anyone at, so
+  sharing GRam has meant reading a URL out loud, which does not work across a gym floor. Now you
+  hold up the phone. Under it sits the address in text, tappable, for anyone who would rather
+  type it.
+
+  The grid is generated at build time by [`scripts/build-qr.mjs`](scripts/build-qr.mjs) and
+  committed as data, so no QR library ships in the app and nothing is encoded at runtime. The
+  encoder's output was checked module for module against the `qrencode` reference
+  implementation. It is drawn black on white on every theme, because that is the only thing a
+  scanner will read.
+
+### Changed
+
+- **The weight wheel counts in fives above 40 kg.** One row per kilogram up to 300 was 301 rows,
+  and the wheel opens on the last value used, which is nothing the first time an exercise is
+  logged. Reaching a working weight from there was most of the scrolling anyone did in this app.
+
+  Fine resolution stays where it is real: dumbbells come in 2 kg steps, and 12 against 14 kg is
+  a decision. Above that the load is a barbell or a stack, both of which move in fives anyway.
+  In pounds the changeover is 90, roughly the same forty kilos, and every plate combination on a
+  45 lb bar already lands on a multiple of five. 93 rows instead of 301, and 205 instead of 661.
+
+  Nothing already recorded changes. A set logged at 42 kg still reads 42 kg; only reopening its
+  wheel and pressing Done rounds it.
+
 ## [1.9.0] - 2026-08-11
 
 Storage schema **v7**, unchanged.

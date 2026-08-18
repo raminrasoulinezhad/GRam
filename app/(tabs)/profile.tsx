@@ -18,6 +18,7 @@ import { useConfirm } from '@/ui/confirm';
 import { BackupCard } from '@/ui/BackupCard';
 import { DateField } from '@/ui/DateField';
 import { FeedbackCard } from '@/ui/FeedbackCard';
+import { ShareCard } from '@/ui/ShareCard';
 import { ThemeCard } from '@/ui/ThemeCard';
 import { WheelField } from '@/ui/WheelField';
 import { theme } from '@/ui/theme';
@@ -287,6 +288,12 @@ export default function ProfileScreen() {
           <Row label="Data format" value={`v${SCHEMA_VERSION}`} />
           <Row label="Exercises" value={String(EXERCISES.length)} />
         </Card>
+        {/*
+          * Last, under About, because it is the one thing here aimed at somebody who is not
+          * holding the phone. Nothing above it needs to be read first, and a QR code high on
+          * the page would be a permanent 180px of screen between you and your own settings.
+          */}
+        <ShareCard />
 
         <Button label="Erase all data" variant="danger" testID="erase" onPress={() => void handleReset()} />
       </ScrollView>

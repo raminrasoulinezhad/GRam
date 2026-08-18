@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { APP_URL } from './appLink';
 
 /**
  * Sending a note to whoever maintains this.
@@ -30,7 +31,7 @@ export const FEEDBACK_FORM = 'gram-feedback';
  * build. The public address of the site, which is on the front of the README; it is not a
  * secret and it is not an inbox.
  */
-export const FEEDBACK_ORIGIN = 'https://grambygram.netlify.app';
+export const FEEDBACK_ORIGIN = APP_URL;
 
 /** Long enough for a paragraph of detail, short enough that a stuck key cannot post a novel. */
 export const MAX_FEEDBACK_CHARS = 1500;
