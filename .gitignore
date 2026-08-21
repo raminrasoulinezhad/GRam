@@ -47,3 +47,7 @@ yarn-error.*
 
 # Artwork drop-off. The canonical copies live in assets/brand/ - see DEVELOPER_README.md.
 newlogos/
+
+# artwork trial output: base64-heavy and regenerable, so it stays out of the history until a
+# pass is chosen and the chosen images are added deliberately
+assets/generated/

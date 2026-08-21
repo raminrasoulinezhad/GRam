@@ -50,10 +50,49 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CATALOG = resolve(ROOT, 'assets/data/exercises.json');
 const OUT_DIR = resolve(ROOT, 'assets/generated');
 
+/**
+ * One fetch, retried through the failures that mean "not now" rather than "not ever".
+ *
+ * Returns only an ok response; anything else throws, so no caller needs its own status check.
+ *
+ * Every host here rate-limits, and a free tier is where you meet the limit. A run over 896
+ * exercises makes thousands of calls, so a single 503 must not cost an exercise: without this
+ * the first busy minute abandons the frame and the manifest records a fallback that was never
+ * really tried. 401 and 400 are not retried, because waiting will not fix a wrong key or a
+ * malformed prompt.
+ */
+const TRANSIENT = new Set([408, 429, 500, 502, 503, 504]);
+
+async function fetchRetry(url, init, label, tries = 4) {
+  let last;
+  for (let n = 1; n <= tries; n++) {
+    let res;
+    try {
+      res = await fetch(url, init);
+    } catch (err) {
+      // A dropped socket is the same class of problem as a 503.
+      last = new Error(`${label}: ${err.message}`);
+      res = null;
+    }
+    if (res?.ok) return res;
+    if (res) {
+      const err = new Error(`${label} ${res.status}: ${(await res.text()).slice(0, 400)}`);
+      // A wrong key or a rejected prompt will say the same thing in thirty seconds.
+      if (!TRANSIENT.has(res.status)) throw err;
+      last = err;
+    }
+    if (n === tries) break;
+    // 2s, 8s, 32s. Long enough for a per-minute quota window to roll over.
+    const wait = 2000 * 4 ** (n - 1);
+    console.log(`      ${label} busy, retrying in ${wait / 1000}s (${n}/${tries - 1})`);
+    await new Promise((r) => setTimeout(r, wait));
+  }
+  throw last;
+}
+
 /** Both dev hosts reply with a URL rather than the bytes, so fetch it and inline it. */
 async function fetchImage(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`fetching generated image: ${res.status}`);
+  const res = await fetchRetry(url, undefined, 'fetching generated image');
   const buf = Buffer.from(await res.arrayBuffer());
   const mime = res.headers.get('content-type') ?? 'image/jpeg';
   return { data: buf.toString('base64'), mime };
@@ -80,7 +119,7 @@ const PROVIDERS = {
     async render(prompt) {
       const account = process.env.CLOUDFLARE_ACCOUNT_ID;
       const model = process.env.CF_IMAGE_MODEL ?? '@cf/black-forest-labs/flux-1-schnell';
-      const res = await fetch(
+      const res = await fetchRetry(
         `https://api.cloudflare.com/client/v4/accounts/${account}/ai/run/${model}`,
         {
           method: 'POST',
@@ -92,8 +131,8 @@ const PROVIDERS = {
           // and also the best quality it has.
           body: JSON.stringify({ prompt: prompt.slice(0, 2048), steps: 8 }),
         },
+        'cloudflare',
       );
-      if (!res.ok) throw new Error(`cloudflare ${res.status}: ${(await res.text()).slice(0, 400)}`);
       const body = await res.json();
       const b64 = body?.result?.image ?? body?.image;
       if (!b64) throw new Error(`cloudflare: no image in reply: ${JSON.stringify(body).slice(0, 300)}`);
@@ -101,28 +140,37 @@ const PROVIDERS = {
     },
   },
 
-  /* Roughly a thousand requests a day free. Same model, so the same licence position. */
+  /*
+   * Same model, so the same licence position, but no longer the free tier it once was.
+   *
+   * `api-inference.huggingface.co` is gone: the host does not even resolve, and hf-inference
+   * answers 410 for this model. Hugging Face now forwards text-to-image to third-party
+   * providers (nscale, fal-ai, wavespeed) and bills them against an account credit that is
+   * about $0.10 a month on a free account. That is a few dozen images, not a catalog, so this
+   * path is for comparing quality against Cloudflare rather than for the full run.
+   *
+   * The route is the provider's OpenAI-shaped images endpoint, which returns base64 JSON.
+   */
   huggingface: {
-    label: 'Hugging Face Inference, FLUX.1-schnell (Apache 2.0)',
+    label: 'Hugging Face router, FLUX.1-schnell (Apache 2.0)',
     env: ['HF_TOKEN'],
-    usdPerImage: 0,
+    usdPerImage: 0.0015,
     async render(prompt) {
       const model = process.env.HF_IMAGE_MODEL ?? 'black-forest-labs/FLUX.1-schnell';
-      const base = process.env.HF_ENDPOINT ?? 'https://api-inference.huggingface.co/models';
-      const res = await fetch(`${base}/${model}`, {
+      const provider = process.env.HF_PROVIDER ?? 'nscale';
+      const base = process.env.HF_ENDPOINT ?? `https://router.huggingface.co/${provider}/v1`;
+      const res = await fetchRetry(`${base}/images/generations`, {
         method: 'POST',
         headers: {
           authorization: `Bearer ${process.env.HF_TOKEN}`,
           'content-type': 'application/json',
-          accept: 'image/png',
         },
-        body: JSON.stringify({ inputs: prompt, options: { wait_for_model: true } }),
-      });
-      if (!res.ok) throw new Error(`huggingface ${res.status}: ${(await res.text()).slice(0, 400)}`);
-      // Returns raw bytes rather than JSON.
-      const buf = Buffer.from(await res.arrayBuffer());
-      if (buf.length < 1000) throw new Error(`huggingface: reply too small to be an image: ${buf.toString().slice(0, 200)}`);
-      return { data: buf.toString('base64'), mime: 'image/png' };
+        body: JSON.stringify({ model, prompt, response_format: 'b64_json', n: 1 }),
+      }, 'huggingface');
+      const body = await res.json();
+      const b64 = body?.data?.[0]?.b64_json;
+      if (!b64) throw new Error(`huggingface: no image in reply: ${JSON.stringify(body).slice(0, 300)}`);
+      return { data: b64, mime: 'image/png' };
     },
   },
 
@@ -139,12 +187,11 @@ const PROVIDERS = {
     env: ['LOCAL_IMAGE_URL'],
     usdPerImage: 0,
     async render(prompt) {
-      const res = await fetch(process.env.LOCAL_IMAGE_URL, {
+      const res = await fetchRetry(process.env.LOCAL_IMAGE_URL, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ prompt, steps: 4 }),
-      });
-      if (!res.ok) throw new Error(`local ${res.status}: ${(await res.text()).slice(0, 300)}`);
+      }, 'local');
       const type = res.headers.get('content-type') ?? '';
       if (type.startsWith('image/')) {
         return { data: Buffer.from(await res.arrayBuffer()).toString('base64'), mime: type };
@@ -171,7 +218,7 @@ const PROVIDERS = {
     // $0.025 per megapixel, rounded up. 768x768 is 0.59MP, so one megapixel's worth.
     usdPerImage: 0.025,
     async render(prompt) {
-      const res = await fetch(process.env.FAL_MODEL_URL ?? 'https://fal.run/fal-ai/flux/dev', {
+      const res = await fetchRetry(process.env.FAL_MODEL_URL ?? 'https://fal.run/fal-ai/flux/dev', {
         method: 'POST',
         headers: { authorization: `Key ${process.env.FAL_KEY}`, 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -182,7 +229,6 @@ const PROVIDERS = {
           num_inference_steps: 28,
         }),
       });
-      if (!res.ok) throw new Error(`fal ${res.status}: ${(await res.text()).slice(0, 400)}`);
       const body = await res.json();
       const url = body?.images?.[0]?.url;
       if (!url) throw new Error(`fal: no image url: ${JSON.stringify(body).slice(0, 300)}`);
@@ -196,7 +242,7 @@ const PROVIDERS = {
     usdPerImage: 0.03,
     async render(prompt) {
       const model = process.env.REPLICATE_MODEL ?? 'black-forest-labs/flux-dev';
-      const res = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
+      const res = await fetchRetry(`https://api.replicate.com/v1/models/${model}/predictions`, {
         method: 'POST',
         headers: {
           authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
@@ -208,7 +254,6 @@ const PROVIDERS = {
           input: { prompt, aspect_ratio: '1:1', output_format: 'jpg', num_outputs: 1 },
         }),
       });
-      if (!res.ok) throw new Error(`replicate ${res.status}: ${(await res.text()).slice(0, 400)}`);
       const body = await res.json();
       const url = Array.isArray(body?.output) ? body.output[0] : body?.output;
       if (typeof url !== 'string') {
@@ -224,7 +269,7 @@ const PROVIDERS = {
     env: ['GEMINI_API_KEY'],
     usdPerImage: 0.039,
     async render(prompt) {
-      const model = process.env.GEMINI_IMAGE_MODEL ?? 'gemini-2.5-flash-image';
+      const model = process.env.GEMINI_IMAGE_MODEL ?? 'gemini-3.1-flash-image';
       const payload = await gemini(model, { contents: [{ role: 'user', parts: [{ text: prompt }] }] });
       const image = firstImage(payload);
       if (!image) throw new Error(`gemini: no image; got ${allText(payload).slice(0, 200)}`);
@@ -288,7 +333,7 @@ const ONLY = value('--only', null);
 const DRY = has('--dry-run');
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY ?? '';
-const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL ?? 'gemini-2.5-flash';
+const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL ?? 'gemini-3.6-flash';
 
 let spent = 0;
 let made = 0;
@@ -296,11 +341,17 @@ let made = 0;
 // ---------------------------------------------------------------------------- gemini (text + vision, free tier)
 
 async function gemini(model, body) {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
-    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) },
+  // The key goes in a header, not the query string: a URL ends up in proxy and server logs,
+  // a header does not.
+  const res = await fetchRetry(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
+      body: JSON.stringify(body),
+    },
+    model,
   );
-  if (!res.ok) throw new Error(`${model} ${res.status}: ${(await res.text()).slice(0, 400)}`);
   return res.json();
 }
 
@@ -416,18 +467,28 @@ Reply with JSON only:
 
 async function buildFrame(provider, spec, frame, figure) {
   let critique = '';
+  let last = null;
   const attempts = [];
   for (let n = 1; n <= MAX_ATTEMPTS; n++) {
     const image = await render(provider, framePrompt(spec, frame, critique, figure));
+    last = image;
     const verdict = await score(image, spec, frame);
     attempts.push({ attempt: n, ok: verdict.ok, issues: verdict.issues ?? [] });
     if (verdict.ok) return { image, attempts, accepted: true };
     critique = verdict.promptFix || (verdict.issues ?? []).join('; ');
     console.log(`      ${frame} attempt ${n} rejected: ${(verdict.issues ?? []).join('; ') || '?'}`);
   }
-  // Out of attempts: the row falls back to the licensed tier or the drawn glyph. That path
-  // already exists and is already tested, so a miss costs a picture, not a broken screen.
-  return { image: null, attempts, accepted: false };
+  /*
+   * Out of attempts. In the app the row falls back to the licensed tier or the drawn glyph, a
+   * path that already exists and is already tested, so a miss costs a picture rather than a
+   * broken screen.
+   *
+   * The last render still comes back, because this script's job during the trial is to answer
+   * "is this provider good enough" and throwing the evidence away makes that unanswerable. A
+   * rejected frame is written to disk and labelled as rejected on the review page; the manifest
+   * records `accepted: false`, which is what decides whether it could ever ship.
+   */
+  return { image: last, attempts, accepted: false };
 }
 
 // ---------------------------------------------------------------------------- review page
@@ -449,11 +510,25 @@ function buildSheet() {
     }
   }
 
+  const manifests = Object.fromEntries(
+    providers.map((p) => {
+      const f = resolve(OUT_DIR, p, 'manifest.json');
+      return [p, existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : {}];
+    }),
+  );
+
   const cell = (p, id, frame) => {
     const rel = `${p}/${id}/${frame}.png`;
-    return existsSync(resolve(OUT_DIR, rel))
-      ? `<img src="${rel}" alt="${id} ${frame}">`
-      : `<div class="miss">no ${frame}</div>`;
+    if (!existsSync(resolve(OUT_DIR, rel))) return `<div class="miss">no ${frame}</div>`;
+    const record = manifests[p]?.[id]?.frames?.[frame];
+    // A rejected frame is shown, because seeing how a provider fails is half the comparison,
+    // but it is never shown silently: the faults the scorer named sit underneath it.
+    const issues = record?.accepted
+      ? ''
+      : `<div class="bad">rejected: ${
+          (record?.attempts?.at(-1)?.issues ?? ['not scored']).join('; ')
+        }</div>`;
+    return `<figure><img src="${rel}" alt="${id} ${frame}">${issues}</figure>`;
   };
 
   const rows = [...ids].sort().map((id) => {
@@ -471,6 +546,7 @@ function buildSheet() {
  th{text-align:left;color:#93A1BA;font-weight:600;width:150px}
  thead th{color:#4ADE80}
  .pair{display:flex;gap:8px} .pair img{width:190px;height:auto;border-radius:8px;background:#fff}
+ figure{margin:0;width:190px} .bad{margin-top:6px;font-size:11px;line-height:1.4;color:#FCA5A5}
  .miss{width:190px;height:120px;display:grid;place-items:center;color:#64748B;border:1px dashed #26334A;border-radius:8px}
 </style>
 <h1>GRam artwork review</h1>

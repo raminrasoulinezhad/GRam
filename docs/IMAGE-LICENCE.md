@@ -115,11 +115,19 @@ local provider is pinned to schnell for exactly that reason.
 | Order | Provider | Model | Cost | Full catalog, 1,792 frames |
 |---|---|---|---|---|
 | 1 | **Cloudflare Workers AI** | schnell, Apache 2.0 | free, 10,000 neurons/day, about **2,000 images/day** | **free**, one day |
-| 2 | **Hugging Face Inference** | schnell, Apache 2.0 | free, ~1,000 requests/day | **free**, two days |
+| 2 | **Hugging Face router** | schnell, Apache 2.0 | about $0.10/month of credit, so a few dozen images | not viable for a full pass |
 | 3 | **Local, RTX 3050** | schnell, Apache 2.0 | free, unlimited retries | **free**, ~45 h of compute |
 | 4 | **fal.ai** | **dev**, licensed by the host | $0.025/megapixel, and 768px is one | **~$45** a pass |
 | 5 | **Replicate** | **dev**, licensed by the host | about $0.03 an image | **~$54** a pass |
 | - | Gemini image | Google | $0.039 an image | ~$70 a pass |
+
+**Path 2 stopped being free while this document was being written.** The endpoint the plan
+assumed, `api-inference.huggingface.co`, no longer resolves at all, and its replacement answers
+410 for this model: Hugging Face now forwards text-to-image to third-party hosts (nscale, fal-ai,
+wavespeed) and bills them against an account credit worth about $0.10 a month on a free plan.
+The model and its Apache-2.0 licence are unchanged, so the path is still worth running to compare
+quality, but it can no longer render the catalog. Cloudflare and the local card are the two free
+paths now.
 
 Two things fall out of that table that were not obvious before pricing it.
 
@@ -176,7 +184,7 @@ path needs:
 |---|---|---|
 | **Every path** | `GEMINI_API_KEY` | free. Spec writing and scoring run on Gemini's text and vision tier whichever provider renders the pixels. |
 | **1. Cloudflare** | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | free |
-| **2. Hugging Face** | `HF_TOKEN` | free |
+| **2. Hugging Face** | `HF_TOKEN` | a monthly credit worth about $0.10 on a free plan, enough to compare quality |
 | **3. Local** | `LOCAL_IMAGE_URL` | free, and not a key: the address of your own server |
 | **4. fal.ai (dev)** | `FAL_KEY` | paid, about $45 for the catalog |
 | **5. Replicate (dev)** | `REPLICATE_API_TOKEN` | paid, about $54 for the catalog |
@@ -198,9 +206,7 @@ and let it tell you.
 **Two free ones start everything.** Add `FAL_KEY` only when you want dev beside them.
 
 ```bash
-export GEMINI_API_KEY=...          # free tier; spec writing and scoring
-export CLOUDFLARE_ACCOUNT_ID=...   # dash.cloudflare.com, right-hand sidebar
-export CLOUDFLARE_API_TOKEN=...    # profile > API tokens, Workers AI template
+cp .env.example .env    # then fill in GEMINI_API_KEY and the Cloudflare pair
 
 npm run art -- --provider cloudflare --probe    # one image, see the house style
 npm run art -- --provider cloudflare --limit 10 # the trial
@@ -255,6 +261,55 @@ weights, and this machine has about 5GB free.
 ## 6. Progress log
 
 Kept here so the effort has a record rather than living in a chat window. Newest first.
+
+### 2026-08-21: path 2 run with a real key, and it is no longer a free path
+
+Ran the real pipeline end to end for the first time, with a Gemini key and a Hugging Face token.
+Three exercises, both frames, three attempts each.
+
+**Path 2 has changed underneath the plan.** `api-inference.huggingface.co` does not resolve at
+all any more, and its replacement returns 410 for FLUX.1-schnell. Hugging Face now forwards
+text-to-image to third-party hosts and bills them against an included credit. On a free account
+that credit ran out after **nine images**, mid-run:
+
+> You have depleted your monthly included credits.
+
+So path 2 is a quality sample, not a way to render 1,792 frames. The script now targets the
+router (nscale by default, `HF_PROVIDER` to change it) so the sample is at least obtainable.
+Section 3 has been corrected.
+
+**Gemini image generation needs billing.** The text and vision calls are free as planned and
+worked throughout, but `gemini-3.1-flash-image` answers 429 on a key with no billing attached.
+The paid fallback is a real fallback, not a free one, and it needs a card before it is a route.
+
+**The model names in the script had gone stale.** `gemini-2.5-flash` now answers 404 with "no
+longer available to new users"; the defaults are `gemini-3.6-flash` for text and vision and
+`gemini-3.1-flash-image` for the paid image path.
+
+**Quality: schnell got every frame wrong.** Nine renders, zero accepted. The scorer's own words,
+which are worth reading because they are specific rather than vague:
+
+- squat: barbell held in front of the clavicles instead of racked across the trapezius, front
+  view where a three-quarter view was asked for, depth well above parallel
+- bench: barbell floating in mid-air unheld, plates detached and drifting near the head, one
+  arm raised in a fist and no bar in it, and on the third attempt an arm growing from the hip
+
+That last one is the tell. Schnell is a four-step distilled model and it is weak exactly where
+this project needs strength: equipment contact points and limb topology. The spec-and-score loop
+is doing its job by catching all of it, but a loop that rejects everything produces nothing.
+
+**What this changes.**
+
+- **Cloudflare is now the only free path worth a full run**, with the local card behind it.
+  Path 2 drops to a sample.
+- Schnell may simply not be good enough at this, in which case fal.ai with dev at about $45 is
+  the answer rather than a fallback. That is the next comparison, and it needs the Cloudflare
+  keys first so there is something to compare against.
+- Rejected frames are now written to disk and shown on the review page with the faults named
+  underneath. Discarding them was a mistake: a trial whose output is an empty folder cannot
+  answer the question the trial exists to ask.
+- Transient failures now retry with backoff. A single Gemini 503 was abandoning a frame, and
+  over 896 exercises that is not an edge case.
 
 ### 2026-08-18: first generation trial, and a correction worth having
 
