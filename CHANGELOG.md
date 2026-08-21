@@ -6,6 +6,29 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.10.4] - 2026-08-21
+
+Storage schema **v7**, unchanged.
+
+### Fixed
+
+- **The screen no longer goes dark during a timed set.** A plank is the one thing in the app
+  nobody touches the phone for: it goes on the floor, you get into position, and for the next
+  minute the device sees no input at all — which is exactly the condition a screen timeout is
+  waiting for. So the display dimmed mid-set and locked, over the one number the app had no
+  other way of telling you.
+
+  The display is now held on for as long as a clock is actually running, and released the
+  moment it stops: when the set is recorded, when it is stopped early, and when the rest
+  countdown reaches zero. A rest bar left undismissed cannot keep the screen lit for the rest
+  of the workout.
+
+  Where a browser has no wake lock, or refuses one, nothing changes and nothing breaks — the
+  timer was never tied to the screen, so it still keeps correct time either way.
+
+- The rest bar stopped repainting itself four times a second after the countdown had finished.
+  It sat there redrawing unchanged text until it was dismissed.
+
 ## [1.10.0] - 2026-08-18
 
 Storage schema **v7**, unchanged.

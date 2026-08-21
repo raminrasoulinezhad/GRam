@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { beep, primeBeep } from '@/lib/beep';
 import { formatDuration } from '@/lib/format';
+import { useWakeLock } from '@/lib/wakeLock';
 import { Button, Dim } from './components';
 import { Sheet } from './Sheet';
 import { theme } from './theme';
@@ -56,6 +57,14 @@ export function HoldTimer({
   const [phase, setPhase] = useState<Phase>({ at: 'ready' });
   const [now, setNow] = useState(() => Date.now());
   const beeped = useRef(false);
+
+  /*
+   * The phone is on the floor and untouched for the whole set, which is precisely the condition
+   * a screen timeout waits for. Held only while the clock is actually running: once the set is
+   * done the number has been read and recorded, and there is no reason to go on burning the
+   * display.
+   */
+  useWakeLock(phase.at === 'leadIn' || phase.at === 'running');
 
   // Repaint often enough that the seconds never look stuck, which four times a second does.
   useEffect(() => {

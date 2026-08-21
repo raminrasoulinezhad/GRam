@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { formatDuration } from '@/lib/format';
+import { useWakeLock } from '@/lib/wakeLock';
 import { theme } from './theme';
 
 /**
@@ -19,21 +20,27 @@ export function RestTimer({
   onDismiss: () => void;
 }) {
   const [now, setNow] = useState(() => Date.now());
-  const interval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const endsAt = startedAt === null ? null : startedAt + seconds * 1000;
 
   useEffect(() => {
-    if (startedAt === null) {
-      if (interval.current) clearInterval(interval.current);
-      interval.current = null;
-      return;
-    }
+    if (endsAt === null) return;
     setNow(Date.now());
-    interval.current = setInterval(() => setNow(Date.now()), 250);
-    return () => {
-      if (interval.current) clearInterval(interval.current);
-      interval.current = null;
-    };
-  }, [startedAt]);
+    const id = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      // Once the countdown has run out the bar is fixed text until it is dismissed, so going on
+      // repainting it four times a second is pure battery for no pixels changed.
+      if (t >= endsAt) clearInterval(id);
+    }, 250);
+    return () => clearInterval(id);
+  }, [endsAt]);
+
+  /*
+   * Rest is the other stretch where nobody touches the phone: it is face up on the bench and
+   * the countdown is the only thing being watched. Released the moment the rest is over, so a
+   * bar left undismissed cannot hold the display on for the remainder of the workout.
+   */
+  useWakeLock(endsAt !== null && seconds > 0 && now < endsAt);
 
   if (startedAt === null || seconds <= 0) return null;
 
