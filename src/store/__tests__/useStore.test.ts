@@ -292,6 +292,30 @@ describe('the workout loop', () => {
     expect(after[2].weightKg).toBe(70); // still only a target, so it follows
   });
 
+  it('does not carry a result that was asked to stay put', () => {
+    const { sessionId, entryId } = setup();
+    const sets = store().sessions[0].entries[0].sets;
+    const planned = sets.map((x) => x.timeSec);
+
+    // A hold stopped early: this set records what was held, the ones after keep their target.
+    store().updateSet(sessionId, entryId, sets[0].id, { timeSec: 12 }, { carry: false });
+
+    const after = store().sessions[0].entries[0].sets;
+    expect(after[0].timeSec).toBe(12);
+    expect(after.slice(1).map((x) => x.timeSec)).toEqual(planned.slice(1));
+  });
+
+  it('still carries a time that was set on purpose', () => {
+    const { sessionId, entryId } = setup();
+    const sets = store().sessions[0].entries[0].sets;
+    store().updateSet(sessionId, entryId, sets[0].id, { timeSec: 12 }, { carry: false });
+
+    // Changing the target afterwards is the edit that is meant to travel.
+    store().updateSet(sessionId, entryId, sets[0].id, { timeSec: 40 });
+
+    expect(store().sessions[0].entries[0].sets.map((x) => x.timeSec)).toEqual([40, 40, 40]);
+  });
+
   it('leaves the sets above alone - they have already happened', () => {
     const { sessionId, entryId } = setup();
     const sets = store().sessions[0].entries[0].sets;

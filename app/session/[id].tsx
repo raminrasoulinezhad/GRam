@@ -15,7 +15,7 @@ import { formatDuration, relativeTime } from '@/lib/format';
 import { orderEntries } from '@/lib/sessionOrder';
 import type { SessionEntry, SessionSet, SetValues } from '@/store/types';
 import { useStore } from '@/store/useStore';
-import { Button, Dim, Empty, Screen } from '@/ui/components';
+import { Button, Dim, Empty, Screen, ScreenFooter } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
 import { HoldTimer } from '@/ui/HoldTimer';
 import { ExerciseCard } from '@/ui/ExerciseCard';
@@ -41,7 +41,7 @@ const SetRow = memo(function SetRow({
   index: number;
   kind: SetKind;
   unit: 'kg' | 'lb';
-  onChange: (setId: string, patch: SetValues) => void;
+  onChange: (setId: string, patch: SetValues, options?: { carry?: boolean }) => void;
   onToggle: (setId: string) => void;
   onRemove: (setId: string) => void;
 }) {
@@ -94,7 +94,13 @@ const SetRow = memo(function SetRow({
           onDone={(seconds) => {
             // Record what was actually held, then mark the set done - the same two things you
             // would otherwise do by hand, in the order that leaves the number right.
-            onChange(set.id, { timeSec: seconds });
+            //
+            // The stopwatch writes a result, not a new target. Stopping a thirty-second plank
+            // at twelve records twelve here and leaves the sets after it on thirty. Running
+            // the clock all the way out records thirty, which this set already said, and must
+            // not overwrite a later set that was set to something else. Changing the time on
+            // the wheel is the edit that travels.
+            onChange(set.id, { timeSec: seconds }, { carry: false });
             if (!logged) onToggle(set.id);
           }}
         />
@@ -144,7 +150,12 @@ const EntryCard = memo(function EntryCard({
   unit: 'kg' | 'lb';
   expanded: boolean;
   onToggleExpanded: (entryId: string) => void;
-  onChange: (entryId: string, setId: string, patch: SetValues) => void;
+  onChange: (
+    entryId: string,
+    setId: string,
+    patch: SetValues,
+    options?: { carry?: boolean },
+  ) => void;
   onToggle: (entryId: string, setId: string, restSec: number) => void;
   onRemoveSet: (entryId: string, setId: string) => void;
   onAddSet: (entryId: string) => void;
@@ -159,7 +170,8 @@ const EntryCard = memo(function EntryCard({
   const complete = entry.sets.length > 0 && done === entry.sets.length;
 
   const handleChange = useCallback(
-    (setId: string, patch: SetValues) => onChange(entry.id, setId, patch),
+    (setId: string, patch: SetValues, options?: { carry?: boolean }) =>
+      onChange(entry.id, setId, patch, options),
     [entry.id, onChange],
   );
   const handleToggle = useCallback(
@@ -307,7 +319,8 @@ export default function SessionScreen() {
   );
 
   const handleChange = useCallback(
-    (entryId: string, setId: string, patch: SetValues) => updateSet(id, entryId, setId, patch),
+    (entryId: string, setId: string, patch: SetValues, options?: { carry?: boolean }) =>
+      updateSet(id, entryId, setId, patch, options),
     [id, updateSet],
   );
 
@@ -453,10 +466,10 @@ export default function SessionScreen() {
       />
 
       {!finished && !typing ? (
-        <View style={s.footer}>
+        <ScreenFooter style={s.footer}>
           <Button label="Finish workout" onPress={() => void handleFinish()} style={{ flex: 1 }} testID="finish" />
           <Button label="Discard" variant="danger" onPress={() => void handleDiscard()} testID="discard" />
-        </View>
+        </ScreenFooter>
       ) : null}
     </Screen>
   );
@@ -521,12 +534,9 @@ const s = StyleSheet.create({
     borderColor: theme.color.border,
   },
   logBtnOn: { backgroundColor: theme.color.accent, borderColor: theme.color.accent },
+  // Chrome and the home-indicator inset come from ScreenFooter; the row layout is this screen's.
   footer: {
     flexDirection: 'row',
     gap: theme.space(2),
-    padding: theme.space(4),
-    borderTopWidth: 1,
-    borderTopColor: theme.color.border,
-    backgroundColor: theme.color.surface,
   },
 });

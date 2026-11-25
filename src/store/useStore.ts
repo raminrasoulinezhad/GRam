@@ -107,7 +107,19 @@ type Actions = {
   swapSessionExercise: (sessionId: string, entryId: string, exerciseId: string) => void;
   addSet: (sessionId: string, entryId: string) => void;
   removeSet: (sessionId: string, entryId: string, setId: string) => void;
-  updateSet: (sessionId: string, entryId: string, setId: string, values: SetValues) => void;
+  updateSet: (
+    sessionId: string,
+    entryId: string,
+    setId: string,
+    values: SetValues,
+    /**
+     * Whether the change is a new target for the sets still to come.
+     *
+     * Defaults to carrying. A timed set stopped short of its goal is the exception: the
+     * seconds held are what happened, not what the next set should aim for.
+     */
+    options?: { carry?: boolean },
+  ) => void;
   toggleSetLogged: (sessionId: string, entryId: string, setId: string) => void;
   endSession: (sessionId: string) => void;
   discardSession: (sessionId: string) => void;
@@ -543,17 +555,22 @@ export const useStore = create<State & Actions>()(
        * happened. A recorded set is never rewritten by an edit to another set, which is also
        * what keeps this quiet in the history editor: every set in a finished workout is
        * recorded, so correcting one there changes exactly the one you are looking at.
+       *
+       * `carry: false` writes this set and stops. A hold stopped at 12 of 30 seconds has to
+       * be logged as 12, and that 12 is a result. Carrying it would quietly shorten every
+       * set still waiting, which is what happens when the number is edited on purpose.
        */
-      updateSet: (sessionId, entryId, setId, values) =>
+      updateSet: (sessionId, entryId, setId, values, options) =>
         set((s) => ({
           sessions: withSession(s.sessions, sessionId, (session) =>
             withEntry(session, entryId, (entry) => {
               const at = entry.sets.findIndex((x) => x.id === setId);
               if (at < 0) return entry;
+              const carry = options?.carry !== false;
               return {
                 ...entry,
                 sets: entry.sets.map((x, i) =>
-                  i === at || (i > at && x.loggedAt === null) ? { ...x, ...values } : x,
+                  i === at || (carry && i > at && x.loggedAt === null) ? { ...x, ...values } : x,
                 ),
               };
             }),

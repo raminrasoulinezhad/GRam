@@ -6,6 +6,18 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.10.5] - 2026-11-25
+
+Storage schema **v7**, unchanged.
+
+### Fixed
+
+- **Stopping a timed set early no longer shortens the sets after it.** The stopwatch records
+  how long the hold actually lasted, and that number was being treated as a new target, so a
+  plank given up at twelve seconds of thirty reset every set still to come to twelve. The
+  measured time now stays on the set that was timed. Changing the time on the wheel still
+  updates the sets that follow, which is the edit that means "this is what I intend to do next".
+
 ## [1.10.4] - 2026-08-21
 
 Storage schema **v7**, unchanged.

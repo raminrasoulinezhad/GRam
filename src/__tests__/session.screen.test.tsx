@@ -1,5 +1,6 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 import { cancelDialog, confirmDialog, dialogOpen, renderScreen } from '@/test-utils';
+import { LEAD_IN_SEC } from '@/ui/HoldTimer';
 import { useStore } from '@/store/useStore';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
@@ -210,6 +211,43 @@ describe('active workout screen', () => {
     await fireEvent.press(screen.getByTestId(`set-${setId}-time`));
     await fireEvent.press(screen.getByTestId(`set-${setId}-time-done`));
     expect(store().sessions[0].entries[0].sets[0].timeSec).toBe(75);
+  });
+
+  it('records a hold stopped early without shortening the sets after it', async () => {
+    jest.useFakeTimers();
+    try {
+      startWorkout(PLANK);
+      const planned = store().sessions[0].entries[0].sets.map((x) => x.timeSec);
+      await renderScreen(<SessionScreen />);
+
+      const [first] = setIds();
+      await fireEvent.press(screen.getByTestId(`time-${first}`));
+      await fireEvent.press(screen.getByTestId('hold-start'));
+      await act(async () => {
+        jest.advanceTimersByTime((LEAD_IN_SEC + 12) * 1000);
+      });
+      await fireEvent.press(screen.getByTestId('hold-finish'));
+
+      const sets = store().sessions[0].entries[0].sets;
+      expect(sets[0].timeSec).toBe(12);
+      expect(sets[0].loggedAt).not.toBeNull();
+      expect(sets.slice(1).map((x) => x.timeSec)).toEqual(planned.slice(1));
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('carries a time chosen on the wheel into the sets after it', async () => {
+    startWorkout(PLANK);
+    const setId = setIds()[0];
+    // 73 snaps to 75 on Done, so the write is visible on every set it reaches.
+    store().updateSet(store().sessions[0].id, entryId(), setId, { timeSec: 73 });
+    await renderScreen(<SessionScreen />);
+
+    await fireEvent.press(screen.getByTestId(`set-${setId}-time`));
+    await fireEvent.press(screen.getByTestId(`set-${setId}-time-done`));
+
+    expect(store().sessions[0].entries[0].sets.map((x) => x.timeSec)).toEqual([75, 75, 75]);
   });
 
   it('puts the stopwatch beside the seconds, not beside the record button', async () => {
