@@ -320,12 +320,13 @@ describe('active workout screen', () => {
     expect(dialogOpen()).toBe(false);
   });
 
-  it('offers to discard rather than saving an empty workout', async () => {
+  it('finishes a workout that has nothing recorded by dropping it', async () => {
     const sessionId = startWorkout();
     await renderScreen(<SessionScreen />);
 
     await fireEvent.press(screen.getByTestId('finish'));
-    expect(screen.getByText('Nothing recorded')).toBeTruthy();
+    expect(screen.getByText('Finish workout?')).toBeTruthy();
+    expect(screen.getByText(/will be dropped/)).toBeTruthy();
 
     await confirmDialog();
     expect(store().sessions.find((s) => s.id === sessionId)).toBeUndefined();

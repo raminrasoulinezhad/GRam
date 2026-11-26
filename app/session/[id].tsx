@@ -1,5 +1,6 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import {
@@ -298,6 +299,8 @@ export default function SessionScreen() {
   const discardSession = useStore((st) => st.discardSession);
   const confirm = useConfirm();
   const typing = useKeyboardOpen();
+  // The app paints under the home indicator. Without this the Finish row is the gesture.
+  const insets = useSafeAreaInsets();
 
   const [rest, setRest] = useState<{ startedAt: number; seconds: number } | null>(null);
 
@@ -379,15 +382,18 @@ export default function SessionScreen() {
 
   async function handleFinish() {
     if (logged === 0) {
-      const discard = await confirm({
-        title: 'Nothing recorded',
-        message: 'No sets were recorded. Discard this workout instead of saving it?',
-        confirmLabel: 'Discard',
+      // Nothing was logged, so there is no workout to put in the log. Finishing still has to
+      // be possible: otherwise a session opened by mistake stays "in progress" until you
+      // record a set you did not do. Drop it, using the id of the session on screen.
+      const end = await confirm({
+        title: 'Finish workout?',
+        message: 'No sets were recorded, so this workout will be dropped rather than saved empty.',
+        confirmLabel: 'Finish',
         cancelLabel: 'Keep going',
         destructive: true,
       });
-      if (discard) {
-        discardSession(id);
+      if (end) {
+        discardSession(session.id);
         router.replace('/');
       }
       return;
@@ -466,7 +472,7 @@ export default function SessionScreen() {
       />
 
       {!finished && !typing ? (
-        <View style={s.footer}>
+        <View style={[s.footer, { paddingBottom: theme.space(4) + insets.bottom }]}>
           <Button label="Finish workout" onPress={() => void handleFinish()} style={{ flex: 1 }} testID="finish" />
           <Button label="Discard" variant="danger" onPress={() => void handleDiscard()} testID="discard" />
         </View>

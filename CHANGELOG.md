@@ -6,6 +6,17 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.10.7] - 2026-11-26
+
+Storage schema **v7**, unchanged.
+
+### Fixed
+
+- **A workout with nothing recorded can be finished.** Finish treated that as a refusal and
+  only offered to discard, so a session opened by mistake stayed in progress. Finishing now
+  ends it and drops it, rather than saving an empty workout to the log. The buttons also sit
+  above the home indicator, where a tap is a tap.
+
 ## [1.10.6] - 2026-11-26
 
 Storage schema **v7**, unchanged.
