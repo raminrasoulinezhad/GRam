@@ -15,7 +15,7 @@ import { formatDuration, relativeTime } from '@/lib/format';
 import { orderEntries } from '@/lib/sessionOrder';
 import type { SessionEntry, SessionSet, SetValues } from '@/store/types';
 import { useStore } from '@/store/useStore';
-import { Button, Dim, Empty, Screen, ScreenFooter } from '@/ui/components';
+import { Button, Dim, Empty, Screen } from '@/ui/components';
 import { useConfirm } from '@/ui/confirm';
 import { HoldTimer } from '@/ui/HoldTimer';
 import { ExerciseCard } from '@/ui/ExerciseCard';
@@ -466,10 +466,10 @@ export default function SessionScreen() {
       />
 
       {!finished && !typing ? (
-        <ScreenFooter style={s.footer}>
+        <View style={s.footer}>
           <Button label="Finish workout" onPress={() => void handleFinish()} style={{ flex: 1 }} testID="finish" />
           <Button label="Discard" variant="danger" onPress={() => void handleDiscard()} testID="discard" />
-        </ScreenFooter>
+        </View>
       ) : null}
     </Screen>
   );
@@ -534,9 +534,12 @@ const s = StyleSheet.create({
     borderColor: theme.color.border,
   },
   logBtnOn: { backgroundColor: theme.color.accent, borderColor: theme.color.accent },
-  // Chrome and the home-indicator inset come from ScreenFooter; the row layout is this screen's.
   footer: {
     flexDirection: 'row',
     gap: theme.space(2),
+    padding: theme.space(4),
+    borderTopWidth: 1,
+    borderTopColor: theme.color.border,
+    backgroundColor: theme.color.surface,
   },
 });

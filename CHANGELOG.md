@@ -6,6 +6,17 @@ versions follow [Semantic Versioning](https://semver.org).
 Each entry notes its **storage schema version**. Upgrading between any two releases preserves
 all plans and logged workouts — see [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.10.6] - 2026-11-26
+
+Storage schema **v7**, unchanged.
+
+### Fixed
+
+- **Opening a workout no longer blanks the app.** The session screen was rendering a footer
+  component that exists only in unfinished local work, so the build that shipped had nothing
+  to render there. React threw, the whole screen went black, and reopening landed on the same
+  workout and threw again. The footer is back to the bar that actually ships.
+
 ## [1.10.5] - 2026-11-25
 
 Storage schema **v7**, unchanged.
